@@ -1,132 +1,92 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  CheckCircle, 
-  AlertTriangle, 
-  Clock, 
-  Plus, 
-  Search, 
-  Filter,
-  BarChart3,
-  Users,
-  Target,
-  Zap
+  TrendingUp, 
+  TrendingDown, 
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity,
+  Globe,
+  Zap,
+  Shield
 } from 'lucide-react';
-import CreateIssueModal from '@/components/CreateIssueModal';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
-interface Issue {
-  id: string;
-  title: string;
-  description: string;
-  status: 'open' | 'in-progress' | 'resolved';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  assignee?: string;
-  createdAt: string;
-  category: string;
-}
-
-const mockIssues: Issue[] = [
-  {
-    id: '1',
-    title: 'Website loading slowly',
-    description: 'Users reporting slow page load times on the homepage',
-    status: 'open',
-    priority: 'high',
-    assignee: 'John Doe',
-    createdAt: '2024-01-15',
-    category: 'Performance'
-  },
-  {
-    id: '2',
-    title: 'Mobile app crashes on startup',
-    description: 'iOS app crashes immediately after launch for some users',
-    status: 'in-progress',
-    priority: 'critical',
-    assignee: 'Jane Smith',
-    createdAt: '2024-01-14',
-    category: 'Bug'
-  },
-  {
-    id: '3',
-    title: 'Email notifications not working',
-    description: 'Users not receiving email confirmations for orders',
-    status: 'resolved',
-    priority: 'medium',
-    assignee: 'Bob Johnson',
-    createdAt: '2024-01-13',
-    category: 'Feature'
-  }
+// Mock trading data
+const mockPriceData = [
+  { time: '00:00', price: 42500, volume: 1250 },
+  { time: '04:00', price: 43200, volume: 1890 },
+  { time: '08:00', price: 41800, volume: 2100 },
+  { time: '12:00', price: 44500, volume: 1750 },
+  { time: '16:00', price: 45200, volume: 2300 },
+  { time: '20:00', price: 46800, volume: 1950 },
 ];
 
-export default function Home() {
-  const [issues, setIssues] = useState<Issue[]>(mockIssues);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+const mockTokens = [
+  { symbol: 'REC', name: 'Renewable Energy Credits', price: 45.67, change: 5.23, changePercent: 12.95 },
+  { symbol: 'CARB', name: 'Carbon Credits', price: 28.45, change: -1.23, changePercent: -4.14 },
+  { symbol: 'SOLAR', name: 'Solar Energy Tokens', price: 15.89, change: 2.45, changePercent: 18.22 },
+  { symbol: 'WIND', name: 'Wind Energy Credits', price: 32.11, change: 0.89, changePercent: 2.85 },
+];
 
-  const filteredIssues = issues.filter(issue => {
-    const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         issue.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+const mockNews = [
+  { title: 'Global REC Market Reaches New High', time: '2 hours ago', impact: 'bullish' },
+  { title: 'New Carbon Trading Regulations Announced', time: '4 hours ago', impact: 'neutral' },
+  { title: 'Renewable Energy Investment Surge', time: '6 hours ago', impact: 'bullish' },
+];
 
-  const stats = {
-    total: issues.length,
-    open: issues.filter(i => i.status === 'open').length,
-    inProgress: issues.filter(i => i.status === 'in-progress').length,
-    resolved: issues.filter(i => i.status === 'resolved').length
-  };
+export default function TradingPlatform() {
+  const [selectedToken, setSelectedToken] = useState(mockTokens[0]);
+  const [currentPrice, setCurrentPrice] = useState(45.67);
+  const [isConnected, setIsConnected] = useState(false);
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
+  // Simulate real-time price updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const change = (Math.random() - 0.5) * 2;
+      setCurrentPrice(prev => Math.max(0, prev + change));
+    }, 3000);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'open': return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'in-progress': return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'resolved': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default: return null;
-    }
-  };
-
-  const handleCreateIssue = (newIssue: Omit<Issue, 'id' | 'createdAt' | 'status'>) => {
-    const issue: Issue = {
-      ...newIssue,
-      id: (issues.length + 1).toString(),
-      status: 'open',
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setIssues(prev => [issue, ...prev]);
-  };
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-slate-800/50 backdrop-blur-lg border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <Target className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">RECtify</h1>
-              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">MVP</span>
-            </div>
             <div className="flex items-center space-x-4">
-              <button className="text-gray-600 hover:text-gray-900">
-                <BarChart3 className="h-5 w-5" />
-              </button>
-              <button className="text-gray-600 hover:text-gray-900">
-                <Users className="h-5 w-5" />
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-2 rounded-lg">
+                <Zap className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                  RECtify
+                </h1>
+                <p className="text-xs text-slate-400">Trading Platform</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:flex items-center space-x-6 text-sm">
+                <span className="text-slate-300">Market Status:</span>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-400 font-medium">Open</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setIsConnected(!isConnected)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  isConnected 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                }`}
+              >
+                {isConnected ? 'Connected' : 'Connect Wallet'}
               </button>
             </div>
           </div>
@@ -136,162 +96,233 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Rectify Issues, Streamline Solutions
+          <h2 className="text-4xl md:text-6xl font-bold mb-6">
+            Trade Renewable Energy Credits
+            <span className="block bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+              Sustainably
+            </span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Track, manage, and resolve issues efficiently with our comprehensive platform. 
-            From bug reports to feature requests, keep your team aligned and productive.
-          </p>
-          <div className="flex items-center justify-center space-x-4">
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 transition-colors"
-            >
-              <Plus className="h-5 w-5" />
-              <span>Create Issue</span>
-            </button>
-            <button className="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg font-medium border border-gray-300 transition-colors">
-              View Analytics
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Issues</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
+                     <p className="text-xl text-slate-400 max-w-3xl mx-auto mb-8">
+             Access the world&apos;s largest marketplace for renewable energy credits, carbon offsets, 
+             and sustainable energy tokens. Trade with confidence on our secure, transparent platform.
+           </p>
           
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Open</p>
-                <p className="text-2xl font-bold text-red-600">{stats.open}</p>
-              </div>
-              <div className="bg-red-100 p-3 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-              </div>
+          {/* Key Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+              <div className="text-2xl font-bold text-green-400">$2.4B</div>
+              <div className="text-sm text-slate-400">24h Volume</div>
             </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">In Progress</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.inProgress}</p>
-              </div>
-              <div className="bg-yellow-100 p-3 rounded-lg">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+              <div className="text-2xl font-bold text-blue-400">150+</div>
+              <div className="text-sm text-slate-400">Active Tokens</div>
             </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Resolved</p>
-                <p className="text-2xl font-bold text-green-600">{stats.resolved}</p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+              <div className="text-2xl font-bold text-purple-400">50K+</div>
+              <div className="text-sm text-slate-400">Traders</div>
+            </div>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+              <div className="text-2xl font-bold text-yellow-400">99.9%</div>
+              <div className="text-sm text-slate-400">Uptime</div>
             </div>
           </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Search issues..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Filter className="h-5 w-5 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                <option value="open">Open</option>
-                <option value="in-progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Issues List */}
-        <div className="space-y-4">
-          {filteredIssues.map((issue) => (
-            <div key={issue.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    {getStatusIcon(issue.status)}
-                    <h3 className="text-lg font-semibold text-gray-900">{issue.title}</h3>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(issue.priority)}`}>
-                      {issue.priority}
+        {/* Main Trading Interface */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Price Chart */}
+          <div className="lg:col-span-2 bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold">{selectedToken.symbol}/USD</h3>
+                <div className="flex items-center space-x-4 mt-2">
+                  <span className="text-2xl font-bold">${currentPrice.toFixed(2)}</span>
+                  <div className={`flex items-center space-x-1 px-2 py-1 rounded-lg ${
+                    selectedToken.change > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                  }`}>
+                    {selectedToken.change > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                    <span className="text-sm font-medium">
+                      {selectedToken.change > 0 ? '+' : ''}{selectedToken.changePercent.toFixed(2)}%
                     </span>
                   </div>
-                  <p className="text-gray-600 mb-3">{issue.description}</p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span>#{issue.id}</span>
-                    <span>{issue.category}</span>
-                    <span>Created {issue.createdAt}</span>
-                    {issue.assignee && <span>Assigned to {issue.assignee}</span>}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <Zap className="h-5 w-5" />
-                  </button>
                 </div>
               </div>
+              
+              <div className="flex space-x-2">
+                <button className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors">1H</button>
+                <button className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded-lg text-sm transition-colors">24H</button>
+                <button className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors">7D</button>
+                <button className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors">1M</button>
+              </div>
             </div>
-          ))}
+            
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={mockPriceData}>
+                  <defs>
+                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="time" stroke="#64748b" />
+                  <YAxis stroke="#64748b" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1e293b', 
+                      border: '1px solid #334155',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="price" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    fill="url(#colorPrice)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Order Book / Trading Panel */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+            <h3 className="text-lg font-bold mb-4">Quick Trade</h3>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <button className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                  Buy
+                </button>
+                <button className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                  Sell
+                </button>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Amount (USD)</label>
+                <input 
+                  type="number" 
+                  placeholder="0.00" 
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Quantity</label>
+                <input 
+                  type="number" 
+                  placeholder="0.00" 
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              
+              <button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 rounded-lg font-medium transition-all">
+                Place Order
+              </button>
+            </div>
+          </div>
         </div>
 
-        {filteredIssues.length === 0 && (
-          <div className="text-center py-12">
-            <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No issues found</h3>
-            <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
+        {/* Token List */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+            <h3 className="text-lg font-bold mb-4">Market Overview</h3>
+                         <div className="space-y-3">
+               {mockTokens.map((token) => (
+                 <div 
+                   key={token.symbol}
+                   onClick={() => setSelectedToken(token)}
+                   className={`p-4 rounded-lg cursor-pointer transition-all ${
+                     selectedToken.symbol === token.symbol 
+                       ? 'bg-green-500/20 border border-green-500/30' 
+                       : 'bg-slate-700/30 hover:bg-slate-700/50'
+                   }`}
+                 >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{token.symbol}</div>
+                      <div className="text-sm text-slate-400">{token.name}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">${token.price.toFixed(2)}</div>
+                      <div className={`text-sm flex items-center ${
+                        token.change > 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {token.change > 0 ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
+                        {token.changePercent.toFixed(2)}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+
+          {/* News & Updates */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+            <h3 className="text-lg font-bold mb-4">Market News</h3>
+            <div className="space-y-4">
+              {mockNews.map((news, index) => (
+                <div key={index} className="p-4 bg-slate-700/30 rounded-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium text-sm">{news.title}</h4>
+                    <div className={`w-2 h-2 rounded-full ${
+                      news.impact === 'bullish' ? 'bg-green-500' : 
+                      news.impact === 'bearish' ? 'bg-red-500' : 'bg-yellow-500'
+                    }`}></div>
+                  </div>
+                  <p className="text-xs text-slate-400">{news.time}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Features Section */}
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="text-center">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Secure Trading</h3>
+            <p className="text-slate-400 text-sm">
+              Bank-grade security with multi-signature wallets and cold storage protection.
+            </p>
+          </div>
+          
+          <div className="text-center">
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Globe className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Global Markets</h3>
+            <p className="text-slate-400 text-sm">
+              Access renewable energy credits from markets worldwide, 24/7 trading.
+            </p>
+          </div>
+          
+          <div className="text-center">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Activity className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Real-time Data</h3>
+            <p className="text-slate-400 text-sm">
+              Live market data, advanced charts, and professional trading tools.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-16">
+      <footer className="bg-slate-800/30 border-t border-slate-700/50 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-600">
-            <p>&copy; 2024 RECtify MVP. Built for efficient issue resolution.</p>
+          <div className="text-center text-slate-400">
+            <p>&copy; 2024 RECtify Trading Platform. Powering sustainable finance.</p>
           </div>
         </div>
       </footer>
-
-      {/* Create Issue Modal */}
-      <CreateIssueModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSubmit={handleCreateIssue}
-      />
     </div>
   );
 }

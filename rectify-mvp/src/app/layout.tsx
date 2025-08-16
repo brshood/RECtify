@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RECtify - Issue Resolution Platform",
-  description: "A comprehensive platform for tracking, managing, and resolving issues efficiently",
+  title: "RECtify - Renewable Energy Trading Platform",
+  description: "Trade renewable energy credits, carbon offsets, and sustainable energy tokens on the world's leading platform",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased bg-gray-50 min-h-screen">
+      <body className="antialiased bg-slate-900 text-white min-h-screen">
         {children}
       </body>
     </html>
