@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd 'REC Website' && npm install && npm run build",
+  "outputDirectory": "REC Website/dist",
+  "installCommand": "cd 'REC Website' && npm install"
+}
