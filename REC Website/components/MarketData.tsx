@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { TrendingUp, TrendingDown, Shield, MapPin, Eye, ShoppingCart, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 export function MarketData() {
   const [selectedREC, setSelectedREC] = useState<any>(null);

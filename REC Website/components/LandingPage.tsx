@@ -9,7 +9,7 @@ import khaledImage from "figma:asset/0b9b39a6f2ea03faecd7b97c59b9395f830a5a5f.pn
 import rashedImage from "figma:asset/dc024cfa9bb3832ac70e0f6f9a389dd4c95c2fa7.png";
 import { InfoModal } from "./InfoModal";
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 
 interface LandingPageProps {
   onEnterPlatform: () => void;

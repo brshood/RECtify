@@ -31,7 +31,7 @@ import {
   X,
   Eye
 } from "lucide-react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 interface EmissionsReportWizardProps {
   currentStep: number;
@@ -217,7 +217,7 @@ function CompanyInformationStep({ reportData, updateReportData }: { reportData: 
           
           <div className="space-y-2">
             <Label htmlFor="sector">Business Sector</Label>
-            <Select value={reportData.company.sector} onValueChange={(value) => handleInputChange('sector', value)}>
+            <Select value={reportData.company.sector} onValueChange={(value: string) => handleInputChange('sector', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select sector" />
               </SelectTrigger>
@@ -249,7 +249,7 @@ function CompanyInformationStep({ reportData, updateReportData }: { reportData: 
           <Label htmlFor="reporting-year">Reporting Year *</Label>
           <Select 
             value={reportData.company.reportingYear.toString()} 
-            onValueChange={(value) => handleInputChange('reportingYear', parseInt(value))}
+            onValueChange={(value: string) => handleInputChange('reportingYear', parseInt(value))}
           >
             <SelectTrigger className="w-48">
               <SelectValue />
@@ -326,7 +326,7 @@ function ReportingScopeStep({ reportData, updateReportData }: { reportData: Emis
             <Label>Consolidation Approach *</Label>
             <Select 
               value={reportData.reportingScope.organizationalBoundary} 
-              onValueChange={(value) => handleBoundaryChange('organizationalBoundary', value)}
+              onValueChange={(value: string) => handleBoundaryChange('organizationalBoundary', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select consolidation approach" />
@@ -360,9 +360,10 @@ function ReportingScopeStep({ reportData, updateReportData }: { reportData: Emis
                 <Checkbox
                   id={scope.value}
                   checked={(reportData.reportingScope?.operationalBoundary || []).includes(scope.value)}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={(checked: boolean | "indeterminate") => {
                     const currentBoundary = reportData.reportingScope?.operationalBoundary || [];
-                    if (checked) {
+                    const isChecked = checked === true;
+                    if (isChecked) {
                       handleBoundaryChange('operationalBoundary', [...currentBoundary, scope.value]);
                     } else {
                       handleBoundaryChange('operationalBoundary', currentBoundary.filter(s => s !== scope.value));
@@ -418,7 +419,7 @@ function ReportingScopeStep({ reportData, updateReportData }: { reportData: Emis
                   <Label>Facility Type</Label>
                   <Select 
                     value={facility.type} 
-                    onValueChange={(value) => updateFacility(facility.id, 'type', value)}
+                    onValueChange={(value: string) => updateFacility(facility.id, 'type', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
@@ -577,7 +578,7 @@ function ActivityDataStep({ reportData, updateReportData }: { reportData: Emissi
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const text = e.target?.result as string;
+        const text = (e.target && typeof e.target.result === 'string') ? e.target.result : '';
         if (!text) {
           toast.error('Failed to read file content');
           return;
@@ -589,7 +590,12 @@ function ActivityDataStep({ reportData, updateReportData }: { reportData: Emissi
           return;
         }
         
-        const headers = lines[0].split(',').map(h => h.trim());
+        const headerLine = lines[0] ?? '';
+        if (!headerLine) {
+          toast.error('Missing CSV header row');
+          return;
+        }
+        const headers = headerLine.split(',').map(h => h.trim());
         
         const newActivities = lines.slice(1).map((line, index) => {
           const values = line.split(',').map(val => val.trim());
@@ -597,20 +603,20 @@ function ActivityDataStep({ reportData, updateReportData }: { reportData: Emissi
           if (activeScope === 'scope3') {
             return {
               id: `${Date.now()}-${index}`,
-              source: values[0] || '',
-              category: values[1] || '',
-              activity: values[2] || '',
-              amount: parseFloat(values[3]) || 0,
-              unit: values[4] || ''
+              source: values[0] ?? '',
+              category: values[1] ?? '',
+              activity: values[2] ?? '',
+              amount: parseFloat(values[3] ?? '0') || 0,
+              unit: values[4] ?? ''
             };
           } else {
             return {
               id: `${Date.now()}-${index}`,
-              source: values[0] || '',
-              activity: values[1] || '',
-              amount: parseFloat(values[2]) || 0,
-              unit: values[3] || '',
-              facility: values[4] || ''
+              source: values[0] ?? '',
+              activity: values[1] ?? '',
+              amount: parseFloat(values[2] ?? '0') || 0,
+              unit: values[3] ?? '',
+              facility: values[4] ?? ''
             };
           }
         }).filter(activity => activity.source); // Filter out empty rows
@@ -759,7 +765,7 @@ function ActivityDataStep({ reportData, updateReportData }: { reportData: Emissi
                       <Label>Category *</Label>
                       <Select 
                         value={activity.category} 
-                        onValueChange={(value) => updateActivity(activeScope, activity.id, 'category', value)}
+                        onValueChange={(value: string) => updateActivity(activeScope, activity.id, 'category', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />
@@ -802,7 +808,7 @@ function ActivityDataStep({ reportData, updateReportData }: { reportData: Emissi
                     <Label>Unit *</Label>
                     <Select 
                       value={activity.unit} 
-                      onValueChange={(value) => updateActivity(activeScope, activity.id, 'unit', value)}
+                      onValueChange={(value: string) => updateActivity(activeScope, activity.id, 'unit', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select unit" />
@@ -842,7 +848,7 @@ function ActivityDataStep({ reportData, updateReportData }: { reportData: Emissi
                       <Label>Facility</Label>
                       <Select 
                         value={activity.facility} 
-                        onValueChange={(value) => updateActivity(activeScope, activity.id, 'facility', value)}
+                        onValueChange={(value: string) => updateActivity(activeScope, activity.id, 'facility', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select facility" />
@@ -1302,7 +1308,7 @@ function VerificationStep({ reportData, updateReportData }: { reportData: Emissi
           <Checkbox
             id="verification-required"
             checked={reportData.verification?.verificationRequired || false}
-            onCheckedChange={(checked) => handleVerificationChange('verificationRequired', checked)}
+            onCheckedChange={(checked: boolean | "indeterminate") => handleVerificationChange('verificationRequired', checked === true)}
           />
           <Label htmlFor="verification-required">
             Third-party verification will be conducted for this report
@@ -1326,7 +1332,7 @@ function VerificationStep({ reportData, updateReportData }: { reportData: Emissi
                 <Label htmlFor="verifier-accreditation">Accreditation Standard *</Label>
                 <Select 
                   value={reportData.verification?.verifierAccreditation || ''} 
-                  onValueChange={(value) => handleVerificationChange('verifierAccreditation', value)}
+                  onValueChange={(value: string) => handleVerificationChange('verifierAccreditation', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select accreditation" />
@@ -1370,7 +1376,7 @@ function DeclarationsStep({ reportData, updateReportData }: { reportData: Emissi
             <Checkbox
               id="accuracy-declaration"
               checked={reportData.declarations?.accuracyDeclaration || false}
-              onCheckedChange={(checked) => handleDeclarationChange('accuracyDeclaration', checked)}
+              onCheckedChange={(checked: boolean | "indeterminate") => handleDeclarationChange('accuracyDeclaration', checked === true)}
               className="mt-1"
             />
             <Label htmlFor="accuracy-declaration" className="text-sm leading-relaxed">
@@ -1382,7 +1388,7 @@ function DeclarationsStep({ reportData, updateReportData }: { reportData: Emissi
             <Checkbox
               id="completeness-declaration"
               checked={reportData.declarations?.completenessDeclaration || false}
-              onCheckedChange={(checked) => handleDeclarationChange('completenessDeclaration', checked)}
+              onCheckedChange={(checked: boolean | "indeterminate") => handleDeclarationChange('completenessDeclaration', checked === true)}
               className="mt-1"
             />
             <Label htmlFor="completeness-declaration" className="text-sm leading-relaxed">
@@ -1394,7 +1400,7 @@ function DeclarationsStep({ reportData, updateReportData }: { reportData: Emissi
             <Checkbox
               id="compliance-declaration"
               checked={reportData.declarations?.complianceDeclaration || false}
-              onCheckedChange={(checked) => handleDeclarationChange('complianceDeclaration', checked)}
+              onCheckedChange={(checked: boolean | "indeterminate") => handleDeclarationChange('complianceDeclaration', checked === true)}
               className="mt-1"
             />
             <Label htmlFor="compliance-declaration" className="text-sm leading-relaxed">

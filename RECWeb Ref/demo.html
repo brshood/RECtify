@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RECtify Platform Demo - UAE's First Digital I-REC Trading Platform</title>
+    <meta name="description" content="RECtify (ريكتيفاي) platform demo featuring interactive I-REC trading interface, portfolio management, market data visualization, and comprehensive emissions reporting wizard for UAE businesses supporting Vision 2050 and Net Zero goals.">
+    <meta name="keywords" content="RECtify demo, I-REC trading demo, renewable energy certificates UAE, carbon trading platform, emissions reporting UAE, sustainability platform demo, Vision 2050, Net Zero, ريكتيفاي">
+    <meta name="author" content="RECtify">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="RECtify Platform Demo - Interactive I-REC Trading & Emissions Reporting">
+    <meta property="og:description" content="Experience the comprehensive RECtify platform demo with real-time I-REC trading, portfolio management, market data, and UAE compliance reporting tools.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RECtify Platform Demo">
+    <meta property="og:locale" content="en_AE">
+    <meta property="og:locale:alternate" content="ar_AE">
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="RECtify Platform Demo - UAE's Digital I-REC Trading Platform">
+    <meta name="twitter:description" content="Explore the interactive RECtify demo with I-REC trading, emissions reporting, and portfolio management for UAE businesses.">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "RECtify Platform Demo",
+      "alternateName": "ريكتيفاي منصة العرض التوضيحي",
+      "description": "Interactive demonstration of RECtify's I-REC trading and emissions reporting platform for UAE businesses",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "provider": {
+        "@type": "Organization",
+        "name": "RECtify",
+        "alternateName": "ريكتيفاي"
+      },
+      "featureList": [
+        "I-REC Trading Interface with real-time UAE pricing",
+        "Portfolio Management Dashboard",
+        "Market Data Visualization",
+        "10-Step Emissions Reporting Wizard",
+        "UAE Compliance Tools",
+        "Arabic Language Support"
+      ],
+      "audience": {
+        "@type": "BusinessAudience",
+        "audienceType": "UAE businesses seeking renewable energy certificates and emissions management"
+      },
+      "serviceArea": {
+        "@type": "Country",
+        "name": "United Arab Emirates"
+      }
+    }
+    </script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: #fafbfc;
+            color: #1a202c;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #16a085 0%, #3b82f6 100%);
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .hero .subtitle {
+            font-size: 1.5rem;
+            margin: 0 0 2rem 0;
+            opacity: 0.9;
+        }
+        
+        .hero .cta-button {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .hero .cta-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .section {
+            padding: 3rem 0;
+        }
+        
+        .section h2 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 0 0 2rem 0;
+            text-align: center;
+            color: #16a085;
+        }
+        
+        .section h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem 0;
+            color: #2d3748;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stat-value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #16a085;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            color: #64748b;
+            margin: 0;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #16a085;
+        }
+        
+        .feature-card h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 1rem 0;
+            color: #0f766e;
+        }
+        
+        .feature-card p {
+            margin: 0;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        
+        .code-block {
+            background: #f1f5f9;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #475569;
+            margin: 0.5rem 0;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .tech-stack {
+            background: #f8fafc;
+            padding: 3rem 0;
+        }
+        
+        .tech-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .tech-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .tech-item strong {
+            color: #16a085;
+            font-weight: 600;
+        }
+        
+        .compliance-section {
+            background: linear-gradient(135deg, #f0fdfa 0%, #dbeafe 100%);
+            padding: 3rem 0;
+        }
+        
+        .js-notice {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin: 3rem 0;
+        }
+        
+        .js-notice h3 {
+            color: #92400e;
+            margin: 0 0 1rem 0;
+        }
+        
+        .js-notice p {
+            margin: 0.5rem 0;
+        }
+        
+        ul {
+            line-height: 1.8;
+        }
+        
+        ul li {
+            margin: 0.5rem 0;
+        }
+        
+        .highlight {
+            color: #16a085;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .hero .subtitle {
+                font-size: 1.25rem;
+            }
+            
+            .section h2 {
+                font-size: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <h1>RECtify (ريكتيفاي)</h1>
+            <p class="subtitle">UAE's First Digital I-REC Trading Platform - Interactive Demo</p>
+            <a href="#interactive-demo" class="cta-button">View Interactive Demo Details</a>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="container">
+            <h2>Platform Overview</h2>
+            <p style="text-align: center; font-size: 1.25rem; max-width: 800px; margin: 0 auto;">
+                RECtify is the United Arab Emirates' premier digital platform for trading 
+                International Renewable Energy Certificates (I-RECs). Our comprehensive platform 
+                supports the UAE's Vision 2050 and Net Zero 2050 goals by providing businesses 
+                with the tools they need to manage their renewable energy portfolio and emissions reporting.
+            </p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">AED 45,231.89</div>
+                    <p class="stat-label">Demo Portfolio Value<br><span class="highlight">(+20.1% monthly growth)</span></p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1,234</div>
+                    <p class="stat-label">I-REC Certificates<br><span class="highlight">(MWh Available)</span></p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">573</div>
+                    <p class="stat-label">Monthly Trading Volume<br><span class="highlight">(+201% increase)</span></p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">10</div>
+                    <p class="stat-label">Compliance Steps<br><span class="highlight">(UAE Reporting Wizard)</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="interactive-demo">
+        <div class="container">
+            <h2>Interactive Demo Components</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4>📊 Dashboard Overview</h4>
+                    <div class="code-block">/components/Dashboard.tsx</div>
+                    <p>
+                        Main demo hub featuring comprehensive tabbed interface with key performance metrics. 
+                        Displays portfolio value (AED 45,231.89), total I-RECs (1,234 MWh), monthly trading activity (+573 transactions), 
+                        and active orders (12 total: 3 buy, 9 sell). Features responsive mobile navigation with 
+                        dropdown selector and desktop tabbed interface. Serves as central navigation for all platform functionality.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>💱 I-REC Trading Interface</h4>
+                    <div class="code-block">/components/TradingInterface.tsx</div>
+                    <p>
+                        Advanced trading functionality with real-time UAE market pricing ranging from AED 15.50 to AED 35.75 per MWh. 
+                        Features comprehensive order placement system, interactive order book visualization, 
+                        live price charts powered by Recharts, seasonal availability patterns specific to UAE's climate, 
+                        and instant trade execution with detailed settlement tracking. Includes realistic market depth and spread analysis.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>💼 Portfolio Management</h4>
+                    <div class="code-block">/components/PortfolioOverview.tsx</div>
+                    <p>
+                        Comprehensive portfolio tracking system with advanced performance analytics, complete transaction history, 
+                        and detailed certificate metadata. Features interactive visualizations built with Recharts, 
+                        portfolio diversification analysis across different renewable sources, sophisticated ROI calculations with time-based performance, 
+                        and detailed holdings breakdown by certificate type and vintage year.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>📈 Market Data & Analytics</h4>
+                    <div class="code-block">/components/MarketData.tsx</div>
+                    <p>
+                        Real-time market intelligence featuring comprehensive pricing trend analysis, market volatility indicators, 
+                        trading volume analytics, and UAE-specific renewable energy sector insights. 
+                        Includes interactive charting with Recharts library, historical price data spanning multiple years, 
+                        advanced market forecasting algorithms, and detailed seasonal availability patterns tailored to UAE's unique renewable energy landscape.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>📋 Emissions Inventory Reporting</h4>
+                    <div class="code-block">/components/EmissionsReport.tsx</div>
+                    <p>
+                        TurboTax-style guided reporting wizard specifically designed for UAE Federal Decree-Law No. (11) of 2024 compliance. 
+                        Features intelligent 10-step process with automated GHG calculations, comprehensive data validation and error checking, 
+                        real-time progress tracking, professional PDF export functionality, and complete regulatory submission preparation. 
+                        Includes specialized UAE business sector calculations and local emission factor databases.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>🌍 UAE Market Localization</h4>
+                    <div class="code-block">/components/Header.tsx + Localization</div>
+                    <p>
+                        Comprehensive UAE market adaptation featuring full Arabic language support (ريكتيفاي), 
+                        native AED currency integration with real-time exchange rates, specialized UAE regulatory compliance tools, 
+                        and deep integration with UAE Vision 2050 sustainability goals. Features cultural adaptation for local business practices, 
+                        proper right-to-left text rendering for Arabic content, and UAE-specific industry workflows and reporting standards.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tech-stack">
+        <div class="container">
+            <h2>Technical Implementation</h2>
+            
+            <div class="tech-list">
+                <div class="tech-item">
+                    <strong>React + TypeScript</strong><br>
+                    Robust component architecture with comprehensive type safety and modern React hooks
+                </div>
+                <div class="tech-item">
+                    <strong>Tailwind CSS v4</strong><br>
+                    Advanced responsive design system with custom RECtify brand theming
+                </div>
+                <div class="tech-item">
+                    <strong>Shadcn/ui Components</strong><br>
+                    Professional UI component library with 40+ accessible, customizable elements
+                </div>
+                <div class="tech-item">
+                    <strong>Recharts Integration</strong><br>
+                    Interactive data visualization for complex trading analytics and market trends
+                </div>
+                <div class="tech-item">
+                    <strong>Mobile-First Design</strong><br>
+                    Touch-optimized interfaces with progressive web app capabilities
+                </div>
+                <div class="tech-item">
+                    <strong>SEO & Accessibility</strong><br>
+                    WCAG compliant with comprehensive crawler support and screen reader optimization
+                </div>
+            </div>
+
+            <h3>Complete File Structure</h3>
+            <div style="background: white; padding: 2rem; border-radius: 1rem; margin: 2rem 0; border: 1px solid #e2e8f0;">
+                <h4>Core Application Components:</h4>
+                <div class="code-block">/App.tsx - Main application entry point with routing and state management</div>
+                <div class="code-block">/components/LandingPage.tsx - Platform introduction with navigation and feature highlights</div>
+                <div class="code-block">/components/RecentTransactions.tsx - Transaction history with filtering and search</div>
+                <div class="code-block">/components/PriceChart.tsx - Advanced market price visualization component</div>
+                <div class="code-block">/components/UAEEmissionsCalculator.tsx - Specialized UAE emissions calculation engine</div>
+                <div class="code-block">/styles/globals.css - Comprehensive Tailwind CSS v4 styling with RECtify theming</div>
+
+                <h4>User Interface Components (40+ Professional Components):</h4>
+                <div class="code-block">/components/ui/* - Complete Shadcn/ui library including cards, buttons, forms, charts, navigation, and specialized trading interface elements</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="compliance-section">
+        <div class="container">
+            <h2>UAE Regulatory Compliance & Market Integration</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; margin: 2rem 0;">
+                <h3>UAE Federal Decree-Law No. (11) of 2024 Compliance</h3>
+                <p>
+                    The RECtify emissions reporting module provides comprehensive tools for businesses to meet UAE's 
+                    stringent environmental regulations. The 10-step guided wizard ensures complete compliance through:
+                </p>
+                <ul>
+                    <li><strong>Automated GHG Calculations:</strong> Built-in UAE-specific emission factors and calculation methodologies</li>
+                    <li><strong>Data Validation:</strong> Real-time validation against regulatory requirements and industry standards</li>
+                    <li><strong>Progress Tracking:</strong> Visual progress indicators and completion status for each compliance step</li>
+                    <li><strong>Professional Documentation:</strong> Generate regulatory-compliant reports with official UAE government formatting</li>
+                    <li><strong>Submission Preparation:</strong> Complete preparation for official regulatory submission with all required documentation</li>
+                </ul>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; margin: 2rem 0;">
+                <h3>UAE Market Integration & Vision 2050 Alignment</h3>
+                <p>
+                    RECtify is strategically designed to support UAE's ambitious sustainability goals:
+                </p>
+                <ul>
+                    <li><strong>Vision 2050 Integration:</strong> Tracking and reporting tools aligned with UAE's long-term sustainability targets</li>
+                    <li><strong>Net Zero 2050 Support:</strong> Comprehensive carbon accounting and offset tracking capabilities</li>
+                    <li><strong>Real Market Data:</strong> Integration with UAE renewable energy market for accurate pricing and availability</li>
+                    <li><strong>Local Currency Support:</strong> Native AED pricing with real-time currency conversion and local market rates</li>
+                    <li><strong>Cultural Adaptation:</strong> Interface design and workflows adapted for UAE business culture and practices</li>
+                </ul>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; margin: 2rem 0;">
+                <h3>Language & Cultural Localization</h3>
+                <ul>
+                    <li><strong>Bilingual Interface:</strong> Complete English and Arabic language support with proper RTL text handling</li>
+                    <li><strong>Arabic Typography:</strong> Native Arabic font rendering and text layout optimization</li>
+                    <li><strong>Cultural Context:</strong> Business workflows adapted for UAE regulatory and cultural requirements</li>
+                    <li><strong>Local Business Integration:</strong> Support for UAE business registration numbers, tax identification, and local compliance requirements</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="container">
+            <h2>Platform Capabilities Summary</h2>
+            
+            <div style="background: white; padding: 3rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                <div class="features-grid">
+                    <div>
+                        <h3>Trading & Portfolio</h3>
+                        <ul>
+                            <li>Real-time I-REC certificate trading with AED 15.50-35.75 pricing range</li>
+                            <li>Advanced order book with market depth analysis</li>
+                            <li>Portfolio analytics with ROI tracking and performance metrics</li>
+                            <li>Transaction history with comprehensive filtering and export</li>
+                            <li>Certificate verification and authenticity tracking</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3>Market Intelligence</h3>
+                        <ul>
+                            <li>Interactive price charts with historical data and trend analysis</li>
+                            <li>Market volatility indicators and risk assessment tools</li>
+                            <li>Seasonal availability forecasting specific to UAE climate</li>
+                            <li>Trading volume analytics and market sentiment indicators</li>
+                            <li>Competitive pricing analysis and market positioning</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3>Compliance & Reporting</h3>
+                        <ul>
+                            <li>10-step emissions inventory wizard for UAE Federal Decree-Law compliance</li>
+                            <li>Automated GHG calculations with UAE-specific emission factors</li>
+                            <li>Professional PDF report generation with official formatting</li>
+                            <li>Data validation and regulatory requirement checking</li>
+                            <li>Progress tracking and completion status monitoring</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3>Technical Excellence</h3>
+                        <ul>
+                            <li>Mobile-responsive design with touch-optimized interfaces</li>
+                            <li>Progressive Web App capabilities for offline functionality</li>
+                            <li>Comprehensive accessibility with WCAG compliance</li>
+                            <li>Real-time data synchronization and auto-save functionality</li>
+                            <li>Advanced security with data encryption and secure authentication</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="js-notice">
+        <div class="container">
+            <h3>⚡ Interactive Demo Access</h3>
+            <p><strong>For Interactive Users:</strong> The full RECtify platform demo requires JavaScript to display 
+            real-time trading interfaces, dynamic portfolio management, and interactive data visualizations.</p>
+            <p><strong>For Crawlers & Analysis:</strong> This page provides comprehensive technical documentation, 
+            feature specifications, and implementation details for automated content analysis and SEO optimization.</p>
+            <p><strong>Demo Access:</strong> Enable JavaScript in your browser to experience the complete interactive 
+            platform with live trading simulation, portfolio analytics, and emissions reporting tools.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="container" style="text-align: center;">
+            <h2>Ready to Experience RECtify?</h2>
+            <p style="font-size: 1.25rem; margin-bottom: 2rem;">
+                Explore the future of renewable energy certificate trading and emissions management in the UAE
+            </p>
+            <a href="/" class="cta-button" style="background: linear-gradient(135deg, #16a085 0%, #3b82f6 100%); color: white; text-decoration: none; padding: 1.5rem 3rem; border-radius: 0.75rem; font-size: 1.125rem; font-weight: 600;">
+                Launch Interactive Platform Demo
+            </a>
+        </div>
+    </div>
+
+    <footer style="background: #1a202c; color: white; padding: 2rem 0; margin-top: 4rem; text-align: center;">
+        <div class="container">
+            <h3 style="color: #16a085; margin: 0 0 1rem 0;">RECtify (ريكتيفاي)</h3>
+            <p style="margin: 0; opacity: 0.8;">UAE's First Digital I-REC Trading Platform</p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.6;">
+                Supporting UAE Vision 2050 and Net Zero 2050 Goals
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
