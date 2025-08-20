@@ -1,8 +1,9 @@
 import { Button } from "./ui/button";
 import { Bell, User, Menu, Shield, Globe, Home } from "lucide-react";
 import { Badge } from "./ui/badge";
-import rectifyFullLogo from "figma:asset/64bc305d443823c7964a7ddacff43fe13a09cab2.png";
-import rectifyIconLogo from "figma:asset/ebac5c17bacb866086be3b4a1ea662ad0e31eeb7.png";
+// Placeholder logos - replace with actual logo files when available
+const rectifyFullLogo = "/logo-full.png";
+const rectifyIconLogo = "/logo-icon.png";
 
 interface HeaderProps {
   onNavigateHome?: () => void;
