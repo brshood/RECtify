@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   description: "A comprehensive platform for tracking, managing, and resolving issues efficiently",
   manifest: "/manifest.webmanifest",
   themeColor: "#2563eb",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

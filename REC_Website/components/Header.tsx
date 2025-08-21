@@ -1,9 +1,9 @@
 import { Button } from "./ui/button";
 import { Bell, User, Menu, Shield, Globe, Home } from "lucide-react";
 import { Badge } from "./ui/badge";
-// Placeholder logos - replace with actual logo files when available
-const rectifyFullLogo = "/logo-full.png";
-const rectifyIconLogo = "/logo-icon.png";
+// Company logo asset served from `public/logo.png`
+const rectifyFullLogo = "/logo.png";
+const rectifyIconLogo = "/logo.png";
 
 interface HeaderProps {
   onNavigateHome?: () => void;

@@ -115,9 +115,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <Target className="h-6 w-6 text-white" />
-              </div>
+              <img src="/logo.png" alt="RECtify" className="h-8 w-auto" />
               <h1 className="text-2xl font-bold text-gray-900">RECtify</h1>
               <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">MVP</span>
             </div>
