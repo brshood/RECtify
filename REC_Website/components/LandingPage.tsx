@@ -1,12 +1,10 @@
-import image_94a3247396ceec0e6396f554452975e037b47a14 from 'figma:asset/94a3247396ceec0e6396f554452975e037b47a14.png';
-import image_8074d3680bed84eb87667c02ef0886cffd5ae6ef from 'figma:asset/8074d3680bed84eb87667c02ef0886cffd5ae6ef.png';
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, Phone, MapPin, Send, X, FileText } from "lucide-react";
-import rectifyLogo from "figma:asset/ebac5c17bacb866086be3b4a1ea662ad0e31eeb7.png";
-import khaledImage from "figma:asset/0b9b39a6f2ea03faecd7b97c59b9395f830a5a5f.png";
-import rashedImage from "figma:asset/dc024cfa9bb3832ac70e0f6f9a389dd4c95c2fa7.png";
+import rectifyLogo from "/images/rectify.logo.png";
+import khaledImage from "/images/khaled-alsamri.png.JPG";
+import rashedImage from "/images/rashed-alneyadi.png.jpeg";
 import { InfoModal } from "./InfoModal";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -903,7 +901,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         transition={{ duration: 0.3 }}
                       >
                         <img 
-                          src={image_8074d3680bed84eb87667c02ef0886cffd5ae6ef} 
+                          src={khaledImage} 
                           alt="Khaled Alsamri - RECtify Founder"
                           className="w-full h-full object-cover"
                         />
@@ -978,7 +976,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         transition={{ duration: 0.3 }}
                       >
                         <img 
-                          src={image_94a3247396ceec0e6396f554452975e037b47a14} 
+                          src={rashedImage} 
                           alt="Rashed Alneyadi - RECtify Founder"
                           className="w-full h-full object-cover"
                         />
