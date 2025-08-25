@@ -1,0 +1,19 @@
+[build]
+# Run everything from the REC_Website subdirectory (monorepo-style)
+base = "REC_Website"
+# Build command for Vite
+command = "npm run build"
+# Directory to publish (relative to base)
+publish = "dist"
+
+[build.environment]
+# Ensure a modern Node runtime on Netlify
+NODE_VERSION = "20"
+
+[[redirects]]
+# SPA fallback so client-side routes work
+from = "/*"
+to = "/index.html"
+status = 200
+
+
