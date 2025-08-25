@@ -1,3 +1,4 @@
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/brshood/RECtify?utm_source=oss&utm_medium=github&utm_campaign=brshood%2FRECtify&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 # RECtify MVP - Issue Resolution Platform
 
 ✅ **COMPLETED MVP** - A comprehensive platform for tracking, managing, and resolving issues efficiently.
