@@ -7,7 +7,7 @@ import { LoginForm } from "./components/LoginForm";
 import { UserProfile } from "./components/UserProfile";
 
 export default function App() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>('landing');
@@ -45,7 +45,16 @@ export default function App() {
         <Header 
           onNavigateHome={navigateToLanding}
           showNavigation={currentView === 'dashboard'}
-          onOpenLogin={() => setShowLogin(true)}
+          onOpenLogin={() => {
+            if (user) {
+              logout();
+              setShowProfile(false);
+              setShowLogin(false);
+              setCurrentView('landing');
+            } else {
+              setShowLogin(true);
+            }
+          }}
           onOpenProfile={() => setShowProfile(true)}
         />
         
