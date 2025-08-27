@@ -32,7 +32,7 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
     if (!user) return tabs;
     return tabs.filter((t) => {
       if (t.value === 'trading') return user.permissions.canTrade;
-      if (t.value === 'rec-registration') return user.permissions.canRegisterFacilities;
+      // Always show REC Registration tab; we'll gate content below
       return true;
     });
   }, [user]);
@@ -179,7 +179,20 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
 
         {/* REC Registration Tab */}
         <TabsContent value="rec-registration" className="space-y-4">
-          <RECRegistration />
+          {user && !user.permissions.canRegisterFacilities ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>REC Registration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Your account does not have permission to register facilities. Please switch to a Facility Owner account or contact support.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <RECRegistration />
+          )}
         </TabsContent>
       </Tabs>
     </div>

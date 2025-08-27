@@ -70,16 +70,16 @@ export function Header({ onNavigateHome, showNavigation = true, onOpenLogin, onO
 						</div>
 					</div>
 					
-					<Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+					<Button variant="ghost" size="sm" className="h-8 w-8 p-0" type="button" aria-label="Notifications">
 						<Bell className="h-4 w-4" />
 					</Button>
-					<Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onOpenProfile}>
+					<Button variant="ghost" size="sm" className="h-8 w-8 p-0" type="button" aria-label="Profile" onClick={() => onOpenProfile?.()}>
 						<User className="h-4 w-4" />
 					</Button>
-					<Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onOpenLogin}>
+					<Button variant="ghost" size="sm" className="h-8 w-8 p-0" type="button" aria-label="Login" onClick={() => onOpenLogin?.()}>
 						<LogIn className="h-4 w-4" />
 					</Button>
-					<Button variant="ghost" size="sm" className="h-8 w-8 p-0 lg:hidden">
+					<Button variant="ghost" size="sm" className="h-8 w-8 p-0 lg:hidden" type="button" aria-label="Menu">
 						<Menu className="h-4 w-4" />
 					</Button>
 				</div>
