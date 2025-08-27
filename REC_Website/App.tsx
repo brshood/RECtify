@@ -2,8 +2,14 @@ import { useState } from "react";
 import { Header } from "./components/Header";
 import { LandingPage } from "./components/LandingPage";
 import { Dashboard } from "./components/Dashboard";
+import { useAuth } from "./components/AuthContext";
+import { LoginForm } from "./components/LoginForm";
+import { UserProfile } from "./components/UserProfile";
 
 export default function App() {
+  const { user } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>('landing');
   const [initialTab, setInitialTab] = useState<string>('overview');
 
@@ -39,15 +45,37 @@ export default function App() {
         <Header 
           onNavigateHome={navigateToLanding}
           showNavigation={currentView === 'dashboard'}
+          onOpenLogin={() => setShowLogin(true)}
+          onOpenProfile={() => setShowProfile(true)}
         />
         
         {currentView === 'landing' ? (
           <LandingPage 
-            onEnterPlatform={navigateToDashboard}
-            onNavigateToEIReports={navigateToEIReports}
+            onEnterPlatform={() => {
+              if (!user) {
+                setShowLogin(true);
+              } else {
+                navigateToDashboard();
+              }
+            }}
+            onNavigateToEIReports={() => {
+              setInitialTab('ei-reports');
+              setCurrentView('dashboard');
+            }}
           />
         ) : (
           <Dashboard initialTab={initialTab} />
+        )}
+
+        {!user && showLogin && (
+          <LoginForm onClose={() => {
+            setShowLogin(false);
+            setCurrentView('dashboard');
+          }} />
+        )}
+
+        {user && showProfile && (
+          <UserProfile onClose={() => setShowProfile(false)} />
         )}
       </div>
     </>

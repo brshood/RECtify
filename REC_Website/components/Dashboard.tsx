@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
@@ -7,7 +7,9 @@ import { PortfolioOverview } from "./PortfolioOverview";
 import { MarketData } from "./MarketData";
 import { RecentTransactions } from "./RecentTransactions";
 import { EmissionsReport } from "./EmissionsReport";
-import { BarChart3, TrendingUp, DollarSign, Activity, FileText, Leaf } from "lucide-react";
+import RECRegistration from "./RECRegistration";
+import { BarChart3, TrendingUp, DollarSign, Activity, FileText, Leaf, Shield } from "lucide-react";
+import { useAuth } from "./AuthContext";
 
 interface DashboardProps {
   initialTab?: string;
@@ -15,6 +17,7 @@ interface DashboardProps {
 
 export function Dashboard({ initialTab = "overview" }: DashboardProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const { user } = useAuth();
 
   const tabs = [
     { value: "overview", label: "Overview", icon: BarChart3 },
@@ -22,7 +25,17 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
     { value: "portfolio", label: "Portfolio", icon: DollarSign },
     { value: "market", label: "Market Data", icon: Activity },
     { value: "ei-reports", label: "EI Reports", icon: FileText },
+    { value: "rec-registration", label: "REC Registration", icon: Shield },
   ];
+
+  const filteredTabs = useMemo(() => {
+    if (!user) return tabs;
+    return tabs.filter((t) => {
+      if (t.value === 'trading') return user.permissions.canTrade;
+      if (t.value === 'rec-registration') return user.permissions.canRegisterFacilities;
+      return true;
+    });
+  }, [user]);
 
   return (
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4">
@@ -42,7 +55,7 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
               <SelectValue placeholder="Select a tab" />
             </SelectTrigger>
             <SelectContent>
-              {tabs.map((tab) => {
+              {filteredTabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <SelectItem key={tab.value} value={tab.value}>
@@ -63,8 +76,8 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
         {/* Desktop/Tablet Tab List (hidden on mobile) */}
         <div className="hidden sm:block">
           <Card className="p-1">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
-              {tabs.map((tab) => {
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
+              {filteredTabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <TabsTrigger 
@@ -77,6 +90,7 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
                     <span className="md:hidden">
                       {tab.value === "market" ? "Market" : 
                        tab.value === "ei-reports" ? "Reports" : 
+                       tab.value === "rec-registration" ? "Registration" : 
                        tab.label}
                     </span>
                   </TabsTrigger>
@@ -161,6 +175,11 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
         {/* EI Reports Tab */}
         <TabsContent value="ei-reports" className="space-y-4">
           <EmissionsReport />
+        </TabsContent>
+
+        {/* REC Registration Tab */}
+        <TabsContent value="rec-registration" className="space-y-4">
+          <RECRegistration />
         </TabsContent>
       </Tabs>
     </div>
