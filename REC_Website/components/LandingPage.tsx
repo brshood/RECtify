@@ -2,9 +2,11 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, Phone, MapPin, Send, X, FileText } from "lucide-react";
-import rectifyLogo from "/images/rectify.logo.png";
-import khaledImage from "/images/khaled-alsamri.png.JPG";
-import rashedImage from "/images/rashed-alneyadi.png.jpeg";
+// Use public URL for static assets
+const rectifyLogo = "/logo.png";
+// Note: Team member images not available in public folder
+// import khaledImage from "/images/khaled-alsamri.png.JPG";
+// import rashedImage from "/images/rashed-alneyadi.png.jpeg";
 import { InfoModal } from "./InfoModal";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -900,11 +902,9 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         whileHover={{ scale: 1.1 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <img 
-                          src={khaledImage} 
-                          alt="Khaled Alsamri - RECtify Founder"
-                          className="w-full h-full object-cover"
-                        />
+                        <div className="w-full h-full bg-rectify-green flex items-center justify-center">
+                          <Users className="h-12 w-12 text-white" />
+                        </div>
                       </motion.div>
                     </div>
                     <CardTitle className="text-2xl">Khaled Alsamri</CardTitle>
@@ -975,11 +975,9 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         whileHover={{ scale: 1.1 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <img 
-                          src={rashedImage} 
-                          alt="Rashed Alneyadi - RECtify Founder"
-                          className="w-full h-full object-cover"
-                        />
+                        <div className="w-full h-full bg-rectify-green flex items-center justify-center">
+                          <Users className="h-12 w-12 text-white" />
+                        </div>
                       </motion.div>
                     </div>
                     <CardTitle className="text-2xl">Rashed Alneyadi</CardTitle>
