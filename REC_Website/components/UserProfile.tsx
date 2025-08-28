@@ -402,7 +402,14 @@ export function UserProfile({ onClose }: UserProfileProps) {
             <Button variant="outline" onClick={onClose} className="flex-1">
               Close
             </Button>
-            <Button variant="destructive" onClick={logout} className="flex-1">
+            <Button 
+              variant="destructive" 
+              onClick={async () => {
+                await logout();
+                onClose?.();
+              }} 
+              className="flex-1"
+            >
               Logout
             </Button>
           </div>

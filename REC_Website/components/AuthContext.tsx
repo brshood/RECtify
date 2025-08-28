@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiService } from '../services/api';
 
 export type UserRole = 'trader' | 'facility-owner' | 'compliance-officer' | 'admin';
 export type UserTier = 'basic' | 'premium' | 'enterprise';
@@ -38,8 +39,8 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (userData: Partial<User> & { password: string }) => Promise<boolean>;
-  logout: () => void;
-  updateProfile: (updates: Partial<User>) => void;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -173,107 +174,99 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getAllUsers = (): Record<string, User & { password: string }> => {
-    const customUsers = localStorage.getItem('rectify-custom-users');
-    const parsedCustomUsers = customUsers ? JSON.parse(customUsers) : {};
-    return { ...demoUsers, ...parsedCustomUsers };
-  };
-
-  const saveCustomUser = (email: string, userWithPassword: User & { password: string }) => {
-    const customUsers = localStorage.getItem('rectify-custom-users');
-    const parsedCustomUsers = customUsers ? JSON.parse(customUsers) : {};
-    parsedCustomUsers[email] = userWithPassword;
-    localStorage.setItem('rectify-custom-users', JSON.stringify(parsedCustomUsers));
-  };
-
+  // Check if user is authenticated on app load
   useEffect(() => {
-    const savedUser = localStorage.getItem('rectify-user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-      } catch (error) {
-        localStorage.removeItem('rectify-user');
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('rectify-token');
+      if (token) {
+        try {
+          const response = await apiService.getCurrentUser();
+          if (response.success && response.user) {
+            setUser(response.user);
+          } else {
+            // Invalid token, clear it
+            localStorage.removeItem('rectify-token');
+          }
+        } catch (error) {
+          console.error('Failed to verify token:', error);
+          localStorage.removeItem('rectify-token');
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const allUsers = getAllUsers();
-    const userAccount = allUsers[email];
-    if (userAccount && userAccount.password === password) {
-      const { password: _, ...userWithoutPassword } = userAccount;
-      const userWithUpdatedLogin = {
-        ...userWithoutPassword,
-        lastLogin: new Date().toISOString()
-      };
-      setUser(userWithUpdatedLogin);
-      localStorage.setItem('rectify-user', JSON.stringify(userWithUpdatedLogin));
+    try {
+      const response = await apiService.login(email, password);
+      if (response.success && response.token && response.user) {
+        localStorage.setItem('rectify-token', response.token);
+        setUser(response.user);
+        setIsLoading(false);
+        return true;
+      }
       setIsLoading(false);
-      return true;
+      return false;
+    } catch (error) {
+      console.error('Login failed:', error);
+      setIsLoading(false);
+      return false;
     }
-    setIsLoading(false);
-    return false;
   };
 
   const signup = async (userData: Partial<User> & { password: string }): Promise<boolean> => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    const allUsers = getAllUsers();
-    if (allUsers[userData.email!]) {
+    try {
+      const response = await apiService.register({
+        email: userData.email!,
+        password: userData.password,
+        firstName: userData.firstName!,
+        lastName: userData.lastName!,
+        company: userData.company!,
+        role: userData.role || 'trader',
+        emirate: userData.emirate!
+      });
+      
+      if (response.success && response.token && response.user) {
+        localStorage.setItem('rectify-token', response.token);
+        setUser(response.user);
+        setIsLoading(false);
+        return true;
+      }
+      setIsLoading(false);
+      return false;
+    } catch (error) {
+      console.error('Signup failed:', error);
       setIsLoading(false);
       return false;
     }
-    const newUser: User = {
-      id: Date.now().toString(),
-      email: userData.email!,
-      firstName: userData.firstName!,
-      lastName: userData.lastName!,
-      company: userData.company!,
-      role: userData.role || 'trader',
-      tier: 'basic',
-      emirate: userData.emirate!,
-      joinedDate: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      preferences: {
-        currency: 'AED',
-        language: 'en',
-        notifications: true,
-        darkMode: false,
-        dashboardLayout: 'default'
-      },
-      permissions: {
-        canTrade: userData.role !== 'compliance-officer',
-        canRegisterFacilities: userData.role === 'facility-owner',
-        canViewAnalytics: userData.role !== 'trader' || userData.tier !== 'basic',
-        canExportReports: userData.role !== 'trader' || userData.tier !== 'basic',
-        canManageUsers: userData.role === 'admin'
-      },
-      portfolioValue: 0,
-      totalRecs: 0,
-      verificationStatus: 'pending'
-    };
-    const newUserWithPassword = { ...newUser, password: userData.password };
-    saveCustomUser(userData.email!, newUserWithPassword);
-    setUser(newUser);
-    localStorage.setItem('rectify-user', JSON.stringify(newUser));
-    setIsLoading(false);
-    return true;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('rectify-user');
+  const logout = async () => {
+    try {
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('rectify-token');
+    }
   };
 
-  const updateProfile = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('rectify-user', JSON.stringify(updatedUser));
+  const updateProfile = async (updates: Partial<User>) => {
+    if (!user) return;
+    
+    try {
+      const response = await apiService.updateProfile(updates);
+      if (response.success && response.user) {
+        setUser(response.user);
+      }
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      throw error;
     }
   };
 
