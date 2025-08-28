@@ -2,7 +2,8 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, Phone, MapPin, Send, X, FileText } from "lucide-react";
-import rectifyLogo from "/logo.png";
+// Use public URL for static assets
+const rectifyLogo = "/logo.png";
 // Note: Team member images not available in public folder
 // import khaledImage from "/images/khaled-alsamri.png.JPG";
 // import rashedImage from "/images/rashed-alneyadi.png.jpeg";
