@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Download, FileText, Shield, Eye, X, CheckCircle, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from 'jspdf';
-import rectifyFavicon from "/images/rectify.logo.png";
+import rectifyFavicon from "/logo.png";
 
 const transactions = [
   {

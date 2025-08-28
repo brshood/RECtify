@@ -1,8 +1,8 @@
 import { Button } from "./ui/button";
 import { Bell, User, Menu, Shield, Globe, Home, LogIn } from "lucide-react";
 import { Badge } from "./ui/badge";
-import rectifyFullLogo from "/images/rectify.logo.png";
-import rectifyIconLogo from "/images/rectify.logo.png";
+import rectifyFullLogo from "/logo.png";
+import rectifyIconLogo from "/logo.png";
 
 interface HeaderProps {
 	onNavigateHome?: () => void;
