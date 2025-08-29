@@ -1,5 +1,9 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Debug: Log the API URL being used
+console.log('🔍 API_BASE_URL:', API_BASE_URL);
+console.log('🔍 VITE_API_URL env var:', import.meta.env.VITE_API_URL);
+
 interface ApiResponse<T = any> {
   success: boolean;
   message: string;
@@ -22,13 +26,18 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    const fullUrl = `${API_BASE_URL}${endpoint}`;
+    console.log('🌐 Making API request to:', fullUrl);
+    
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(fullUrl, {
         headers: this.getAuthHeaders(),
         ...options
       });
 
+      console.log('📡 Response status:', response.status);
       const data = await response.json();
+      console.log('📡 Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
@@ -36,7 +45,7 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('❌ API request failed:', error);
       throw error;
     }
   }
