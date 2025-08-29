@@ -178,8 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('rectify-token');
-      const localUser = localStorage.getItem('rectify-user');
-      
       if (token) {
         try {
           const response = await apiService.getCurrentUser();
@@ -193,15 +191,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Failed to verify token:', error);
           localStorage.removeItem('rectify-token');
         }
-      } else if (localUser) {
-        // Check for local demo user data
-        try {
-          const userData = JSON.parse(localUser);
-          setUser(userData);
-        } catch (error) {
-          console.error('Failed to parse local user data:', error);
-          localStorage.removeItem('rectify-user');
-        }
       }
       setIsLoading(false);
     };
@@ -212,7 +201,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Try API first
       const response = await apiService.login(email, password);
       if (response.success && response.token && response.user) {
         localStorage.setItem('rectify-token', response.token);
@@ -223,18 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return false;
     } catch (error) {
-      console.log('API login failed, trying local demo authentication...');
-      
-      // Fallback to local demo authentication
-      const demoUser = demoUsers[email];
-      if (demoUser && demoUser.password === password) {
-        const { password: _, ...userWithoutPassword } = demoUser;
-        setUser(userWithoutPassword);
-        localStorage.setItem('rectify-user', JSON.stringify(userWithoutPassword));
-        setIsLoading(false);
-        return true;
-      }
-      
+      console.error('Login failed:', error);
       setIsLoading(false);
       return false;
     }
@@ -276,7 +253,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setUser(null);
       localStorage.removeItem('rectify-token');
-      localStorage.removeItem('rectify-user'); // Clear local demo user data
     }
   };
 
