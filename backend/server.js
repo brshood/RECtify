@@ -151,26 +151,12 @@ mongoose.connect(process.env.MONGODB_URI)
 })
 .catch((error) => {
   console.error('❌ MongoDB Atlas connection error:', error);
-  // Don't exit immediately in production, let the health check handle it
-  if (process.env.NODE_ENV === 'production') {
-    console.log('⚠️  Continuing without database connection for health check...');
-  } else {
-    process.exit(1);
-  }
+  process.exit(1);
 });
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-
-// Root endpoint for basic health check
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'RECtify API Server', 
-    status: 'running',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Health check endpoint - Enhanced for production monitoring
 app.get('/api/health', async (req, res) => {
