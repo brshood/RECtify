@@ -123,6 +123,11 @@ app.use((req, res, next) => {
 mongoose.connect(process.env.MONGODB_URI)
 .then(() => {
   console.log('✅ Connected to MongoDB Atlas');
+  // Log the outbound IP for Railway IP identification
+  fetch('https://api.ipify.org?format=json')
+    .then(res => res.json())
+    .then(data => console.log('🌐 Railway connecting from IP:', data.ip))
+    .catch(err => console.log('Could not determine outbound IP:', err.message));
 })
 .catch((error) => {
   console.error('❌ MongoDB Atlas connection error:', error);
