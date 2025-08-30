@@ -2,12 +2,14 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, Phone, MapPin, Send, X, FileText } from "lucide-react";
-import rectifyLogo from "/images/rectify.logo.png";
-import khaledImage from "/images/khaled-alsamri.png.JPG";
-import rashedImage from "/images/rashed-alneyadi.png.jpeg";
+// Use direct paths for Vite static assets
+const rectifyLogo = "/logo.png";
+const khaledImage = "/logo.png"; // Placeholder - replace with actual image
+const rashedImage = "/logo.png"; // Placeholder - replace with actual image
 import { InfoModal } from "./InfoModal";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import emailjs from '@emailjs/browser';
 
 interface LandingPageProps {
   onEnterPlatform: () => void;
@@ -17,6 +19,7 @@ interface LandingPageProps {
 export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingPageProps) {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -93,23 +96,52 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
     }
   ];
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    // Here you would normally send the data to your backend
-    // For now, we'll just show the success popup and reset the form
-    setShowSuccessPopup(true);
-    setContactForm({
-      name: '',
-      email: '',
-      subject: '',
-      message: ''
-    });
-    
-    // Auto-hide the popup after 5 seconds
-    setTimeout(() => {
-      setShowSuccessPopup(false);
-    }, 5000);
+    try {
+      // EmailJS configuration - these will be set as environment variables
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_rectify';
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_contact';
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY';
+      
+      // Prepare template parameters
+      const templateParams = {
+        from_name: contactForm.name,
+        from_email: contactForm.email,
+        subject: contactForm.subject,
+        message: contactForm.message,
+        to_email: 'alsamrikhaled@gmail.com',
+        reply_to: contactForm.email
+      };
+      
+      // Send email using EmailJS
+      await emailjs.send(serviceId, templateId, templateParams, publicKey);
+      
+      // Show success popup
+      setShowSuccessPopup(true);
+      
+      // Reset form
+      setContactForm({
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+      });
+      
+      // Auto-hide the popup after 5 seconds
+      setTimeout(() => {
+        setShowSuccessPopup(false);
+      }, 5000);
+      
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      // You could show an error message here
+      alert('Failed to send message. Please try again or contact us directly at alsamrikhaled@gmail.com');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -1277,9 +1309,10 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                     <Button 
                       type="submit"
                       size="lg"
-                      className="bg-rectify-gradient hover:opacity-90 text-white px-8 py-3"
+                      disabled={isSubmitting}
+                      className="bg-rectify-gradient hover:opacity-90 text-white px-8 py-3 disabled:opacity-50"
                     >
-                      Send Message
+                      {isSubmitting ? 'Sending...' : 'Send Message'}
                       <Send className="ml-2 h-5 w-5" />
                     </Button>
                   </motion.div>
