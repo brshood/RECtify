@@ -29,7 +29,8 @@ import {
   Shield,
   Paperclip,
   X,
-  Eye
+  Eye,
+  AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -971,44 +972,257 @@ function EmissionFactorsStep({ reportData, updateReportData }: { reportData: Emi
 function CalculationsStep({ reportData, updateReportData }: { reportData: EmissionsReportData, updateReportData: (section: keyof EmissionsReportData, data: any) => void }) {
   const [isCalculating, setIsCalculating] = useState(false);
 
+  // Clear any existing calculations that don't have a calculatedAt timestamp
+  useEffect(() => {
+    if (reportData.calculations && !reportData.calculations.calculatedAt) {
+      clearCalculations();
+    }
+  }, []);
+
+  // Clear calculations when activity data changes
+  useEffect(() => {
+    if (hasCalculations && reportData.activityData) {
+      // Clear calculations if activity data has changed since last calculation
+      clearCalculations();
+    }
+  }, [reportData.activityData]);
+
+  const hasActivityData = () => {
+    const scope1Data = reportData.activityData?.scope1?.length > 0;
+    const scope2Data = reportData.activityData?.scope2?.length > 0;
+    const scope3Data = reportData.activityData?.scope3?.length > 0;
+    
+    return scope1Data || scope2Data || scope3Data;
+  };
+
+  const clearCalculations = () => {
+    updateReportData('calculations', {
+      scope1Total: 0,
+      scope2Total: 0,
+      scope3Total: 0,
+      totalEmissions: 0,
+      emissionsByFacility: [],
+      emissionsByCategory: []
+    });
+  };
+
+  const validateActivityData = () => {
+    const issues = [];
+    
+    // Check if activity data exists
+    if (!reportData.activityData) {
+      issues.push('No activity data found. Please add activity data in Step 3.');
+      return issues;
+    }
+    
+    // Check each scope for valid data
+    ['scope1', 'scope2', 'scope3'].forEach(scope => {
+      const activities = reportData.activityData[scope as keyof typeof reportData.activityData];
+      if (activities && activities.length > 0) {
+        activities.forEach((activity: any, index: number) => {
+          if (!activity.source || activity.source.trim() === '') {
+            issues.push(`${scope.toUpperCase()} Activity ${index + 1}: Missing emission source`);
+          }
+          if (!activity.amount || activity.amount <= 0) {
+            issues.push(`${scope.toUpperCase()} Activity ${index + 1}: Invalid amount (must be > 0)`);
+          }
+          if (!activity.unit || activity.unit.trim() === '') {
+            issues.push(`${scope.toUpperCase()} Activity ${index + 1}: Missing unit`);
+          }
+        });
+      }
+    });
+    
+    return issues;
+  };
+
   const calculateEmissions = () => {
     setIsCalculating(true);
     
+    // Validate data first
+    const validationIssues = validateActivityData();
+    if (validationIssues.length > 0) {
+      setIsCalculating(false);
+      toast.error(`Validation errors: ${validationIssues.join(', ')}`);
+      return;
+    }
+    
     // Simulate calculation delay
     setTimeout(() => {
-      const scope1Total = Math.random() * 1000 + 500; // Random for demo
-      const scope2Total = Math.random() * 2000 + 1000;
-      const scope3Total = Math.random() * 500 + 200;
-      const totalEmissions = scope1Total + scope2Total + scope3Total;
+      try {
+        // Calculate emissions based on activity data and emission factors
+        let scope1Total = 0;
+        let scope2Total = 0;
+        let scope3Total = 0;
 
-      const emissionsByFacility = (reportData.reportingScope?.facilities || []).map((facility) => ({
-        facility: facility.name,
-        scope1: scope1Total * (facility.ownership / 100) * 0.3,
-        scope2: scope2Total * (facility.ownership / 100) * 0.7,
-        total: (scope1Total + scope2Total) * (facility.ownership / 100)
-      }));
+        // UAE Emission Factors Database (same as in UAEEmissionsCalculator)
+        const uaeEmissionFactors = {
+          scope1: {
+            'natural-gas': { factor: 0.0184, unit: 'tCO₂e/m³' },
+            'diesel': { factor: 2.67, unit: 'tCO₂e/m³' },
+            'gasoline': { factor: 2.31, unit: 'tCO₂e/m³' },
+            'lpg': { factor: 1.51, unit: 'tCO₂e/tonne' },
+            'fleet-vehicles': { factor: 0.171, unit: 'kgCO₂e/km' }
+          },
+          scope2: {
+            'grid-electricity': { factor: 0.4772, unit: 'tCO₂e/MWh' },
+            'district-cooling': { factor: 0.5892, unit: 'tCO₂e/MWh' },
+            'district-heating': { factor: 0.2156, unit: 'tCO₂e/MWh' }
+          },
+          scope3: {
+            'business-travel': { factor: 0.255, unit: 'kgCO₂e/km' },
+            'employee-commuting': { factor: 0.171, unit: 'kgCO₂e/km' },
+            'waste': { factor: 0.0211, unit: 'tCO₂e/tonne' },
+            'water': { factor: 0.344, unit: 'kgCO₂e/m³' }
+          }
+        };
 
-      const emissionsByCategory = [
-        { category: 'Direct Emissions (Scope 1)', amount: scope1Total, percentage: (scope1Total / totalEmissions) * 100 },
-        { category: 'Energy Indirect (Scope 2)', amount: scope2Total, percentage: (scope2Total / totalEmissions) * 100 },
-        { category: 'Other Indirect (Scope 3)', amount: scope3Total, percentage: (scope3Total / totalEmissions) * 100 }
-      ];
+        // Calculate Scope 1 emissions
+        if (reportData.activityData?.scope1) {
+          scope1Total = reportData.activityData.scope1.reduce((total: number, activity: any) => {
+            const factorData = uaeEmissionFactors.scope1[activity.source as keyof typeof uaeEmissionFactors.scope1];
+            if (factorData && activity.amount > 0) {
+              let emissions = activity.amount * factorData.factor;
+              
+              // Unit conversions
+              if (factorData.unit.includes('kg') && activity.unit === 'km') {
+                emissions = emissions / 1000; // Convert kg to tonnes
+              }
+              
+              return total + emissions;
+            }
+            return total;
+          }, 0);
+        }
 
-      updateReportData('calculations', {
-        scope1Total,
-        scope2Total,
-        scope3Total,
-        totalEmissions,
-        emissionsByFacility,
-        emissionsByCategory
-      });
+        // Calculate Scope 2 emissions
+        if (reportData.activityData?.scope2) {
+          scope2Total = reportData.activityData.scope2.reduce((total: number, activity: any) => {
+            const factorData = uaeEmissionFactors.scope2[activity.source as keyof typeof uaeEmissionFactors.scope2];
+            if (factorData && activity.amount > 0) {
+              let emissions = activity.amount * factorData.factor;
+              
+              // Unit conversions
+              if (activity.unit === 'kWh' && factorData.unit.includes('MWh')) {
+                emissions = emissions / 1000; // Convert kWh to MWh
+              }
+              
+              return total + emissions;
+            }
+            return total;
+          }, 0);
+        }
 
-      setIsCalculating(false);
-      toast.success('Emissions calculated successfully!');
+        // Calculate Scope 3 emissions
+        if (reportData.activityData?.scope3) {
+          scope3Total = reportData.activityData.scope3.reduce((total: number, activity: any) => {
+            const factorData = uaeEmissionFactors.scope3[activity.source as keyof typeof uaeEmissionFactors.scope3];
+            if (factorData && activity.amount > 0) {
+              let emissions = activity.amount * factorData.factor;
+              
+              // Unit conversions
+              if (factorData.unit.includes('kg') && activity.unit === 'km') {
+                emissions = emissions / 1000; // Convert kg to tonnes
+              }
+              
+              return total + emissions;
+            }
+            return total;
+          }, 0);
+        }
+
+        const totalEmissions = scope1Total + scope2Total + scope3Total;
+
+        // Calculate emissions by facility
+        const emissionsByFacility = (reportData.reportingScope?.facilities || []).map((facility) => {
+          // Calculate facility-specific emissions based on activities assigned to each facility
+          let facilityScope1 = 0;
+          let facilityScope2 = 0;
+
+          // Scope 1 facility emissions
+          if (reportData.activityData?.scope1) {
+            facilityScope1 = reportData.activityData.scope1
+              .filter((activity: any) => activity.facility === facility.name)
+              .reduce((total: number, activity: any) => {
+                const factorData = uaeEmissionFactors.scope1[activity.source as keyof typeof uaeEmissionFactors.scope1];
+                if (factorData && activity.amount > 0) {
+                  let emissions = activity.amount * factorData.factor;
+                  if (factorData.unit.includes('kg') && activity.unit === 'km') {
+                    emissions = emissions / 1000;
+                  }
+                  return total + emissions;
+                }
+                return total;
+              }, 0);
+          }
+
+          // Scope 2 facility emissions
+          if (reportData.activityData?.scope2) {
+            facilityScope2 = reportData.activityData.scope2
+              .filter((activity: any) => activity.facility === facility.name)
+              .reduce((total: number, activity: any) => {
+                const factorData = uaeEmissionFactors.scope2[activity.source as keyof typeof uaeEmissionFactors.scope2];
+                if (factorData && activity.amount > 0) {
+                  let emissions = activity.amount * factorData.factor;
+                  if (activity.unit === 'kWh' && factorData.unit.includes('MWh')) {
+                    emissions = emissions / 1000;
+                  }
+                  return total + emissions;
+                }
+                return total;
+              }, 0);
+          }
+
+          const facilityTotal = facilityScope1 + facilityScope2;
+          
+          return {
+            facility: facility.name,
+            scope1: facilityScope1 * (facility.ownership / 100),
+            scope2: facilityScope2 * (facility.ownership / 100),
+            total: facilityTotal * (facility.ownership / 100)
+          };
+        });
+
+        // Calculate emissions by category
+        const emissionsByCategory = [
+          { 
+            category: 'Direct Emissions (Scope 1)', 
+            amount: scope1Total, 
+            percentage: totalEmissions > 0 ? (scope1Total / totalEmissions) * 100 : 0 
+          },
+          { 
+            category: 'Energy Indirect (Scope 2)', 
+            amount: scope2Total, 
+            percentage: totalEmissions > 0 ? (scope2Total / totalEmissions) * 100 : 0 
+          },
+          { 
+            category: 'Other Indirect (Scope 3)', 
+            amount: scope3Total, 
+            percentage: totalEmissions > 0 ? (scope3Total / totalEmissions) * 100 : 0 
+          }
+        ];
+
+        updateReportData('calculations', {
+          scope1Total,
+          scope2Total,
+          scope3Total,
+          totalEmissions,
+          emissionsByFacility,
+          emissionsByCategory,
+          calculatedAt: new Date().toISOString()
+        });
+
+        setIsCalculating(false);
+        toast.success('Emissions calculated successfully!');
+      } catch (error) {
+        console.error('Error calculating emissions:', error);
+        setIsCalculating(false);
+        toast.error('Error calculating emissions. Please check your data and try again.');
+      }
     }, 2000);
   };
 
-  const hasCalculations = reportData.calculations?.totalEmissions > 0;
+  const hasCalculations = reportData.calculations?.calculatedAt && reportData.calculations?.totalEmissions >= 0;
 
   return (
     <Card>
@@ -1019,10 +1233,10 @@ function CalculationsStep({ reportData, updateReportData }: { reportData: Emissi
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="text-center">
+        <div className="text-center space-y-4">
           <Button
             onClick={calculateEmissions}
-            disabled={isCalculating}
+            disabled={isCalculating || !hasActivityData()}
             className="bg-rectify-green hover:bg-rectify-green-dark"
             size="lg"
           >
@@ -1034,14 +1248,48 @@ function CalculationsStep({ reportData, updateReportData }: { reportData: Emissi
             ) : (
               <>
                 <Calculator className="h-4 w-4 mr-2" />
-                Calculate Total Emissions
+                {hasActivityData() ? 'Calculate Total Emissions' : 'Add Activity Data First'}
               </>
             )}
           </Button>
+          
+          {hasCalculations && (
+            <Button
+              onClick={clearCalculations}
+              variant="outline"
+              size="sm"
+              className="text-red-600 border-red-600 hover:bg-red-50"
+            >
+              Clear Calculations
+            </Button>
+          )}
         </div>
 
         {hasCalculations && (
           <div className="space-y-6">
+            {/* Calculation Summary */}
+            <Card className="bg-blue-50 border-blue-200">
+              <CardHeader>
+                <CardTitle className="text-blue-800">Calculation Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <strong>Scope 1 Activities:</strong> {reportData.activityData?.scope1?.length || 0}
+                  </div>
+                  <div>
+                    <strong>Scope 2 Activities:</strong> {reportData.activityData?.scope2?.length || 0}
+                  </div>
+                  <div>
+                    <strong>Scope 3 Activities:</strong> {reportData.activityData?.scope3?.length || 0}
+                  </div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  Calculations based on UAE-certified emission factors from DEWA, ADNOC, and UAE Ministry of Energy
+                </p>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600">
@@ -1066,7 +1314,7 @@ function CalculationsStep({ reportData, updateReportData }: { reportData: Emissi
               
               <Card className="p-4 text-center bg-rectify-accent">
                 <div className="text-2xl font-bold text-rectify-green">
-                  {reportData.calculations.totalEmissions.toFixed(2)}
+                  {reportData.calculations?.calculatedAt ? reportData.calculations.totalEmissions.toFixed(2) : '0.00'}
                 </div>
                 <div className="text-sm text-muted-foreground">Total (tCO₂e)</div>
               </Card>
@@ -1118,7 +1366,17 @@ function CalculationsStep({ reportData, updateReportData }: { reportData: Emissi
         {!hasCalculations && (
           <div className="text-center py-8 text-muted-foreground">
             <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Click the calculate button to process your emission data and generate totals.</p>
+            <p>
+              {hasActivityData() 
+                ? 'Click "Calculate Total Emissions" to process your activity data and generate emission totals.'
+                : 'Add activity data in Step 3 before calculating emissions.'
+              }
+            </p>
+            {hasActivityData() && (
+              <p className="text-sm mt-2">
+                No calculations have been performed yet. All values will start at 0.
+              </p>
+            )}
           </div>
         )}
       </CardContent>
@@ -1193,7 +1451,7 @@ function ReductionsCreditsStep({ reportData, updateReportData }: { reportData: E
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-600">
-                {(reportData.calculations?.totalEmissions || 0).toFixed(2)}
+                {reportData.calculations?.calculatedAt ? (reportData.calculations?.totalEmissions || 0).toFixed(2) : '0.00'}
               </div>
               <div className="text-sm text-muted-foreground">Gross Emissions (tCO₂e)</div>
             </div>
@@ -1205,7 +1463,7 @@ function ReductionsCreditsStep({ reportData, updateReportData }: { reportData: E
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-rectify-green">
-                {((reportData.calculations?.totalEmissions || 0) - totalReductions).toFixed(2)}
+                {reportData.calculations?.calculatedAt ? ((reportData.calculations?.totalEmissions || 0) - totalReductions).toFixed(2) : '0.00'}
               </div>
               <div className="text-sm text-muted-foreground">Net Emissions (tCO₂e)</div>
             </div>
@@ -1289,68 +1547,190 @@ function ReductionsCreditsStep({ reportData, updateReportData }: { reportData: E
 // Step 7: Verification
 function VerificationStep({ reportData, updateReportData }: { reportData: EmissionsReportData, updateReportData: (section: keyof EmissionsReportData, data: any) => void }) {
   const handleVerificationChange = (field: string, value: any) => {
-    updateReportData('verification', {
-      ...reportData.verification,
-      [field]: value
-    });
+    try {
+      updateReportData('verification', {
+        ...reportData.verification,
+        [field]: value
+      });
+    } catch (error) {
+      console.error('Error updating verification field:', error);
+      toast.error('Error updating verification data. Please try again.');
+    }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Shield className="h-5 w-5" />
-          <span>Third-Party Verification</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="verification-required"
-            checked={reportData.verification?.verificationRequired || false}
-            onCheckedChange={(checked: boolean | "indeterminate") => handleVerificationChange('verificationRequired', checked === true)}
-          />
-          <Label htmlFor="verification-required">
-            Third-party verification will be conducted for this report
-          </Label>
-        </div>
+  const handleVerificationTypeChange = (type: 'none' | 'third-party') => {
+    try {
+      updateReportData('verification', {
+        ...reportData.verification,
+        verificationRequired: type === 'third-party',
+        verificationType: type
+      });
+    } catch (error) {
+      console.error('Error updating verification type:', error);
+      toast.error('Error updating verification type. Please try again.');
+    }
+  };
 
-        {reportData.verification?.verificationRequired && (
-          <div className="space-y-4 ml-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="verifier-name">Verification Body Name *</Label>
-                <Input
-                  id="verifier-name"
-                  value={reportData.verification?.verifierName || ''}
-                  onChange={(e) => handleVerificationChange('verifierName', e.target.value)}
-                  placeholder="Name of accredited verification body"
+  // Add null checks to prevent undefined access
+  if (!reportData || !reportData.verification) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center">
+            <AlertTriangle className="h-8 w-8 text-orange-500 mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading verification data...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  try {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Shield className="h-5 w-5" />
+            <span>Verification</span>
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Choose whether your emissions report will undergo third-party verification
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Verification Type</Label>
+            
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  id="verification-none"
+                  name="verification-type"
+                  value="none"
+                  checked={reportData.verification?.verificationType === 'none' || (!reportData.verification?.verificationRequired && !reportData.verification?.verificationType)}
+                  onChange={() => handleVerificationTypeChange('none')}
+                  className="h-4 w-4 text-rectify-green"
                 />
+                <Label htmlFor="verification-none" className="flex-1 cursor-pointer">
+                  <div className="font-medium">No Third-Party Verification</div>
+                  <div className="text-sm text-muted-foreground">
+                    Self-declaration without external verification
+                  </div>
+                </Label>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="verifier-accreditation">Accreditation Standard *</Label>
-                <Select 
-                  value={reportData.verification?.verifierAccreditation || ''} 
-                  onValueChange={(value: string) => handleVerificationChange('verifierAccreditation', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select accreditation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="iso-14065">ISO 14065</SelectItem>
-                    <SelectItem value="uae-accredited">UAE Accredited Verifier</SelectItem>
-                    <SelectItem value="cdp-approved">CDP Approved Verifier</SelectItem>
-                    <SelectItem value="other">Other International Standard</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  id="verification-third-party"
+                  name="verification-type"
+                  value="third-party"
+                  checked={reportData.verification?.verificationType === 'third-party' || reportData.verification?.verificationRequired === true}
+                  onChange={() => handleVerificationTypeChange('third-party')}
+                  className="h-4 w-4 text-rectify-green"
+                />
+                <Label htmlFor="verification-third-party" className="flex-1 cursor-pointer">
+                  <div className="font-medium">Third-Party Verification</div>
+                  <div className="text-sm text-muted-foreground">
+                    Independent verification by accredited verification body
+                  </div>
+                </Label>
               </div>
             </div>
           </div>
-        )}
+
+          {reportData.verification?.verificationType === 'third-party' && (
+            <div className="space-y-4 ml-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="font-medium text-blue-900">Third-Party Verification Details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="verifier-name">Verification Body Name *</Label>
+                  <Input
+                    id="verifier-name"
+                    value={reportData.verification?.verifierName || ''}
+                    onChange={(e) => handleVerificationChange('verifierName', e.target.value)}
+                    placeholder="Name of accredited verification body"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="verifier-email">Verifier Email *</Label>
+                  <Input
+                    id="verifier-email"
+                    type="email"
+                    value={reportData.verification?.verifierEmail || ''}
+                    onChange={(e) => handleVerificationChange('verifierEmail', e.target.value)}
+                    placeholder="verifier@company.com"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="verifier-accreditation">Accreditation Standard *</Label>
+                  <Select 
+                    value={reportData.verification?.verifierAccreditation || ''} 
+                    onValueChange={(value: string) => handleVerificationChange('verifierAccreditation', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select accreditation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="iso-14065">ISO 14065</SelectItem>
+                      <SelectItem value="uae-accredited">UAE Accredited Verifier</SelectItem>
+                      <SelectItem value="cdp-approved">CDP Approved Verifier</SelectItem>
+                      <SelectItem value="other">Other International Standard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="verification-date">Expected Verification Date</Label>
+                  <Input
+                    id="verification-date"
+                    type="date"
+                    value={reportData.verification?.verificationDate || ''}
+                    onChange={(e) => handleVerificationChange('verificationDate', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {reportData.verification?.verificationType === 'none' && (
+            <div className="ml-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium text-gray-900 mb-1">Self-Declaration Notice</p>
+                  <p>Your report will be submitted as a self-declaration without third-party verification. This is acceptable for initial compliance reporting, but third-party verification may be required for certain regulatory purposes or stakeholder assurance.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
-  );
+    );
+  } catch (error) {
+    console.error('Error in VerificationStep:', error);
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center">
+            <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 mb-4">Error loading verification step</p>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()}
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 }
 
 // Step 8: Declarations
@@ -1590,16 +1970,107 @@ function AttachmentsStep({ reportData, updateReportData }: { reportData: Emissio
 
 // Step 10: Review
 function ReviewStep({ reportData, onGenerateReport, isStepComplete }: { reportData: EmissionsReportData, onGenerateReport: () => void, isStepComplete: (stepId: number) => boolean }) {
-  const completedSteps = Array.from({ length: 9 }, (_, i) => i + 1).filter(step => isStepComplete(step));
-  const totalSteps = 9;
-  const completionPercentage = (completedSteps.length / totalSteps) * 100;
+  // Ensure all required data exists to prevent crashes
+  if (!reportData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Eye className="h-5 w-5" />
+            <span>Report Review & Generation</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No report data available. Please start from the beginning.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const requiredAttachments = (reportData.attachments || []).filter(a => a.required);
-  const uploadedRequiredAttachments = requiredAttachments.filter(a => a.uploaded);
+  // Use the same completion calculation as the main component
+  const calculateReportCompletion = () => {
+    let completionScore = 0;
+    const totalPossibleScore = 100;
+    
+    // Company Information (15 points)
+    if (reportData.company?.name && reportData.company?.tradeLicense && reportData.company?.address && 
+        reportData.company?.contactPerson && reportData.company?.email && reportData.company?.reportingYear) {
+      completionScore += 15;
+    }
+    
+    // Reporting Scope (10 points)
+    if (reportData.reportingScope?.organizationalBoundary && 
+        reportData.reportingScope?.operationalBoundary?.length > 0 &&
+        reportData.reportingScope?.facilities?.length > 0) {
+      completionScore += 10;
+    }
+    
+    // Activity Data (25 points)
+    const hasScope1Data = reportData.activityData?.scope1?.length > 0;
+    const hasScope2Data = reportData.activityData?.scope2?.length > 0;
+    const hasScope3Data = reportData.activityData?.scope3?.length > 0;
+    
+    if (hasScope1Data) completionScore += 10;
+    if (hasScope2Data) completionScore += 10;
+    if (hasScope3Data) completionScore += 5;
+    
+    // Emission Factors (15 points)
+    const hasScope1Factors = reportData.emissionFactors?.scope1Factors?.length > 0;
+    const hasScope2Factors = reportData.emissionFactors?.scope2Factors?.length > 0;
+    const hasScope3Factors = reportData.emissionFactors?.scope3Factors?.length > 0;
+    
+    if (hasScope1Factors) completionScore += 5;
+    if (hasScope2Factors) completionScore += 5;
+    if (hasScope3Factors) completionScore += 5;
+    
+    // Calculations (15 points)
+    if (reportData.calculations?.calculatedAt) {
+      completionScore += 15;
+    }
+    
+    // Reductions & Credits (5 points)
+    if (reportData.reductionsCredits?.reductionMeasures?.length > 0) {
+      completionScore += 5;
+    }
+    
+    // Verification (5 points)
+    if (reportData.verification?.verificationRequired !== undefined) {
+      completionScore += 5;
+    }
+    
+    // Declarations (5 points)
+    if (reportData.declarations?.accuracyDeclaration && 
+        reportData.declarations?.completenessDeclaration && 
+        reportData.declarations?.complianceDeclaration &&
+        reportData.declarations?.authorizedSignatory &&
+        reportData.declarations?.position &&
+        reportData.declarations?.date) {
+      completionScore += 5;
+    }
+    
+    // Attachments (5 points)
+    const requiredAttachments = (reportData.attachments || []).filter(a => a.required);
+    const uploadedRequiredAttachments = requiredAttachments.filter(a => a.uploaded);
+    if (uploadedRequiredAttachments.length === requiredAttachments.length && requiredAttachments.length > 0) {
+      completionScore += 5;
+    }
+    
+    return Math.min(completionScore, totalPossibleScore);
+  };
 
-  const canGenerateReport = completedSteps.length >= 8 && // At least first 8 steps
-    requiredAttachments.every(a => a.uploaded) && // All required attachments
-    reportData.calculations?.totalEmissions > 0; // Has calculations
+  try {
+    const completionPercentage = calculateReportCompletion();
+    
+    // Get required attachments for canGenerateReport check
+    const requiredAttachments = (reportData.attachments || []).filter(a => a.required);
+    const uploadedRequiredAttachments = requiredAttachments.filter(a => a.uploaded);
+
+    const canGenerateReport = completionPercentage >= 80 && // At least 80% completion
+      requiredAttachments.every(a => a.uploaded) && // All required attachments
+      reportData.calculations?.calculatedAt; // Has calculations
 
   return (
     <div className="space-y-6">
@@ -1629,7 +2100,7 @@ function ReviewStep({ reportData, onGenerateReport, isStepComplete }: { reportDa
             
             <Card className="p-4 text-center">
               <div className="text-2xl font-bold text-rectify-green">
-                {(reportData.calculations?.totalEmissions || 0).toFixed(2)}
+                {reportData.calculations?.calculatedAt ? (reportData.calculations?.totalEmissions || 0).toFixed(2) : '0.00'}
               </div>
               <div className="text-sm text-muted-foreground">Total Emissions (tCO₂e)</div>
             </Card>
@@ -1653,19 +2124,31 @@ function ReviewStep({ reportData, onGenerateReport, isStepComplete }: { reportDa
                   { id: 8, title: "Declarations" },
                   { id: 9, title: "Attachments" }
                 ].map((step) => {
-                  const isComplete = isStepComplete(step.id);
-                  return (
-                    <div key={step.id} className="flex items-center space-x-3">
-                      {isComplete ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : (
+                  try {
+                    const isComplete = isStepComplete(step.id);
+                    return (
+                      <div key={step.id} className="flex items-center space-x-3">
+                        {isComplete ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <AlertTriangle className="h-5 w-5 text-orange-500" />
+                        )}
+                        <span className={isComplete ? "text-green-600" : "text-orange-500"}>
+                          {step.title}
+                        </span>
+                      </div>
+                    );
+                  } catch (error) {
+                    console.error(`Error checking step ${step.id} completion:`, error);
+                    return (
+                      <div key={step.id} className="flex items-center space-x-3">
                         <AlertTriangle className="h-5 w-5 text-orange-500" />
-                      )}
-                      <span className={isComplete ? "text-green-600" : "text-orange-500"}>
-                        {step.title}
-                      </span>
-                    </div>
-                  );
+                        <span className="text-orange-500">
+                          {step.title}
+                        </span>
+                      </div>
+                    );
+                  }
                 })}
               </div>
             </CardContent>
@@ -1682,9 +2165,9 @@ function ReviewStep({ reportData, onGenerateReport, isStepComplete }: { reportDa
                   <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                     <h4 className="font-medium text-yellow-800 mb-2">Requirements Not Met</h4>
                     <div className="text-sm text-yellow-700 space-y-1">
-                      {completedSteps.length < 8 && <p>• Complete at least the first 8 report steps</p>}
+                      {completionPercentage < 80 && <p>• Complete at least 80% of the report (currently {completionPercentage.toFixed(0)}%)</p>}
                       {!requiredAttachments.every(a => a.uploaded) && <p>• Upload all required supporting documents</p>}
-                      {!(reportData.calculations?.totalEmissions > 0) && <p>• Calculate total emissions in Step 5</p>}
+                      {!reportData.calculations?.calculatedAt && <p>• Calculate total emissions in Step 5</p>}
                     </div>
                   </div>
                 )}
@@ -1709,4 +2192,31 @@ function ReviewStep({ reportData, onGenerateReport, isStepComplete }: { reportDa
       </Card>
     </div>
   );
+  } catch (error) {
+    console.error('Error in ReviewStep:', error);
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <span>Error Loading Review Step</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>There was an error loading the review step.</p>
+            <p className="text-sm mt-2">Please try refreshing the page or go back to a previous step.</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="mt-4"
+              variant="outline"
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 }

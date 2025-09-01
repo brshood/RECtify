@@ -62,8 +62,12 @@ export function UAEEmissionsCalculator({
     let emissions = activity * factorData.factor;
     
     // Unit conversions
-    if (factorData.unit.includes('kg') && selectedUnit.includes('MWh')) {
+    if (factorData.unit.includes('kg') && selectedUnit === 'km') {
       emissions = emissions / 1000; // Convert kg to tonnes
+    }
+    
+    if (factorData.unit.includes('MWh') && selectedUnit === 'kWh') {
+      emissions = emissions / 1000; // Convert kWh to MWh
     }
     
     setCalculatedEmissions(emissions);
