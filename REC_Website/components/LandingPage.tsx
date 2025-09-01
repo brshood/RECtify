@@ -4,9 +4,8 @@ import { Badge } from "./ui/badge";
 import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, Phone, MapPin, Send, X, FileText } from "lucide-react";
 // Use public URL for static assets
 const rectifyLogo = "/logo.png";
-// Note: Team member images not available in public folder
-// import khaledImage from "/images/khaled-alsamri.png.JPG";
-// import rashedImage from "/images/rashed-alneyadi.png.jpeg";
+const khaledImage = "/khaled-alsamri.png.JPG";
+const rashedImage = "/rashed-alneyadi.png.jpeg";
 import { InfoModal } from "./InfoModal";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -902,7 +901,17 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         whileHover={{ scale: 1.1 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <div className="w-full h-full bg-rectify-green flex items-center justify-center">
+                        <img 
+                          src={khaledImage} 
+                          alt="Khaled Alsamri" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="w-full h-full bg-rectify-green flex items-center justify-center hidden">
                           <Users className="h-12 w-12 text-white" />
                         </div>
                       </motion.div>
@@ -975,7 +984,17 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         whileHover={{ scale: 1.1 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <div className="w-full h-full bg-rectify-green flex items-center justify-center">
+                        <img 
+                          src={rashedImage} 
+                          alt="Rashed Alneyadi" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="w-full h-full bg-rectify-green flex items-center justify-center hidden">
                           <Users className="h-12 w-12 text-white" />
                         </div>
                       </motion.div>
