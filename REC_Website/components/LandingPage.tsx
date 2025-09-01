@@ -192,6 +192,27 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
+      {/* Demo Notice */}
+      <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 shadow-sm">
+        <div className="flex items-center justify-center">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-bold">!</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-yellow-800 font-medium">
+                🚧 This is a <strong>DEMO ONLY</strong> website currently in development stage
+              </p>
+              <p className="text-yellow-700 text-sm mt-1">
+                Features and functionality are being actively developed and may change
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <motion.div 
@@ -305,7 +326,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               animate="animate"
             >
               {[
-                { value: "50M+", label: "MWh Available", color: "text-rectify-green" },
+                { value: "5,000", label: "MWh Available", color: "text-rectify-green" },
                 { value: "99.9%", label: "Platform Uptime", color: "text-rectify-blue" },
                 { value: "24/7", label: "Trading Available", color: "text-rectify-green" }
               ].map((stat, index) => (
