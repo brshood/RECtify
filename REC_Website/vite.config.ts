@@ -45,7 +45,7 @@ export default defineConfig({
       { find: 'motion/react', replacement: 'framer-motion' },
     ],
   },
-  publicDir: 'REC_Website/public',
+  publicDir: 'public',
   base: './',
   server: { port: 5173, open: true },
 })
