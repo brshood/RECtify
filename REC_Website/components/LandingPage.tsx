@@ -264,11 +264,11 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                 <div className="flex flex-col space-y-4">
                   <Button 
                     size="lg" 
-                    className="bg-rectify-gradient hover:opacity-90 text-white px-8 py-6 text-lg"
+                    className="bg-rectify-gradient hover:bg-rectify-gradient/80 hover:shadow-lg hover:shadow-rectify-green/25 hover:scale-105 hover:-translate-y-1 text-white px-8 py-6 text-lg transition-all duration-300 ease-in-out border-2 border-transparent hover:border-rectify-green/30"
                     onClick={onEnterPlatform}
                   >
                     Enter Trading Platform
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
                   </Button>
                   
                   <Button 
@@ -776,11 +776,11 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               >
                 <Button 
                   size="lg"
-                  className="bg-rectify-gradient hover:opacity-90 text-white px-8 py-3"
+                  className="bg-rectify-gradient hover:bg-rectify-gradient/80 hover:shadow-lg hover:shadow-rectify-green/25 hover:scale-105 hover:-translate-y-1 text-white px-8 py-3 transition-all duration-300 ease-in-out border-2 border-transparent hover:border-rectify-green/30 group"
                   onClick={onEnterPlatform}
                 >
                   Start Your Journey
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
               </motion.div>
             </motion.div>
@@ -1161,11 +1161,11 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
           >
             <Button 
               size="lg" 
-              className="bg-rectify-gradient hover:opacity-90 text-white px-12 py-6 text-lg"
+              className="bg-rectify-gradient hover:bg-rectify-gradient/80 hover:shadow-lg hover:shadow-rectify-green/25 hover:scale-105 hover:-translate-y-1 text-white px-12 py-6 text-lg transition-all duration-300 ease-in-out border-2 border-transparent hover:border-rectify-green/30 group"
               onClick={onEnterPlatform}
             >
               Access Trading Platform
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
             </Button>
           </motion.div>
         </div>
