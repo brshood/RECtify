@@ -3,12 +3,28 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { sanitizeInput, validateEmail, validatePassword } = require('../middleware/security');
 
 const router = express.Router();
 
-// Generate JWT token
+// Generate JWT token with enhanced security
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long');
+  }
+  
+  return jwt.sign(
+    { 
+      userId,
+      iat: Math.floor(Date.now() / 1000),
+      jti: require('crypto').randomBytes(16).toString('hex') // JWT ID for token tracking
+    }, 
+    process.env.JWT_SECRET, 
+    { 
+      expiresIn: process.env.NODE_ENV === 'production' ? '1h' : '7d', // Shorter expiry in production
+      algorithm: 'HS256'
+    }
+  );
 };
 
 // @route   POST /api/auth/register
@@ -106,13 +122,34 @@ router.post('/login', [
       });
     }
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({
+    // Check if account is locked
+    if (user.isLocked) {
+      const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / (1000 * 60)); // minutes
+      return res.status(423).json({
         success: false,
-        message: 'Invalid email or password'
+        message: `Account is locked due to too many failed attempts. Try again in ${lockTimeRemaining} minutes.`
       });
+    }
+
+    // Check password
+    try {
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        // Increment login attempts on failed password
+        await user.incLoginAttempts();
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid email or password'
+        });
+      }
+    } catch (error) {
+      if (error.message.includes('Account is temporarily locked')) {
+        return res.status(423).json({
+          success: false,
+          message: error.message
+        });
+      }
+      throw error;
     }
 
     // Update last login

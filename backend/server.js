@@ -3,11 +3,16 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const slowDown = require('express-slow-down');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss');
+const hpp = require('hpp');
 const morgan = require('morgan');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const { xssProtection, validateRequestSize, securityHeaders } = require('./middleware/security');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -50,6 +55,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
+<<<<<<< HEAD
+=======
+// Prevent NoSQL injection attacks
+app.use(mongoSanitize());
+
+// Prevent parameter pollution
+app.use(hpp({
+  whitelist: ['role', 'tier', 'emirate'] // Allow these fields to have multiple values
+}));
+
+>>>>>>> MongoTest
 // Rate limiting - Enhanced for production
 const limiter = rateLimit({
   windowMs: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
@@ -74,6 +90,17 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth', authLimiter);
 
+<<<<<<< HEAD
+=======
+// Slow down repeated requests
+const speedLimiter = slowDown({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  delayAfter: 50, // allow 50 requests per windowMs without delay
+  delayMs: 500 // add 500ms of delay per request after delayAfter
+});
+app.use(speedLimiter);
+
+>>>>>>> MongoTest
 // Logging - Enhanced for security
 app.use(morgan('combined', {
   skip: function (req, res) {
@@ -98,6 +125,14 @@ app.use(express.urlencoded({
   parameterLimit: 20 // Limit number of parameters
 }));
 
+<<<<<<< HEAD
+=======
+// Additional security middleware
+app.use(securityHeaders);
+app.use(validateRequestSize);
+app.use(xssProtection);
+
+>>>>>>> MongoTest
 // Performance monitoring middleware
 app.use((req, res, next) => {
   req.startTime = Date.now();

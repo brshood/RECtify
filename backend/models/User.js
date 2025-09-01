@@ -116,6 +116,27 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date
+  },
+  passwordResetToken: {
+    type: String
+  },
+  passwordResetExpires: {
+    type: Date
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
@@ -166,22 +187,79 @@ userSchema.pre('save', function(next) {
   next();
 });
 
-// Hash password before saving
+// Hash password before saving - Enhanced security
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   try {
-    const salt = await bcrypt.genSalt(12);
+    // Enhanced salt rounds for better security
+    const saltRounds = process.env.NODE_ENV === 'production' ? 14 : 12;
+    const salt = await bcrypt.genSalt(saltRounds);
     this.password = await bcrypt.hash(this.password, salt);
+    
+    // Clear any password reset tokens when password is changed
+    if (this.passwordResetToken) {
+      this.passwordResetToken = undefined;
+      this.passwordResetExpires = undefined;
+    }
+    
     next();
   } catch (error) {
     next(error);
   }
 });
 
-// Compare password method
+// Account lockout constants
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_TIME = 2 * 60 * 60 * 1000; // 2 hours
+
+// Virtual for checking if account is locked
+userSchema.virtual('isLocked').get(function() {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+});
+
+// Account lockout methods
+userSchema.methods.incLoginAttempts = function() {
+  // If we have a previous lock that has expired, restart at 1
+  if (this.lockUntil && this.lockUntil < Date.now()) {
+    return this.updateOne({
+      $unset: { lockUntil: 1 },
+      $set: { loginAttempts: 1 }
+    });
+  }
+  
+  const updates = { $inc: { loginAttempts: 1 } };
+  
+  // Lock the account if we've reached max attempts and it's not locked already
+  if (this.loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS && !this.isLocked) {
+    updates.$set = { lockUntil: Date.now() + LOCK_TIME };
+  }
+  
+  return this.updateOne(updates);
+};
+
+// Reset login attempts
+userSchema.methods.resetLoginAttempts = function() {
+  return this.updateOne({
+    $unset: { loginAttempts: 1, lockUntil: 1 }
+  });
+};
+
+// Compare password method - Enhanced with lockout protection
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  // Check if account is locked
+  if (this.isLocked) {
+    throw new Error('Account is temporarily locked due to too many failed login attempts');
+  }
+  
+  const isMatch = await bcrypt.compare(candidatePassword, this.password);
+  
+  // Reset login attempts on successful login
+  if (isMatch && this.loginAttempts > 0) {
+    await this.resetLoginAttempts();
+  }
+  
+  return isMatch;
 };
 
 // Transform output to match frontend interface
