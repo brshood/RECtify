@@ -7,6 +7,7 @@ import { Separator } from "./ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { EmissionsReportWizard } from "./EmissionsReportWizard";
 import { EmissionsReportView } from "./EmissionsReportView";
+import { toast } from "sonner";
 import { 
   FileText, 
   Building2, 
@@ -564,8 +565,82 @@ export function EmissionsReport() {
             <Button 
               variant="outline" 
               onClick={() => {
-                localStorage.setItem('startFresh', 'true');
-                window.location.reload();
+                // Clear all form data and reset to initial state
+                const defaultData = {
+                  company: {
+                    name: '',
+                    tradeLicense: '',
+                    address: '',
+                    contactPerson: '',
+                    email: '',
+                    phone: '',
+                    sector: '',
+                    employees: 0,
+                    reportingYear: new Date().getFullYear()
+                  },
+                  reportingScope: {
+                    organizationalBoundary: '',
+                    operationalBoundary: [],
+                    facilities: []
+                  },
+                  activityData: {
+                    scope1: [],
+                    scope2: [],
+                    scope3: []
+                  },
+                  emissionFactors: {
+                    scope1Factors: [],
+                    scope2Factors: [],
+                    scope3Factors: []
+                  },
+                  calculations: {
+                    scope1Total: 0,
+                    scope2Total: 0,
+                    scope3Total: 0,
+                    totalEmissions: 0,
+                    emissionsByFacility: [],
+                    emissionsByCategory: []
+                  },
+                  reductionsCredits: {
+                    reductionMeasures: [],
+                    nrccCredits: [],
+                    netEmissions: 0
+                  },
+                  verification: {
+                    verificationRequired: false,
+                    verificationType: undefined
+                  },
+                  declarations: {
+                    accuracyDeclaration: false,
+                    completenessDeclaration: false,
+                    complianceDeclaration: false,
+                    authorizedSignatory: '',
+                    position: '',
+                    date: ''
+                  },
+                  attachments: [
+                    { id: '1', name: 'Activity Data Spreadsheet', type: 'Excel', description: 'Detailed activity data with source documentation', required: true, uploaded: false },
+                    { id: '2', name: 'Emission Factor References', type: 'PDF', description: 'Documentation of emission factors used', required: true, uploaded: false },
+                    { id: '3', name: 'NRCC Credit Certificates', type: 'PDF', description: 'Valid NRCC credit certificates', required: false, uploaded: false },
+                    { id: '4', name: 'Verification Statement', type: 'PDF', description: 'Third-party verification statement', required: false, uploaded: false }
+                  ],
+                  marketingBoxClosed: false
+                };
+                
+                // Reset the form data
+                setReportData(defaultData);
+                
+                // Clear localStorage
+                localStorage.removeItem('reportData');
+                
+                // Reset to step 1
+                setCurrentStep(1);
+                
+                // Reset view mode to wizard
+                setViewMode('wizard');
+                
+                // Show success message
+                toast.success('Form cleared successfully! You can now start a new report.');
               }}
               className="text-red-600 border-red-600 hover:bg-red-50"
             >
