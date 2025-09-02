@@ -12,6 +12,9 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const holdingsRoutes = require('./routes/holdings');
+const ordersRoutes = require('./routes/orders');
+const transactionsRoutes = require('./routes/transactions');
 const { xssProtection, validateRequestSize, securityHeaders } = require('./middleware/security');
 
 const app = express();
@@ -55,8 +58,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-<<<<<<< HEAD
-=======
 // Prevent NoSQL injection attacks
 app.use(mongoSanitize());
 
@@ -64,8 +65,6 @@ app.use(mongoSanitize());
 app.use(hpp({
   whitelist: ['role', 'tier', 'emirate'] // Allow these fields to have multiple values
 }));
-
->>>>>>> MongoTest
 // Rate limiting - Enhanced for production
 const limiter = rateLimit({
   windowMs: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
@@ -90,8 +89,6 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth', authLimiter);
 
-<<<<<<< HEAD
-=======
 // Slow down repeated requests
 const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -99,8 +96,6 @@ const speedLimiter = slowDown({
   delayMs: 500 // add 500ms of delay per request after delayAfter
 });
 app.use(speedLimiter);
-
->>>>>>> MongoTest
 // Logging - Enhanced for security
 app.use(morgan('combined', {
   skip: function (req, res) {
@@ -125,14 +120,10 @@ app.use(express.urlencoded({
   parameterLimit: 20 // Limit number of parameters
 }));
 
-<<<<<<< HEAD
-=======
 // Additional security middleware
 app.use(securityHeaders);
 app.use(validateRequestSize);
 app.use(xssProtection);
-
->>>>>>> MongoTest
 // Performance monitoring middleware
 app.use((req, res, next) => {
   req.startTime = Date.now();
@@ -175,6 +166,9 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/holdings', holdingsRoutes);
+app.use('/api/orders', ordersRoutes);
+app.use('/api/transactions', transactionsRoutes);
 
 // Health check endpoint - Enhanced for production monitoring
 app.get('/api/health', async (req, res) => {
