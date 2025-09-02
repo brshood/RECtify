@@ -80,22 +80,70 @@ export interface EmissionsReportData {
   };
   emissionFactors: {
     scope1Factors: Array<{
-      source: string;
-      factor: number;
-      unit: string;
-      reference: string;
+      id: string;
+      factor: {
+        id: string;
+        scope: 'scope1' | 'scope2' | 'scope3';
+        name: string;
+        year: string;
+        factor_value: number;
+        unit: string;
+        applies_to: Array<{
+          source: string;
+          units: string[];
+        }>;
+        source: string;
+        notes: string;
+        certified: boolean;
+      };
+      activityAmount: number;
+      activityUnit: string;
+      calculatedEmissions: number;
+      appliedAt: string;
     }>;
     scope2Factors: Array<{
-      source: string;
-      factor: number;
-      unit: string;
-      reference: string;
+      id: string;
+      factor: {
+        id: string;
+        scope: 'scope1' | 'scope2' | 'scope3';
+        name: string;
+        year: string;
+        factor_value: number;
+        unit: string;
+        applies_to: Array<{
+          source: string;
+          units: string[];
+        }>;
+        source: string;
+        notes: string;
+        certified: boolean;
+      };
+      activityAmount: number;
+      activityUnit: string;
+      calculatedEmissions: number;
+      appliedAt: string;
     }>;
     scope3Factors: Array<{
-      category: string;
-      factor: number;
-      unit: string;
-      reference: string;
+      id: string;
+      factor: {
+        id: string;
+        scope: 'scope1' | 'scope2' | 'scope3';
+        name: string;
+        year: string;
+        factor_value: number;
+        unit: string;
+        applies_to: Array<{
+          source: string;
+          units: string[];
+        }>;
+        source: string;
+        notes: string;
+        certified: boolean;
+      };
+      activityAmount: number;
+      activityUnit: string;
+      calculatedEmissions: number;
+      appliedAt: string;
     }>;
   };
   calculations: {
@@ -371,8 +419,8 @@ export function EmissionsReport() {
         const requiredAttachments = reportData.attachments?.filter(a => a.required) || [];
         return requiredAttachments.length > 0 && requiredAttachments.every(a => a.uploaded);
       case 10:
-        // Review - only complete if report is ready for generation (80% completion and calculations done)
-        return calculateReportCompletion() >= 80 && !!reportData.calculations?.calculatedAt;
+        // Review - only complete if calculations are done
+        return !!reportData.calculations?.calculatedAt;
       default:
         return false;
     }
@@ -795,13 +843,11 @@ export function EmissionsReport() {
                       <Download className="h-4 w-4 text-rectify-green" />
                       <span>Download templates for bulk import</span>
                     </div>
-                                     ) : (
-                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                       <span>{progressPercentage.toFixed(0)}% Complete</span>
-                       <Separator orientation="vertical" className="h-4" />
-                       <span>Estimated {Math.max(1, Math.ceil((100 - progressPercentage) / 10))} minutes remaining</span>
-                     </div>
-                   )}
+                  ) : (
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <span>Report in progress</span>
+                    </div>
+                  )}
                   <Badge variant="secondary" className="bg-rectify-green/10 text-rectify-green border-rectify-green/20">
                     {completedSteps === 0 ? "⏱️ Takes 15-30 minutes" : `📋 Step ${currentStep} of 10`}
                   </Badge>

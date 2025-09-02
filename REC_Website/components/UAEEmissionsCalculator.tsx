@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -6,320 +6,565 @@ import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Badge } from "./ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { Calculator, Plus, Trash2, Info, Zap } from "lucide-react";
+import { Alert, AlertDescription } from "./ui/alert";
+
+import { 
+  Plus, 
+  Info, 
+  Zap, 
+  Table, 
+  Search,
+  CheckCircle,
+  AlertTriangle,
+  X,
+  ChevronDown,
+  ChevronRight
+} from "lucide-react";
 import { toast } from "sonner";
+import { 
+  getFactorsByScope, 
+  calculateEmissions, 
+  factorAppliesToActivity,
+  formatFactorName,
+  formatFactorValue,
+  getSuggestedFactors,
+  validateFactorSelection,
+  type EmissionFactor,
+  type AppliedFactor
+} from "../lib/factors";
 
 interface UAEEmissionsCalculatorProps {
   activeScope: 'scope1' | 'scope2' | 'scope3';
-  onAddFactor: (factor: any) => void;
-  existingFactors: any[];
+  onAddFactor: (factor: AppliedFactor) => void;
+  existingFactors: AppliedFactor[];
   onRemoveFactor: (id: string) => void;
+  activityData?: any; // For auto-mapping preview
 }
 
 export function UAEEmissionsCalculator({ 
   activeScope, 
   onAddFactor, 
   existingFactors,
-  onRemoveFactor 
+  onRemoveFactor,
+  activityData
 }: UAEEmissionsCalculatorProps) {
-  const [selectedSource, setSelectedSource] = useState('');
-  const [activityValue, setActivityValue] = useState('');
-  const [selectedUnit, setSelectedUnit] = useState('');
-  const [calculatedEmissions, setCalculatedEmissions] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [customFactorInputs, setCustomFactorInputs] = useState<Record<string, { value: string; unit: string }>>({});
+  const [isFactorLibraryExpanded, setIsFactorLibraryExpanded] = useState(false);
+  const [isGuidelinesVisible, setIsGuidelinesVisible] = useState(true);
+  const [isTipsVisible, setIsTipsVisible] = useState(true);
 
-  // UAE Emission Factors Database
-  const uaeEmissionFactors = {
-    scope1: {
-      'natural-gas': { factor: 0.0184, unit: 'tCO₂e/m³', source: 'UAE Energy Authority 2024' },
-      'diesel': { factor: 2.67, unit: 'tCO₂e/m³', source: 'ADNOC Emission Factors 2024' },
-      'gasoline': { factor: 2.31, unit: 'tCO₂e/m³', source: 'ADNOC Emission Factors 2024' },
-      'lpg': { factor: 1.51, unit: 'tCO₂e/tonne', source: 'UAE Ministry of Energy 2024' },
-      'fleet-vehicles': { factor: 0.171, unit: 'kgCO₂e/km', source: 'UAE Transport Authority 2024' }
-    },
-    scope2: {
-      'grid-electricity': { factor: 0.4772, unit: 'tCO₂e/MWh', source: 'DEWA Grid Emission Factor 2024' },
-      'district-cooling': { factor: 0.5892, unit: 'tCO₂e/MWh', source: 'Dubai District Cooling 2024' },
-      'district-heating': { factor: 0.2156, unit: 'tCO₂e/MWh', source: 'UAE Heating Networks 2024' }
-    },
-    scope3: {
-      'business-travel': { factor: 0.255, unit: 'kgCO₂e/km', source: 'IATA Air Travel Factors 2024' },
-      'employee-commuting': { factor: 0.171, unit: 'kgCO₂e/km', source: 'UAE Transport Authority 2024' },
-      'waste': { factor: 0.0211, unit: 'tCO₂e/tonne', source: 'UAE Waste Management 2024' },
-      'water': { factor: 0.344, unit: 'kgCO₂e/m³', source: 'DEWA Water Treatment 2024' }
+  // Get available factors for current scope
+  const availableFactors = getFactorsByScope(activeScope);
+  console.log('Available factors for', activeScope, ':', availableFactors.length, availableFactors.map(f => f.id));
+  console.log('All factors:', availableFactors);
+
+  const filteredFactors = availableFactors.filter(factor =>
+    factor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    factor.source.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Get factors that apply to a specific activity
+  const getApplicableFactors = (activity: any) => {
+    return availableFactors.filter(factor => 
+      factorAppliesToActivity(factor, activity.source, activity.unit)
+    );
+  };
+
+  // Get suggested factors for an activity
+  const getSuggestedFactorsForActivity = (activity: any) => {
+    return getSuggestedFactors(activity.source, activity.unit, activeScope);
+  };
+
+  // Handle factor selection
+  const handleFactorSelection = (activity: any, factorId: string) => {
+    // Remove existing factor for this activity if it exists
+    const existingFactor = existingFactors.find(f => 
+      f.activityAmount === activity.amount && 
+      f.activityUnit === activity.unit &&
+      f.factor.applies_to.some(applies => applies.source === activity.source)
+    );
+    
+    if (existingFactor) {
+      onRemoveFactor(existingFactor.id);
+    }
+
+    if (factorId === 'custom') {
+      // Initialize custom factor input for this activity
+      const activityKey = `${activity.amount}-${activity.unit}-${activity.source}`;
+      setCustomFactorInputs(prev => ({
+        ...prev,
+        [activityKey]: { value: '', unit: 'tCO₂e/unit' }
+      }));
+    } else if (factorId && factorId !== '') {
+      const selectedFactor = availableFactors.find(f => f.id === factorId);
+      if (selectedFactor) {
+        // Validate the factor selection (but allow manual selections)
+        const validation = validateFactorSelection(selectedFactor, activity.source, activity.unit);
+        
+        // Only block if there are critical errors (not just warnings)
+        if (!validation.isValid && validation.errors.length > 0) {
+          toast.error(`Cannot apply factor: ${validation.errors.join(', ')}`);
+          return;
+        }
+        
+        // Show warnings if any (but don't block the selection)
+        if (validation.warnings.length > 0) {
+          validation.warnings.forEach(warning => {
+            toast.warning(warning);
+          });
+        }
+        
+        // Show info message for manual selections
+        if (!validation.isValid && validation.errors.length === 0) {
+          toast.info('Manual factor selection applied. Please verify the compatibility in your final report.');
+        }
+        
+        const appliedFactor: AppliedFactor = {
+          id: `${selectedFactor.id}-${activity.source}-${Date.now()}`,
+          factor: selectedFactor,
+          activityAmount: activity.amount,
+          activityUnit: activity.unit,
+          calculatedEmissions: calculateEmissions(activity.amount, activity.unit, selectedFactor),
+          appliedAt: new Date().toISOString()
+        };
+        onAddFactor(appliedFactor);
+        toast.success(`Factor "${formatFactorName(selectedFactor)}" applied successfully`);
+      } else {
+        console.error('Factor not found for value:', factorId);
+        toast.error('Selected factor not found. Please try again.');
+      }
     }
   };
 
-  const calculateEmissions = () => {
-    if (!selectedSource || !activityValue || !selectedUnit) return;
-
-    const factorData = uaeEmissionFactors[activeScope]?.[selectedSource as keyof typeof uaeEmissionFactors.scope1];
-    if (!factorData) return;
-
-    const activity = parseFloat(activityValue);
-    if (isNaN(activity)) return;
-
-    // Convert units if necessary and calculate
-    let emissions = activity * factorData.factor;
-    
-    // Unit conversions
-    if (factorData.unit.includes('kg') && selectedUnit === 'km') {
-      emissions = emissions / 1000; // Convert kg to tonnes
-    }
-    
-    if (factorData.unit.includes('MWh') && selectedUnit === 'kWh') {
-      emissions = emissions / 1000; // Convert kWh to MWh
-    }
-    
-    setCalculatedEmissions(emissions);
-    toast.success('Emissions calculated successfully!');
+  // Get current factor for an activity
+  const getCurrentFactor = (activity: any) => {
+    return existingFactors.find(f => 
+      f.activityAmount === activity.amount && 
+      f.activityUnit === activity.unit &&
+      f.factor.applies_to.some(applies => applies.source === activity.source)
+    );
   };
 
-  const addToEmissionFactors = () => {
-    if (!selectedSource || calculatedEmissions === null) return;
+  // Get current factor ID for dropdown value
+  const getCurrentFactorId = (activity: any) => {
+    const currentFactor = getCurrentFactor(activity);
+    const activityKey = `${activity.amount}-${activity.unit}-${activity.source}`;
+    
+    // If custom input is active, return 'custom'
+    if (customFactorInputs[activityKey]) {
+      return 'custom';
+    }
+    
+    return currentFactor?.factor.id || '';
+  };
 
-    const factorData = uaeEmissionFactors[activeScope]?.[selectedSource as keyof typeof uaeEmissionFactors.scope1];
-    if (!factorData) return;
+  // Handle custom factor submission
+  const handleCustomFactorSubmit = (activity: any) => {
+    const activityKey = `${activity.amount}-${activity.unit}-${activity.source}`;
+    const customInput = customFactorInputs[activityKey];
+    
+    if (!customInput || !customInput.value || isNaN(parseFloat(customInput.value))) {
+      toast.error('Please enter a valid custom emission factor value');
+      return;
+    }
 
-    const newFactor = {
-      id: Date.now().toString(),
-      source: selectedSource,
-      factor: factorData.factor,
-      unit: factorData.unit,
-      reference: factorData.source,
-      calculatedEmissions: calculatedEmissions,
-      activityAmount: parseFloat(activityValue),
-      activityUnit: selectedUnit
+    const customFactor: AppliedFactor = {
+      id: `custom-${activity.source}-${Date.now()}`,
+      factor: {
+        id: 'custom',
+        scope: activeScope,
+        name: `Custom Factor (${activity.source})`,
+        year: '2024',
+        factor_value: parseFloat(customInput.value),
+        unit: customInput.unit,
+        applies_to: [{ source: activity.source, units: [activity.unit] }],
+        source: 'Custom Input',
+        notes: 'User-defined emission factor',
+        certified: false
+      },
+      activityAmount: activity.amount,
+      activityUnit: activity.unit,
+      calculatedEmissions: activity.amount * parseFloat(customInput.value),
+      appliedAt: new Date().toISOString()
     };
-
-    onAddFactor(newFactor);
-
-    // Reset calculator
-    setSelectedSource('');
-    setActivityValue('');
-    setSelectedUnit('');
-    setCalculatedEmissions(null);
     
-    toast.success('Emission factor added to report!');
+    onAddFactor(customFactor);
+    
+    // Clear custom input
+    setCustomFactorInputs(prev => {
+      const newInputs = { ...prev };
+      delete newInputs[activityKey];
+      return newInputs;
+    });
+    
+    toast.success('Custom factor added successfully');
+  };
+
+  // Handle custom factor input changes
+  const handleCustomFactorChange = (activity: any, field: 'value' | 'unit', newValue: string) => {
+    const activityKey = `${activity.amount}-${activity.unit}-${activity.source}`;
+    setCustomFactorInputs(prev => ({
+      ...prev,
+      [activityKey]: {
+        value: field === 'value' ? newValue : prev[activityKey]?.value || '',
+        unit: field === 'unit' ? newValue : prev[activityKey]?.unit || 'tCO₂e/unit'
+      }
+    }));
   };
 
   return (
     <div className="space-y-6">
-      {/* UAE Emissions Calculator */}
-      <Card className="border-2 border-rectify-green">
+      {/* Auto-Detected Activity Factors */}
+      <Card className="border-2 border-blue-500">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Calculator className="h-5 w-5 text-rectify-green" />
-            <span>UAE Emissions Calculator</span>
+            <Zap className="h-5 w-5 text-blue-600" />
+            <span>Auto-Detected Activity Factors</span>
             <Tooltip>
               <TooltipTrigger>
                 <Info className="h-4 w-4 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent>
-                <p>Calculate emissions using official UAE emission factors for {activeScope.toUpperCase()}</p>
+                <p>Automatically detected activities from Step 3. Select emission factors for each activity.</p>
               </TooltipContent>
             </Tooltip>
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Calculate emissions using official UAE emission factors for {activeScope.toUpperCase()} sources
+            Select emission factors for each activity detected from your Step 3 data
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Emission Source *</Label>
-              <Select value={selectedSource} onValueChange={setSelectedSource}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select source" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(uaeEmissionFactors[activeScope] || {}).map((source) => (
-                    <SelectItem key={source} value={source}>
-                      {source.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {activityData ? (
+            <div className="space-y-4">
+              {(() => {
+                const activities = activityData[activeScope] || [];
+                if (activities.length === 0) {
+                  return (
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        No {activeScope.toUpperCase()} activities found from Step 3. Add activities in Step 3 to see them here.
+                      </AlertDescription>
+                    </Alert>
+                  );
+                }
+                
+                return activities.map((activity: any, index: number) => {
+                  const currentFactor = getCurrentFactor(activity);
+                  const applicableFactors = getApplicableFactors(activity);
+                  const suggestedFactors = getSuggestedFactorsForActivity(activity);
+                  
+                  return (
+                    <Card key={`${activeScope}-${index}`} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
+                            <div>
+                              <Label className="text-muted-foreground">Activity</Label>
+                              <p className="font-medium capitalize">{activity.source.replace('-', ' ')}</p>
+                            </div>
+                            <div>
+                              <Label className="text-muted-foreground">Amount</Label>
+                              <p className="font-medium">{activity.amount} {activity.unit}</p>
+                            </div>
+                            <div>
+                              <Label className="text-muted-foreground">Facility</Label>
+                              <p className="font-medium">{activity.facility || 'N/A'}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="w-full max-w-md">
+                            <Label className="text-muted-foreground text-sm mb-2 block">Emission Factor</Label>
+                            <Select 
+                              value={getCurrentFactorId(activity)} 
+                              onValueChange={(value) => handleFactorSelection(activity, value)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select emission factor" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                <SelectItem value="custom">
+                                  (Custom Input)
+                                </SelectItem>
+                                {/* Show all available factors for the current scope */}
+                                {availableFactors.map((factor) => {
+                                  // Check if this factor is a suggested match
+                                  const suggestion = suggestedFactors.find(s => s.factor.id === factor.id);
+                                  const indicator = suggestion ? 
+                                    (suggestion.score === 100 ? '✓ ' : suggestion.score >= 70 ? '⚠ ' : '⚠ ') : '';
+                                  
+                                  return (
+                                    <SelectItem key={factor.id} value={factor.id}>
+                                      {indicator}{formatFactorName(factor)} - {formatFactorValue(factor)}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                            
+                            {/* Custom Factor Input */}
+                            {(() => {
+                              const activityKey = `${activity.amount}-${activity.unit}-${activity.source}`;
+                              const customInput = customFactorInputs[activityKey];
+                              
+                              if (customInput) {
+                                return (
+                                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                    <Label className="text-sm font-medium text-yellow-800 mb-2 block">
+                                      Custom Emission Factor
+                                    </Label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <Label className="text-xs text-yellow-700">Factor Value</Label>
+                                        <Input
+                                          type="number"
+                                          step="0.0001"
+                                          placeholder="0.0000"
+                                          value={customInput.value}
+                                          onChange={(e) => handleCustomFactorChange(activity, 'value', e.target.value)}
+                                          className="text-sm"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="text-xs text-yellow-700">Unit</Label>
+                                        <Select
+                                          value={customInput.unit}
+                                          onValueChange={(value) => handleCustomFactorChange(activity, 'unit', value)}
+                                        >
+                                          <SelectTrigger className="text-sm">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="tCO₂e/m³">tCO₂e/m³</SelectItem>
+                                            <SelectItem value="tCO₂e/MWh">tCO₂e/MWh</SelectItem>
+                                            <SelectItem value="kgCO₂e/liter">kgCO₂e/liter</SelectItem>
+                                            <SelectItem value="kgCO₂e/km">kgCO₂e/km</SelectItem>
+                                            <SelectItem value="tCO₂e/tonne">tCO₂e/tonne</SelectItem>
+                                            <SelectItem value="kgCO₂e/m³">kgCO₂e/m³</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-3">
+                                      <p className="text-xs text-yellow-600">
+                                        Estimated emissions: {customInput.value && !isNaN(parseFloat(customInput.value)) 
+                                          ? (activity.amount * parseFloat(customInput.value)).toFixed(4) 
+                                          : '0.0000'} tCO₂e
+                                      </p>
+                                      <div className="flex space-x-2">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            setCustomFactorInputs(prev => {
+                                              const newInputs = { ...prev };
+                                              delete newInputs[activityKey];
+                                              return newInputs;
+                                            });
+                                          }}
+                                          className="text-xs"
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleCustomFactorSubmit(activity)}
+                                          className="bg-yellow-600 hover:bg-yellow-700 text-white text-xs"
+                                        >
+                                          Apply Factor
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+                            
+                            {currentFactor && (
+                              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                                <div className="flex items-center space-x-2">
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                  <span className="text-sm text-green-800">
+                                    Selected: {formatFactorName(currentFactor.factor)} - {formatFactorValue(currentFactor.factor)}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-green-600 mt-1">
+                                  Estimated emissions: {currentFactor.calculatedEmissions.toFixed(4)} tCO₂e
+                                </p>
+                              </div>
+                            )}
+                            
+                            {applicableFactors.length === 0 && !currentFactor && (
+                              <Alert className="mt-2">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                  No emission factors found for this activity type. You can add a custom factor.
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {currentFactor && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRemoveFactor(currentFactor.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                });
+              })()}
             </div>
-
-            <div className="space-y-2">
-              <Label>Activity Amount *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={activityValue}
-                onChange={(e) => setActivityValue(e.target.value)}
-                placeholder="Enter amount"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Unit *</Label>
-              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeScope === 'scope1' && (
-                    <>
-                      <SelectItem value="m³">m³ (Cubic meters)</SelectItem>
-                      <SelectItem value="liters">Liters</SelectItem>
-                      <SelectItem value="tonnes">Tonnes</SelectItem>
-                      <SelectItem value="km">Kilometers</SelectItem>
-                    </>
-                  )}
-                  {activeScope === 'scope2' && (
-                    <>
-                      <SelectItem value="kWh">kWh</SelectItem>
-                      <SelectItem value="MWh">MWh</SelectItem>
-                    </>
-                  )}
-                  {activeScope === 'scope3' && (
-                    <>
-                      <SelectItem value="km">Kilometers</SelectItem>
-                      <SelectItem value="tonnes">Tonnes</SelectItem>
-                      <SelectItem value="m³">m³ (Cubic meters)</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {selectedSource && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-medium mb-2 text-blue-800">Official UAE Emission Factor</h4>
-              <div className="text-sm text-blue-700">
-                <p><strong>Factor:</strong> {uaeEmissionFactors[activeScope]?.[selectedSource as keyof typeof uaeEmissionFactors.scope1]?.factor} {uaeEmissionFactors[activeScope]?.[selectedSource as keyof typeof uaeEmissionFactors.scope1]?.unit}</p>
-                <p><strong>Authority:</strong> {uaeEmissionFactors[activeScope]?.[selectedSource as keyof typeof uaeEmissionFactors.scope1]?.source}</p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex space-x-2">
-            <Button 
-              onClick={calculateEmissions} 
-              className="flex-1 bg-rectify-green hover:bg-rectify-green-dark"
-              disabled={!selectedSource || !activityValue || !selectedUnit}
-            >
-              <Calculator className="h-4 w-4 mr-2" />
-              Calculate Emissions
-            </Button>
-            {calculatedEmissions !== null && (
-              <Button 
-                onClick={addToEmissionFactors} 
-                variant="outline" 
-                className="flex-1 border-rectify-green text-rectify-green hover:bg-rectify-green hover:text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add to Report
-              </Button>
-            )}
-          </div>
-
-          {calculatedEmissions !== null && (
-            <div className="p-4 bg-rectify-accent rounded-lg border border-rectify-green">
-              <h4 className="font-medium text-rectify-green mb-2 flex items-center">
-                <Zap className="h-4 w-4 mr-2" />
-                Calculated Emissions
-              </h4>
-              <div className="text-3xl font-bold text-rectify-green mb-2">
-                {calculatedEmissions.toFixed(4)} tCO₂e
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {activityValue} {selectedUnit} × {uaeEmissionFactors[activeScope]?.[selectedSource as keyof typeof uaeEmissionFactors.scope1]?.factor} {uaeEmissionFactors[activeScope]?.[selectedSource as keyof typeof uaeEmissionFactors.scope1]?.unit}
-              </p>
-              <div className="mt-2 flex items-center space-x-2">
-                <Badge variant="secondary" className="text-xs">
-                  {activeScope.toUpperCase()}
-                </Badge>
-                <Badge variant="outline" className="text-xs border-rectify-green text-rectify-green">
-                  UAE Certified
-                </Badge>
-              </div>
-            </div>
+          ) : (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                No activity data found from Step 3. Complete Step 3 first to auto-detect activities.
+              </AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
 
-      {/* Configured Factors Summary */}
-      <Card>
-        <CardHeader>
+      {/* Factor Library - Primary Entry */}
+      <Card className="border-2 border-rectify-green">
+        <CardHeader 
+          className="cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => setIsFactorLibraryExpanded(!isFactorLibraryExpanded)}
+        >
           <CardTitle className="flex items-center justify-between">
-            <span>Your {activeScope.toUpperCase()} Emission Factors</span>
-            <Badge variant="secondary">
-              {existingFactors.length} configured
-            </Badge>
+            <div className="flex items-center space-x-2">
+              <Table className="h-5 w-5 text-rectify-green" />
+              <span>UAE Emission Factor Library</span>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Choose from official UAE-certified emission factors for {activeScope.toUpperCase()}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            {isFactorLibraryExpanded ? (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            )}
           </CardTitle>
+          {!isFactorLibraryExpanded && (
+            <p className="text-sm text-muted-foreground">
+              Reference library of UAE-certified emission factors for {activeScope.toUpperCase()}. Click to expand.
+            </p>
+          )}
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {existingFactors.map((factor: any, index: number) => (
-              <Card key={factor.id} className="p-4 bg-gray-50">
-                <div className="flex items-start justify-between mb-3">
-                  <h4 className="font-medium">
-                    {factor.source.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                  </h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onRemoveFactor(factor.id)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <Label className="text-muted-foreground">Emission Factor</Label>
-                    <p className="font-medium">{factor.factor} {factor.unit}</p>
+        {isFactorLibraryExpanded && (
+          <CardContent className="space-y-4">
+          {/* Search */}
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search factors..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Factor List - Reference Only */}
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {filteredFactors.map((factor) => (
+              <Card key={factor.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{formatFactorName(factor)}</h4>
                   </div>
-                  <div>
-                    <Label className="text-muted-foreground">Activity Amount</Label>
-                    <p className="font-medium">{factor.activityAmount} {factor.activityUnit}</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <Label className="text-muted-foreground">Emission Factor</Label>
+                      <p className="font-medium text-rectify-green text-lg">{formatFactorValue(factor)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Authority</Label>
+                      <p className="font-medium">{factor.source}</p>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-muted-foreground">Calculated Emissions</Label>
-                    <p className="font-medium text-rectify-green">{factor.calculatedEmissions?.toFixed(4)} tCO₂e</p>
+                  
+                  <div className="mt-3">
+                    <Label className="text-muted-foreground text-xs">Applies To</Label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {factor.applies_to.map((applies, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {applies.source.replace('-', ' ')} ({applies.units.join(', ')})
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-muted-foreground">Authority Reference</Label>
-                    <p className="font-medium text-xs">{factor.reference}</p>
-                  </div>
+                  
+                  {factor.notes && (
+                    <div className="mt-2">
+                      <Label className="text-muted-foreground text-xs">Notes</Label>
+                      <p className="text-xs text-muted-foreground">{factor.notes}</p>
+                    </div>
+                  )}
                 </div>
               </Card>
             ))}
-            
-            {existingFactors.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No emission factors configured yet for {activeScope.toUpperCase()}.</p>
-                <p className="text-sm">Use the calculator above to add UAE-certified emission factors.</p>
-              </div>
-            )}
           </div>
-        </CardContent>
+
+          {filteredFactors.length === 0 && (
+            <Alert>
+              <Search className="h-4 w-4" />
+              <AlertDescription>
+                No factors found matching "{searchTerm}". Try a different search term or add a custom factor.
+              </AlertDescription>
+            </Alert>
+          )}
+          </CardContent>
+        )}
       </Card>
 
       {/* UAE Compliance Information */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-blue-800 flex items-center">
-            <Info className="h-5 w-5 mr-2" />
-            UAE Emission Factor Guidelines
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-blue-700 space-y-2">
-            <p>• <strong>DEWA Grid Factor:</strong> 0.4772 tCO₂e/MWh (2024 certified factor)</p>
-            <p>• <strong>ADNOC Petroleum Products:</strong> Latest emission factors for fossil fuels</p>
-            <p>• <strong>UAE Ministry of Energy:</strong> Official natural gas and renewable factors</p>
-            <p>• <strong>Transport Authority:</strong> Vehicle and public transport emission factors</p>
-            <p>• <strong>Compliance:</strong> All factors comply with Federal Decree-Law No. (11) of 2024</p>
-            <p>• <strong>Update Frequency:</strong> Factors are updated annually by respective authorities</p>
-          </div>
-        </CardContent>
-      </Card>
+      {isGuidelinesVisible && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-blue-800 flex items-center justify-between">
+              <div className="flex items-center">
+                <Info className="h-5 w-5 mr-2" />
+                UAE Emission Factor Guidelines
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsGuidelinesVisible(false)}
+                className="text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-blue-700 space-y-2">
+              <p>• <strong>DEWA Grid Factor:</strong> 0.4772 tCO₂e/MWh (2024 certified factor)</p>
+              <p>• <strong>ADNOC Petroleum Products:</strong> Latest emission factors for fossil fuels</p>
+              <p>• <strong>UAE Ministry of Energy:</strong> Official natural gas and renewable factors</p>
+              <p>• <strong>Transport Authority:</strong> Vehicle and public transport emission factors</p>
+              <p>• <strong>Compliance:</strong> All factors comply with Federal Decree-Law No. (11) of 2024</p>
+              <p>• <strong>Update Frequency:</strong> Factors are updated annually by respective authorities</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

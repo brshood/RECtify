@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -26,7 +26,9 @@ import {
   Verified,
   ExternalLink,
   Download,
-  Eye
+  Eye,
+  X,
+  Plus
 } from "lucide-react";
 
 interface RegistrationData {
@@ -50,9 +52,11 @@ interface DocumentFile {
   id: string;
   name: string;
   type: string;
-  size: string;
+  size: number;
   status: 'pending' | 'uploaded' | 'verified' | 'rejected';
   required: boolean;
+  file?: File;
+  uploadDate?: string;
 }
 
 interface VerificationStep {
@@ -66,6 +70,7 @@ interface VerificationStep {
 
 export default function RECRegistration() {
   const [activeTab, setActiveTab] = useState("facility");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [registrationData, setRegistrationData] = useState<RegistrationData>({
     facilityName: "",
     technology: "",
@@ -83,75 +88,36 @@ export default function RECRegistration() {
     documents: []
   });
 
-  const [verificationSteps] = useState<VerificationStep[]>([
-    {
-      id: "1",
-      name: "Document Upload",
-      status: "completed",
-      description: "Upload all required facility and certification documents",
-      estimatedTime: "5 minutes",
-      completedAt: "2024-01-15 14:30:00"
-    },
-    {
-      id: "2", 
-      name: "I-REC Registry Validation",
-      status: "in-progress",
-      description: "I-REC Registry validates facility registration and compliance",
-      estimatedTime: "2-3 business days"
-    },
-    {
-      id: "3",
-      name: "Third-Party Verification",
-      status: "pending",
-      description: "Independent verification body conducts facility audit",
-      estimatedTime: "5-10 business days"
-    },
-    {
-      id: "4",
-      name: "Blockchain Integration",
-      status: "pending",
-      description: "Asset tokenization and smart contract deployment",
-      estimatedTime: "1 business day"
-    },
-    {
-      id: "5",
-      name: "Trading Activation",
-      status: "pending",
-      description: "RECs available for trading on RECtify platform",
-      estimatedTime: "Immediate"
-    }
-  ]);
-
-  const [requiredDocuments] = useState<DocumentFile[]>([
+  const [requiredDocuments, setRequiredDocuments] = useState<DocumentFile[]>([
     {
       id: "1",
       name: "Facility Registration Certificate",
       type: "pdf",
-      size: "2.3 MB",
-      status: "verified",
+      size: 0,
+      status: "pending",
       required: true
     },
     {
       id: "2",
       name: "Environmental Impact Assessment",
       type: "pdf",
-      size: "5.8 MB",
-      status: "uploaded",
+      size: 0,
+      status: "pending",
       required: true
     },
     {
       id: "3",
       name: "Grid Connection Agreement",
       type: "pdf",
-      size: "1.2 MB",
-      status: "verified",
+      size: 0,
+      status: "pending",
       required: true
     },
     {
       id: "4",
       name: "Technology Specifications",
       type: "pdf",
-      size: "3.1 MB",
+      size: 0,
       status: "pending",
       required: true
     },
@@ -159,19 +125,68 @@ export default function RECRegistration() {
       id: "5",
       name: "Commissioning Certificate",
       type: "pdf",
-      size: "1.8 MB",
-      status: "verified",
+      size: 0,
+      status: "pending",
       required: true
     },
     {
       id: "6",
       name: "Land Ownership/Lease Agreement",
       type: "pdf",
-      size: "2.7 MB",
-      status: "uploaded",
+      size: 0,
+      status: "pending",
       required: false
     }
   ]);
+
+  // Calculate verification steps based on actual progress
+  const getVerificationSteps = (): VerificationStep[] => {
+    const uploadedDocs = requiredDocuments.filter(doc => doc.status === 'uploaded' || doc.status === 'verified').length;
+    const totalRequiredDocs = requiredDocuments.filter(doc => doc.required).length;
+    const isFormComplete = registrationData.facilityName && registrationData.technology && 
+                          registrationData.capacity && registrationData.location && 
+                          registrationData.emirate && registrationData.owner;
+
+    return [
+      {
+        id: "1",
+        name: "Document Upload",
+        status: uploadedDocs >= totalRequiredDocs ? "completed" : uploadedDocs > 0 ? "in-progress" : "pending",
+        description: "Upload all required facility and certification documents",
+        estimatedTime: "5 minutes",
+        completedAt: uploadedDocs >= totalRequiredDocs ? new Date().toISOString() : undefined
+      },
+      {
+        id: "2", 
+        name: "Form Completion",
+        status: isFormComplete ? "completed" : "pending",
+        description: "Complete all required facility information",
+        estimatedTime: "10 minutes",
+        completedAt: isFormComplete ? new Date().toISOString() : undefined
+      },
+      {
+        id: "3",
+        name: "I-REC Registry Validation",
+        status: isFormComplete && uploadedDocs >= totalRequiredDocs ? "pending" : "pending",
+        description: "I-REC Registry validates facility registration and compliance",
+        estimatedTime: "2-3 business days"
+      },
+      {
+        id: "4",
+        name: "Third-Party Verification",
+        status: "pending",
+        description: "Independent verification body conducts facility audit",
+        estimatedTime: "5-10 business days"
+      },
+      {
+        id: "5",
+        name: "Trading Activation",
+        status: "pending",
+        description: "RECs available for trading on RECtify platform",
+        estimatedTime: "Immediate"
+      }
+    ];
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -210,8 +225,85 @@ export default function RECRegistration() {
   };
 
   const calculateProgress = () => {
+    const verificationSteps = getVerificationSteps();
     const completed = verificationSteps.filter(step => step.status === 'completed').length;
     return (completed / verificationSteps.length) * 100;
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleFileUpload = (docId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert('File size must be less than 10MB');
+      event.target.value = '';
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Only PDF and DOC files are allowed');
+      event.target.value = '';
+      return;
+    }
+
+    // Update document status
+    setRequiredDocuments(prev => prev.map(doc => 
+      doc.id === docId 
+        ? {
+            ...doc,
+            status: 'uploaded' as const,
+            file: file,
+            size: file.size,
+            uploadDate: new Date().toISOString().split('T')[0]
+          }
+        : doc
+    ));
+  };
+
+  const handleFileRemove = (docId: string) => {
+    setRequiredDocuments(prev => prev.map(doc => 
+      doc.id === docId 
+        ? {
+            ...doc,
+            status: 'pending' as const,
+            file: undefined,
+            size: 0,
+            uploadDate: undefined
+          }
+        : doc
+    ));
+  };
+
+  const handleSubmitForVerification = () => {
+    const verificationSteps = getVerificationSteps();
+    const isFormComplete = verificationSteps[1].status === 'completed';
+    const isDocsComplete = verificationSteps[0].status === 'completed';
+
+    if (!isFormComplete) {
+      alert('Please complete all required facility information first.');
+      setActiveTab('facility');
+      return;
+    }
+
+    if (!isDocsComplete) {
+      alert('Please upload all required documents first.');
+      setActiveTab('documents');
+      return;
+    }
+
+    alert('Registration submitted for verification! You will receive updates via email.');
   };
 
   return (
@@ -247,7 +339,7 @@ export default function RECRegistration() {
           </div>
           
           <div className="grid gap-3">
-            {verificationSteps.map((step) => (
+            {getVerificationSteps().map((step) => (
               <div key={step.id} className="flex items-center space-x-3 p-3 rounded-lg border">
                 <div className={`p-1 rounded-full ${getStatusColor(step.status)}`}>
                   {getStatusIcon(step.status)}
@@ -262,7 +354,7 @@ export default function RECRegistration() {
                   <p className="text-sm text-muted-foreground">{step.description}</p>
                   <p className="text-xs text-muted-foreground">Est. time: {step.estimatedTime}</p>
                   {step.completedAt && (
-                    <p className="text-xs text-green-600">Completed: {step.completedAt}</p>
+                    <p className="text-xs text-green-600">Completed: {new Date(step.completedAt).toLocaleString()}</p>
                   )}
                 </div>
               </div>
@@ -278,16 +370,25 @@ export default function RECRegistration() {
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Facility Info</span>
             <span className="sm:hidden">Facility</span>
+            {registrationData.facilityName && registrationData.technology && registrationData.capacity && registrationData.location && registrationData.emirate && registrationData.owner && (
+              <CheckCircle className="h-3 w-3 text-green-600" />
+            )}
           </TabsTrigger>
           <TabsTrigger value="technical" className="flex items-center space-x-2">
             <Zap className="h-4 w-4" />
             <span className="hidden sm:inline">Technical</span>
             <span className="sm:hidden">Tech</span>
+            {registrationData.commissionDate && registrationData.expirationDate && registrationData.certificationStandard && registrationData.verificationBody && (
+              <CheckCircle className="h-3 w-3 text-green-600" />
+            )}
           </TabsTrigger>
           <TabsTrigger value="documents" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Documents</span>
             <span className="sm:hidden">Docs</span>
+            {requiredDocuments.filter(doc => doc.required).every(doc => doc.status === 'uploaded' || doc.status === 'verified') && (
+              <CheckCircle className="h-3 w-3 text-green-600" />
+            )}
           </TabsTrigger>
           <TabsTrigger value="verification" className="flex items-center space-x-2">
             <Shield className="h-4 w-4" />
@@ -521,31 +622,51 @@ export default function RECRegistration() {
                         </div>
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <span>{doc.type.toUpperCase()}</span>
-                          <span>{doc.size}</span>
+                          <span>{doc.size > 0 ? formatFileSize(doc.size) : 'No file'}</span>
                           <Badge variant="outline" className={`text-xs ${getStatusColor(doc.status)}`}>
                             {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
                           </Badge>
                         </div>
+                        {doc.uploadDate && (
+                          <p className="text-xs text-green-600">Uploaded: {doc.uploadDate}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {doc.status === 'verified' && (
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                      )}
                       {doc.status === 'pending' && (
-                        <Button variant="outline" size="sm">
-                          <Upload className="h-4 w-4 mr-1" />
-                          Upload
-                        </Button>
+                        <div>
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx"
+                            onChange={(e) => handleFileUpload(doc.id, e)}
+                            className="hidden"
+                            id={`file-upload-${doc.id}`}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => document.getElementById(`file-upload-${doc.id}`)?.click()}
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Upload
+                          </Button>
+                        </div>
                       )}
-                      {(doc.status === 'uploaded' || doc.status === 'verified') && (
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </Button>
+                      {doc.status === 'uploaded' && (
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleFileRemove(doc.id)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -597,21 +718,14 @@ export default function RECRegistration() {
                       <p className="text-sm text-muted-foreground">International REC Standard Registry</p>
                     </div>
                   </div>
-                  <Badge className="bg-blue-100 text-blue-800">
+                  <Badge className="bg-gray-100 text-gray-800">
                     <Clock className="h-3 w-3 mr-1" />
-                    In Progress
+                    Pending
                   </Badge>
                 </div>
                 <p className="text-sm">
-                  Facility registration submitted to I-REC Registry for validation. 
-                  Registry ID: <code className="bg-gray-100 px-1 rounded">UAE-SOL-2024-001234</code>
+                  Facility registration will be submitted to I-REC Registry after form completion and document upload.
                 </p>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm">
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    View in Registry
-                  </Button>
-                </div>
               </div>
 
               {/* Verification Body Status */}
@@ -622,29 +736,18 @@ export default function RECRegistration() {
                       <Verified className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <h4 className="font-medium">SGS Verification</h4>
-                      <p className="text-sm text-muted-foreground">Independent Third-Party Auditor</p>
+                      <h4 className="font-medium">Third-Party Verification</h4>
+                      <p className="text-sm text-muted-foreground">Independent Verification Body</p>
                     </div>
                   </div>
-                  <Badge className="bg-orange-100 text-orange-800">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Awaiting Documents
+                  <Badge className="bg-gray-100 text-gray-800">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Pending
                   </Badge>
                 </div>
                 <p className="text-sm">
-                  SGS will conduct facility verification once all documents are uploaded. 
-                  Verification includes on-site inspection and technical review.
+                  Verification will be conducted by your selected verification body after I-REC registry validation.
                 </p>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm">
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    SGS Portal
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <FileText className="h-4 w-4 mr-1" />
-                    Verification Report
-                  </Button>
-                </div>
               </div>
 
               {/* Blockchain Integration */}
@@ -679,7 +782,10 @@ export default function RECRegistration() {
               </Alert>
 
               <div className="flex space-x-3">
-                <Button className="flex-1 bg-rectify-green hover:bg-rectify-green-dark">
+                <Button 
+                  className="flex-1 bg-rectify-green hover:bg-rectify-green-dark"
+                  onClick={handleSubmitForVerification}
+                >
                   <Shield className="h-4 w-4 mr-2" />
                   Submit for Verification
                 </Button>

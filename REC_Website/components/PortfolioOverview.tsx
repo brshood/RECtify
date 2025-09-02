@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { TrendingUp, TrendingDown, DollarSign, Zap, Leaf, FileCheck, Sparkles, Shield, Globe } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Zap, Leaf, FileCheck, Sparkles, Shield, Globe, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from "recharts";
 
 // Mock portfolio data
@@ -79,10 +80,26 @@ const CHART_COLORS = {
 };
 
 export function PortfolioOverview() {
+  const [isWelcomeBannerVisible, setIsWelcomeBannerVisible] = useState(true);
+
+  const handleCloseBanner = () => {
+    setIsWelcomeBannerVisible(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Redesigned Welcome Banner */}
-      <div className="bg-gradient-to-br from-rectify-green-light via-rectify-accent to-rectify-blue-light rounded-xl p-4 sm:p-6 lg:p-8 border border-rectify-border shadow-sm relative overflow-hidden">
+      {isWelcomeBannerVisible && (
+        <div className="bg-gradient-to-br from-rectify-green-light via-rectify-accent to-rectify-blue-light rounded-xl p-4 sm:p-6 lg:p-8 border border-rectify-border shadow-sm relative overflow-hidden">
+        {/* Close Button */}
+        <button
+          onClick={handleCloseBanner}
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-colors duration-200 group"
+          aria-label="Close welcome banner"
+        >
+          <X className="h-4 w-4 text-rectify-green-dark group-hover:text-rectify-green" />
+        </button>
+
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-4 right-4">
@@ -170,7 +187,8 @@ export function PortfolioOverview() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       
 

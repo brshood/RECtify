@@ -885,6 +885,7 @@ function ActivityDataStep({ reportData, updateReportData }: { reportData: Emissi
 // Step 4: Emission Factors
 function EmissionFactorsStep({ reportData, updateReportData }: { reportData: EmissionsReportData, updateReportData: (section: keyof EmissionsReportData, data: any) => void }) {
   const [activeScope, setActiveScope] = useState<'scope1' | 'scope2' | 'scope3'>('scope1');
+  const [isTipsVisible, setIsTipsVisible] = useState(true);
 
   // Ensure emissionFactors exists
   if (!reportData.emissionFactors) {
@@ -922,12 +923,56 @@ function EmissionFactorsStep({ reportData, updateReportData }: { reportData: Emi
     });
   };
 
+  // Calculate completion status
+  const getScopeCompletion = (scope: 'scope1' | 'scope2' | 'scope3') => {
+    const activities = reportData.activityData?.[scope] || [];
+    const factors = reportData.emissionFactors?.[`${scope}Factors` as keyof typeof reportData.emissionFactors] || [];
+    
+    if (activities.length === 0) return { completed: 0, total: 0, percentage: 0 };
+    
+    const completed = factors.length;
+    const total = activities.length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    return { completed, total, percentage };
+  };
+
+  const scope1Completion = getScopeCompletion('scope1');
+  const scope2Completion = getScopeCompletion('scope2');
+  const scope3Completion = getScopeCompletion('scope3');
+
   return (
     <div className="space-y-6">
+      {/* Progress Overview */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { key: 'scope1', label: 'Scope 1', description: 'Direct emissions from owned sources' },
+              { key: 'scope2', label: 'Scope 2', description: 'Electricity, heating, cooling' },
+              { key: 'scope3', label: 'Scope 3', description: 'Other indirect emissions' }
+            ].map((scope) => (
+              <Button
+                key={scope.key}
+                variant={activeScope === scope.key ? "default" : "outline"}
+                className={`h-auto p-4 flex flex-col items-start ${
+                  activeScope === scope.key ? 'bg-rectify-green hover:bg-rectify-green-dark' : ''
+                }`}
+                onClick={() => setActiveScope(scope.key as any)}
+              >
+                <span className="font-medium">{scope.label}</span>
+                <span className="text-xs text-left mt-1 opacity-80">{scope.description}</span>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Main Calculator */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <span>UAE Emission Factors</span>
+            <span>UAE Emission Factors - {activeScope.toUpperCase()}</span>
             <Tooltip>
               <TooltipTrigger>
                 <Info className="h-4 w-4 text-muted-foreground" />
@@ -939,31 +984,46 @@ function EmissionFactorsStep({ reportData, updateReportData }: { reportData: Emi
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            {[
-              { key: 'scope1', label: 'Scope 1' },
-              { key: 'scope2', label: 'Scope 2' },
-              { key: 'scope3', label: 'Scope 3' }
-            ].map((scope) => (
-              <Button
-                key={scope.key}
-                variant={activeScope === scope.key ? "default" : "outline"}
-                className={activeScope === scope.key ? 'bg-rectify-green hover:bg-rectify-green-dark' : ''}
-                onClick={() => setActiveScope(scope.key as any)}
-              >
-                {scope.label}
-              </Button>
-            ))}
-          </div>
-
           <UAEEmissionsCalculator
             activeScope={activeScope}
             onAddFactor={addFactor}
             existingFactors={currentFactors}
             onRemoveFactor={removeFactor}
+            activityData={reportData.activityData}
           />
         </CardContent>
       </Card>
+
+      {/* Quick Tips */}
+      {isTipsVisible && (
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardHeader>
+            <CardTitle className="text-yellow-800 flex items-center justify-between">
+              <div className="flex items-center">
+                <Info className="h-5 w-5 mr-2" />
+                Quick Tips for Factor Selection
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsTipsVisible(false)}
+                className="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-yellow-700 space-y-2">
+              <p>• <strong>Perfect Match:</strong> Green checkmark indicates exact match for activity type and unit</p>
+              <p>• <strong>Good Match:</strong> Yellow warning indicates compatible factor that may need unit conversion</p>
+              <p>• <strong>Custom Factors:</strong> Use "(Custom Input)" for activities not covered by UAE factors</p>
+              <p>• <strong>Certification:</strong> All UAE factors are certified for official reporting compliance</p>
+              <p>• <strong>Validation:</strong> System will warn you if a factor doesn't match your activity data</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -979,13 +1039,9 @@ function CalculationsStep({ reportData, updateReportData }: { reportData: Emissi
     }
   }, []);
 
-  // Clear calculations when activity data changes
-  useEffect(() => {
-    if (hasCalculations && reportData.activityData) {
-      // Clear calculations if activity data has changed since last calculation
-      clearCalculations();
-    }
-  }, [reportData.activityData]);
+  // Note: Removed automatic clearing of calculations when activity data changes
+  // to prevent clearing when navigating between steps. Calculations will persist
+  // until manually cleared or recalculated.
 
   const hasActivityData = () => {
     const scope1Data = reportData.activityData?.scope1?.length > 0;
@@ -1077,100 +1133,60 @@ function CalculationsStep({ reportData, updateReportData }: { reportData: Emissi
           }
         };
 
-        // Calculate Scope 1 emissions
-        if (reportData.activityData?.scope1) {
-          scope1Total = reportData.activityData.scope1.reduce((total: number, activity: any) => {
-            const factorData = uaeEmissionFactors.scope1[activity.source as keyof typeof uaeEmissionFactors.scope1];
-            if (factorData && activity.amount > 0) {
-              let emissions = activity.amount * factorData.factor;
-              
-              // Unit conversions
-              if (factorData.unit.includes('kg') && activity.unit === 'km') {
-                emissions = emissions / 1000; // Convert kg to tonnes
-              }
-              
-              return total + emissions;
-            }
-            return total;
+        // Calculate Scope 1 emissions using applied factors
+        if (reportData.emissionFactors?.scope1Factors) {
+          scope1Total = reportData.emissionFactors.scope1Factors.reduce((total: number, appliedFactor: any) => {
+            return total + appliedFactor.calculatedEmissions;
           }, 0);
         }
 
-        // Calculate Scope 2 emissions
-        if (reportData.activityData?.scope2) {
-          scope2Total = reportData.activityData.scope2.reduce((total: number, activity: any) => {
-            const factorData = uaeEmissionFactors.scope2[activity.source as keyof typeof uaeEmissionFactors.scope2];
-            if (factorData && activity.amount > 0) {
-              let emissions = activity.amount * factorData.factor;
-              
-              // Unit conversions
-              if (activity.unit === 'kWh' && factorData.unit.includes('MWh')) {
-                emissions = emissions / 1000; // Convert kWh to MWh
-              }
-              
-              return total + emissions;
-            }
-            return total;
+        // Calculate Scope 2 emissions using applied factors
+        if (reportData.emissionFactors?.scope2Factors) {
+          scope2Total = reportData.emissionFactors.scope2Factors.reduce((total: number, appliedFactor: any) => {
+            return total + appliedFactor.calculatedEmissions;
           }, 0);
         }
 
-        // Calculate Scope 3 emissions
-        if (reportData.activityData?.scope3) {
-          scope3Total = reportData.activityData.scope3.reduce((total: number, activity: any) => {
-            const factorData = uaeEmissionFactors.scope3[activity.source as keyof typeof uaeEmissionFactors.scope3];
-            if (factorData && activity.amount > 0) {
-              let emissions = activity.amount * factorData.factor;
-              
-              // Unit conversions
-              if (factorData.unit.includes('kg') && activity.unit === 'km') {
-                emissions = emissions / 1000; // Convert kg to tonnes
-              }
-              
-              return total + emissions;
-            }
-            return total;
+        // Calculate Scope 3 emissions using applied factors
+        if (reportData.emissionFactors?.scope3Factors) {
+          scope3Total = reportData.emissionFactors.scope3Factors.reduce((total: number, appliedFactor: any) => {
+            return total + appliedFactor.calculatedEmissions;
           }, 0);
         }
 
         const totalEmissions = scope1Total + scope2Total + scope3Total;
 
-        // Calculate emissions by facility
+        // Calculate emissions by facility using applied factors
         const emissionsByFacility = (reportData.reportingScope?.facilities || []).map((facility) => {
-          // Calculate facility-specific emissions based on activities assigned to each facility
           let facilityScope1 = 0;
           let facilityScope2 = 0;
 
-          // Scope 1 facility emissions
-          if (reportData.activityData?.scope1) {
-            facilityScope1 = reportData.activityData.scope1
-              .filter((activity: any) => activity.facility === facility.name)
-              .reduce((total: number, activity: any) => {
-                const factorData = uaeEmissionFactors.scope1[activity.source as keyof typeof uaeEmissionFactors.scope1];
-                if (factorData && activity.amount > 0) {
-                  let emissions = activity.amount * factorData.factor;
-                  if (factorData.unit.includes('kg') && activity.unit === 'km') {
-                    emissions = emissions / 1000;
-                  }
-                  return total + emissions;
-                }
-                return total;
-              }, 0);
+          // Scope 1 facility emissions - find factors for activities at this facility
+          if (reportData.emissionFactors?.scope1Factors && reportData.activityData?.scope1) {
+            const facilityActivities = reportData.activityData.scope1.filter((activity: any) => activity.facility === facility.name);
+            facilityScope1 = reportData.emissionFactors.scope1Factors
+              .filter((appliedFactor: any) => 
+                facilityActivities.some((activity: any) => 
+                  activity.amount === appliedFactor.activityAmount && 
+                  activity.unit === appliedFactor.activityUnit &&
+                  appliedFactor.factor.applies_to.some((applies: any) => applies.source === activity.source)
+                )
+              )
+              .reduce((total: number, appliedFactor: any) => total + appliedFactor.calculatedEmissions, 0);
           }
 
-          // Scope 2 facility emissions
-          if (reportData.activityData?.scope2) {
-            facilityScope2 = reportData.activityData.scope2
-              .filter((activity: any) => activity.facility === facility.name)
-              .reduce((total: number, activity: any) => {
-                const factorData = uaeEmissionFactors.scope2[activity.source as keyof typeof uaeEmissionFactors.scope2];
-                if (factorData && activity.amount > 0) {
-                  let emissions = activity.amount * factorData.factor;
-                  if (activity.unit === 'kWh' && factorData.unit.includes('MWh')) {
-                    emissions = emissions / 1000;
-                  }
-                  return total + emissions;
-                }
-                return total;
-              }, 0);
+          // Scope 2 facility emissions - find factors for activities at this facility
+          if (reportData.emissionFactors?.scope2Factors && reportData.activityData?.scope2) {
+            const facilityActivities = reportData.activityData.scope2.filter((activity: any) => activity.facility === facility.name);
+            facilityScope2 = reportData.emissionFactors.scope2Factors
+              .filter((appliedFactor: any) => 
+                facilityActivities.some((activity: any) => 
+                  activity.amount === appliedFactor.activityAmount && 
+                  activity.unit === appliedFactor.activityUnit &&
+                  appliedFactor.factor.applies_to.some((applies: any) => applies.source === activity.source)
+                )
+              )
+              .reduce((total: number, appliedFactor: any) => total + appliedFactor.calculatedEmissions, 0);
           }
 
           const facilityTotal = facilityScope1 + facilityScope2;
@@ -1284,9 +1300,7 @@ function CalculationsStep({ reportData, updateReportData }: { reportData: Emissi
                     <strong>Scope 3 Activities:</strong> {reportData.activityData?.scope3?.length || 0}
                   </div>
                 </div>
-                <p className="text-xs text-blue-600 mt-2">
-                  Calculations based on UAE-certified emission factors from DEWA, ADNOC, and UAE Ministry of Energy
-                </p>
+
               </CardContent>
             </Card>
 
@@ -2068,8 +2082,7 @@ function ReviewStep({ reportData, onGenerateReport, isStepComplete }: { reportDa
     const requiredAttachments = (reportData.attachments || []).filter(a => a.required);
     const uploadedRequiredAttachments = requiredAttachments.filter(a => a.uploaded);
 
-    const canGenerateReport = completionPercentage >= 80 && // At least 80% completion
-      requiredAttachments.every(a => a.uploaded) && // All required attachments
+    const canGenerateReport = requiredAttachments.every(a => a.uploaded) && // All required attachments
       reportData.calculations?.calculatedAt; // Has calculations
 
   return (
@@ -2161,17 +2174,6 @@ function ReviewStep({ reportData, onGenerateReport, isStepComplete }: { reportDa
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {!canGenerateReport && (
-                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <h4 className="font-medium text-yellow-800 mb-2">Requirements Not Met</h4>
-                    <div className="text-sm text-yellow-700 space-y-1">
-                      {completionPercentage < 80 && <p>• Complete at least 80% of the report (currently {completionPercentage.toFixed(0)}%)</p>}
-                      {!requiredAttachments.every(a => a.uploaded) && <p>• Upload all required supporting documents</p>}
-                      {!reportData.calculations?.calculatedAt && <p>• Calculate total emissions in Step 5</p>}
-                    </div>
-                  </div>
-                )}
-
                 <Button
                   onClick={onGenerateReport}
                   disabled={!canGenerateReport}

@@ -76,14 +76,14 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
         {/* Desktop/Tablet Tab List (hidden on mobile) */}
         <div className="hidden sm:block">
           <Card className="p-1">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
+            <TabsList className="flex w-full flex-wrap gap-1">
               {filteredTabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <TabsTrigger 
                     key={tab.value} 
                     value={tab.value} 
-                    className="flex items-center justify-center space-x-1 px-2 py-2 text-xs sm:text-sm whitespace-nowrap"
+                    className="flex items-center justify-center space-x-1 px-3 py-2 text-xs sm:text-sm whitespace-nowrap flex-1 min-w-[80px]"
                   >
                     <Icon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                     <span className="hidden md:inline">{tab.label}</span>
