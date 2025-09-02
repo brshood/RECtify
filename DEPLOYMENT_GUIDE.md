@@ -23,10 +23,10 @@ In Railway dashboard, add these environment variables:
 
 ```env
 # Database
-MONGODB_URI=mongodb+srv://rectify-prod-user:vL99vkCu6bvomMkp6hKL@cluster0.ph9pnjt.mongodb.net/rectify-production?retryWrites=true&w=majority&appName=Cluster0
+MONGODB_URI=<SET_IN_PLATFORM_DASHBOARD>
 
 # Security
-JWT_SECRET=0301bf995f8d99035bba14bbb1b3df7e7133ea2bece542d524e4613524f2de2472dc9fe664f2a3c594c2ee11dd2acf10409b2c6f3ee4f90aa269e7618488081c
+JWT_SECRET=<SET_IN_PLATFORM_DASHBOARD>
 
 # Server
 NODE_ENV=production

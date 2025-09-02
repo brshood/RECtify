@@ -20,8 +20,8 @@ RECtify/
 Copy `backend/env.sample` to `backend/.env` and update with your values:
 
 ```env
-MONGODB_URI=mongodb+srv://admin:password123123@cluster0.ph9pnjt.mongodb.net/rectify?retryWrites=true&w=majority&appName=Cluster0
-JWT_SECRET=your_development_jwt_secret_here
+MONGODB_URI=<YOUR_DEV_MONGODB_URI>
+JWT_SECRET=<YOUR_DEV_JWT_SECRET>
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
@@ -37,11 +37,11 @@ VITE_API_URL=http://localhost:5000/api
 ## 🚀 Production Deployment
 
 ### Backend Production
-Copy `backend/env.production` to `backend/.env` and update with:
+Set these keys in your platform (Railway) variables dashboard:
 
 ```env
-MONGODB_URI=mongodb+srv://rectify-prod-user:YOUR_SECURE_PASSWORD@cluster0.ph9pnjt.mongodb.net/rectify-production?retryWrites=true&w=majority&appName=Cluster0
-JWT_SECRET=YOUR_PRODUCTION_JWT_SECRET_64_CHARS_LONG
+MONGODB_URI=<SET_IN_PLATFORM_DASHBOARD>
+JWT_SECRET=<SET_IN_PLATFORM_DASHBOARD>
 PORT=5000
 NODE_ENV=production
 FRONTEND_URL=https://your-app.netlify.app
@@ -66,15 +66,7 @@ VITE_NODE_ENV=production
 - **Generate new JWT secrets** for each environment
 - **Use environment-specific database names** (rectify-dev, rectify-production)
 
-## 🎯 Current Secure Credentials
+## 🎯 Security
 
-### Production MongoDB User:
-- Username: `rectify-prod-user`
-- Password: `vL99vkCu6bvomMkp6hKL`
-
-### Production JWT Secret:
-```
-0301bf995f8d99035bba14bbb1b3df7e7133ea2bece542d524e4613524f2de2472dc9fe664f2a3c594c2ee11dd2acf10409b2c6f3ee4f90aa269e7618488081c
-```
-
-**⚠️ Store these securely and update them in your actual .env files!**
+- Do not store live credentials in docs or code.
+- Keep `.env` files out of git; use platform variables for production.

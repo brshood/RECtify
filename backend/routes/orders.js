@@ -400,9 +400,62 @@ router.post('/sell', [
         await buyOrder.fillPartial(matchQuantity);
         
         matchedQuantity += matchQuantity;
+        
+        // Transfer RECs from seller (this order) to buyer
+        const sellerHolding = await RECHolding.findById(order.holdingId);
+        if (sellerHolding && sellerHolding.quantity >= matchQuantity) {
+          // Reduce seller's holding
+          sellerHolding.quantity -= matchQuantity;
+          if (sellerHolding.quantity === 0) {
+            await RECHolding.findByIdAndDelete(sellerHolding._id);
+          } else {
+            await sellerHolding.save();
+          }
 
-        // Transfer RECs logic (similar to buy order)
-        // ... (REC transfer logic here)
+          // Add to buyer's holding
+          let buyerHolding = await RECHolding.findOne({
+            userId: buyOrder.userId,
+            facilityId: order.facilityId,
+            energyType: order.energyType,
+            vintage: order.vintage,
+            certificationStandard: order.certificationStandard
+          });
+
+          if (buyerHolding) {
+            const newTotalQuantity = buyerHolding.quantity + matchQuantity;
+            const newTotalValue = buyerHolding.totalValue + (matchQuantity * order.price);
+            buyerHolding.quantity = newTotalQuantity;
+            buyerHolding.averagePurchasePrice = newTotalValue / newTotalQuantity;
+            buyerHolding.totalValue = newTotalValue;
+            await buyerHolding.save();
+          } else {
+            buyerHolding = new RECHolding({
+              userId: buyOrder.userId,
+              facilityName: order.facilityName,
+              facilityId: order.facilityId,
+              energyType: order.energyType,
+              vintage: order.vintage,
+              quantity: matchQuantity,
+              averagePurchasePrice: order.price,
+              emirate: order.emirate,
+              certificationStandard: order.certificationStandard
+            });
+            await buyerHolding.save();
+          }
+
+          // Update user totals
+          const buyerSummary = await RECHolding.getUserTotalRECs(buyOrder.userId);
+          await User.findByIdAndUpdate(buyOrder.userId, {
+            totalRecs: buyerSummary.totalQuantity,
+            portfolioValue: buyerSummary.totalValue
+          });
+
+          const sellerSummary = await RECHolding.getUserTotalRECs(order.userId);
+          await User.findByIdAndUpdate(order.userId, {
+            totalRecs: sellerSummary.totalQuantity,
+            portfolioValue: sellerSummary.totalValue
+          });
+        }
       }
     }
 
