@@ -99,6 +99,137 @@ class ApiService {
   async getUserStats(): Promise<ApiResponse> {
     return this.request('/users/stats');
   }
+
+  // Holdings endpoints
+  async getUserHoldings(): Promise<ApiResponse> {
+    return this.request('/holdings');
+  }
+
+  async getHolding(id: string): Promise<ApiResponse> {
+    return this.request(`/holdings/${id}`);
+  }
+
+  async createHolding(holdingData: {
+    facilityName: string;
+    facilityId: string;
+    energyType: string;
+    vintage: number;
+    quantity: number;
+    averagePurchasePrice: number;
+    emirate: string;
+    certificationStandard?: string;
+  }): Promise<ApiResponse> {
+    return this.request('/holdings', {
+      method: 'POST',
+      body: JSON.stringify(holdingData)
+    });
+  }
+
+  async lockHolding(id: string, lockUntil?: string): Promise<ApiResponse> {
+    return this.request(`/holdings/${id}/lock`, {
+      method: 'PUT',
+      body: JSON.stringify({ lockUntil })
+    });
+  }
+
+  async unlockHolding(id: string): Promise<ApiResponse> {
+    return this.request(`/holdings/${id}/unlock`, {
+      method: 'PUT'
+    });
+  }
+
+  // Orders endpoints
+  async getUserOrders(status?: string, type?: string, limit?: number): Promise<ApiResponse> {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (type) params.append('type', type);
+    if (limit) params.append('limit', limit.toString());
+    
+    const queryString = params.toString();
+    return this.request(`/orders${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getOrderBook(limit?: number): Promise<ApiResponse> {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    
+    const queryString = params.toString();
+    return this.request(`/orders/book${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async createBuyOrder(orderData: {
+    facilityName: string;
+    facilityId: string;
+    energyType: string;
+    vintage: number;
+    quantity: number;
+    price: number;
+    emirate: string;
+    purpose: string;
+    certificationStandard?: string;
+    expiresAt?: string;
+    allowPartialFill?: boolean;
+    minFillQuantity?: number;
+  }): Promise<ApiResponse> {
+    return this.request('/orders/buy', {
+      method: 'POST',
+      body: JSON.stringify(orderData)
+    });
+  }
+
+  async createSellOrder(orderData: {
+    holdingId: string;
+    quantity: number;
+    price: number;
+    expiresAt?: string;
+    allowPartialFill?: boolean;
+    minFillQuantity?: number;
+  }): Promise<ApiResponse> {
+    return this.request('/orders/sell', {
+      method: 'POST',
+      body: JSON.stringify(orderData)
+    });
+  }
+
+  async cancelOrder(id: string): Promise<ApiResponse> {
+    return this.request(`/orders/${id}/cancel`, {
+      method: 'PUT'
+    });
+  }
+
+  async getOrder(id: string): Promise<ApiResponse> {
+    return this.request(`/orders/${id}`);
+  }
+
+  // Transactions endpoints
+  async getUserTransactions(limit?: number, status?: string): Promise<ApiResponse> {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (status) params.append('status', status);
+    
+    const queryString = params.toString();
+    return this.request(`/transactions${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getTransaction(id: string): Promise<ApiResponse> {
+    return this.request(`/transactions/${id}`);
+  }
+
+  async getMarketStats(timeframe?: string): Promise<ApiResponse> {
+    const params = new URLSearchParams();
+    if (timeframe) params.append('timeframe', timeframe);
+    
+    const queryString = params.toString();
+    return this.request(`/transactions/market/stats${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getPriceHistory(facilityName: string, days?: number): Promise<ApiResponse> {
+    const params = new URLSearchParams();
+    if (days) params.append('days', days.toString());
+    
+    const queryString = params.toString();
+    return this.request(`/transactions/market/price-history/${encodeURIComponent(facilityName)}${queryString ? `?${queryString}` : ''}`);
+  }
 }
 
 export const apiService = new ApiService();

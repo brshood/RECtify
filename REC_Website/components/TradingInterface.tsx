@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -7,9 +7,52 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
-import { Shield, FileCheck, Calculator } from "lucide-react";
+import { Shield, FileCheck, Calculator, Loader2, AlertCircle, TrendingUp, TrendingDown } from "lucide-react";
+import { useAuth } from "./AuthContext";
+import apiService from "../services/api";
+import { toast } from "sonner";
+
+interface Order {
+  _id: string;
+  orderType: 'buy' | 'sell';
+  facilityName: string;
+  energyType: string;
+  vintage: number;
+  quantity: number;
+  remainingQuantity: number;
+  price: number;
+  emirate: string;
+  createdBy: string;
+  status: string;
+  userId: {
+    firstName: string;
+    lastName: string;
+    company: string;
+  };
+}
+
+interface OrderBook {
+  buyOrders: Order[];
+  sellOrders: Order[];
+}
+
+interface Holding {
+  _id: string;
+  facilityName: string;
+  facilityId: string;
+  energyType: string;
+  vintage: number;
+  quantity: number;
+  averagePurchasePrice: number;
+  totalValue: number;
+  emirate: string;
+  certificationStandard: string;
+  isLocked: boolean;
+}
 
 export function TradingInterface() {
+  const { user } = useAuth();
+  
   // Buy order state
   const [buyQuantity, setBuyQuantity] = useState<string>("");
   const [buyPrice, setBuyPrice] = useState<string>("");
@@ -17,16 +60,161 @@ export function TradingInterface() {
   const [buyFacility, setBuyFacility] = useState<string>("");
   const [buyVintage, setBuyVintage] = useState<string>("");
   const [buyPurpose, setBuyPurpose] = useState<string>("");
+  const [buyEmirate, setBuyEmirate] = useState<string>("");
 
   // Sell order state
   const [sellQuantity, setSellQuantity] = useState<string>("");
   const [sellPrice, setSellPrice] = useState<string>("");
   const [sellHolding, setSellHolding] = useState<string>("");
 
+  // Data state
+  const [orderBook, setOrderBook] = useState<OrderBook>({ buyOrders: [], sellOrders: [] });
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [orderBookLoading, setOrderBookLoading] = useState(true);
+  const [placingOrder, setPlacingOrder] = useState(false);
+
   // Constants
   const PLATFORM_FEE_RATE = 0.02; // 2%
   const BLOCKCHAIN_FEE = 5.00; // Fixed AED 5.00
   const AED_TO_USD_RATE = 0.272; // Current approximate rate
+
+  // Fetch data on component mount
+  useEffect(() => {
+    if (user) {
+      fetchOrderBook();
+      fetchHoldings();
+    }
+  }, [user]);
+
+  const fetchOrderBook = async () => {
+    try {
+      setOrderBookLoading(true);
+      const response = await apiService.getOrderBook(20);
+      if (response.success) {
+        setOrderBook(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching order book:', error);
+      toast.error('Failed to load order book');
+    } finally {
+      setOrderBookLoading(false);
+    }
+  };
+
+  const fetchHoldings = async () => {
+    try {
+      const response = await apiService.getUserHoldings();
+      if (response.success) {
+        setHoldings(response.data.holdings.filter((h: Holding) => !h.isLocked && h.quantity > 0));
+      }
+    } catch (error) {
+      console.error('Error fetching holdings:', error);
+    }
+  };
+
+  const handleBuyOrder = async () => {
+    if (!user?.permissions.canTrade) {
+      toast.error('You do not have trading permissions');
+      return;
+    }
+
+    if (!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setPlacingOrder(true);
+      const response = await apiService.createBuyOrder({
+        facilityName: buyFacility,
+        facilityId: `${buyFacility.toLowerCase().replace(/\s+/g, '-')}-${buyVintage}`,
+        energyType: buyEnergyType,
+        vintage: parseInt(buyVintage),
+        quantity: parseFloat(buyQuantity),
+        price: parseFloat(buyPrice),
+        emirate: buyEmirate,
+        purpose: buyPurpose,
+        certificationStandard: 'I-REC'
+      });
+
+      if (response.success) {
+        toast.success(`Buy order placed successfully! ${response.data.matchedQuantity > 0 ? `${response.data.matchedQuantity} I-RECs matched immediately.` : ''}`);
+        
+        // Reset form
+        setBuyQuantity("");
+        setBuyPrice("");
+        setBuyEnergyType("");
+        setBuyFacility("");
+        setBuyVintage("");
+        setBuyPurpose("");
+        setBuyEmirate("");
+        
+        // Refresh data
+        fetchOrderBook();
+        fetchHoldings();
+      } else {
+        toast.error(response.message || 'Failed to place buy order');
+      }
+    } catch (error: any) {
+      console.error('Error placing buy order:', error);
+      toast.error(error.message || 'Failed to place buy order');
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
+  const handleSellOrder = async () => {
+    if (!user?.permissions.canTrade) {
+      toast.error('You do not have trading permissions');
+      return;
+    }
+
+    if (!sellQuantity || !sellPrice || !sellHolding) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const holding = holdings.find(h => h._id === sellHolding);
+    if (!holding) {
+      toast.error('Selected holding not found');
+      return;
+    }
+
+    if (parseFloat(sellQuantity) > holding.quantity) {
+      toast.error('Sell quantity exceeds available holding');
+      return;
+    }
+
+    try {
+      setPlacingOrder(true);
+      const response = await apiService.createSellOrder({
+        holdingId: sellHolding,
+        quantity: parseFloat(sellQuantity),
+        price: parseFloat(sellPrice)
+      });
+
+      if (response.success) {
+        toast.success(`Sell order placed successfully! ${response.data.matchedQuantity > 0 ? `${response.data.matchedQuantity} I-RECs matched immediately.` : ''}`);
+        
+        // Reset form
+        setSellQuantity("");
+        setSellPrice("");
+        setSellHolding("");
+        
+        // Refresh data
+        fetchOrderBook();
+        fetchHoldings();
+      } else {
+        toast.error(response.message || 'Failed to place sell order');
+      }
+    } catch (error: any) {
+      console.error('Error placing sell order:', error);
+      toast.error(error.message || 'Failed to place sell order');
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
   // Buy order calculations
   const buyCalculations = useMemo(() => {
@@ -67,38 +255,6 @@ export function TradingInterface() {
   // Format currency
   const formatAED = (amount: number) => amount.toFixed(2);
   const formatUSD = (amount: number) => `$${amount.toFixed(2)}`;
-
-  // Handle form submissions
-  const handleBuyOrder = () => {
-    if (!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility) {
-      alert("Please fill in all required fields");
-      return;
-    }
-    
-    alert(`Buy Order Placed!\nQuantity: ${buyQuantity} MWh\nPrice: AED ${buyPrice}/MWh\nTotal: AED ${formatAED(buyCalculations.totalAED)}`);
-    
-    // Reset form
-    setBuyQuantity("");
-    setBuyPrice("");
-    setBuyEnergyType("");
-    setBuyFacility("");
-    setBuyVintage("");
-    setBuyPurpose("");
-  };
-
-  const handleSellOrder = () => {
-    if (!sellQuantity || !sellPrice || !sellHolding) {
-      alert("Please fill in all required fields");
-      return;
-    }
-    
-    alert(`Sell Order Placed!\nQuantity: ${sellQuantity} MWh\nPrice: AED ${sellPrice}/MWh\nTotal: AED ${formatAED(sellCalculations.totalAED)}`);
-    
-    // Reset form
-    setSellQuantity("");
-    setSellPrice("");
-    setSellHolding("");
-  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -195,10 +351,28 @@ export function TradingInterface() {
                     <SelectValue placeholder="Select purpose" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="scope2">Scope 2 Compliance</SelectItem>
-                    <SelectItem value="voluntary">Voluntary Commitment</SelectItem>
-                    <SelectItem value="esg">ESG Reporting</SelectItem>
-                    <SelectItem value="netzero">Net Zero Strategy</SelectItem>
+                    <SelectItem value="compliance">Compliance</SelectItem>
+                    <SelectItem value="voluntary">Voluntary</SelectItem>
+                    <SelectItem value="resale">Resale</SelectItem>
+                    <SelectItem value="offset">Offset</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="buy-emirate">Emirate</Label>
+                <Select value={buyEmirate} onValueChange={setBuyEmirate}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select emirate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Abu Dhabi">Abu Dhabi</SelectItem>
+                    <SelectItem value="Dubai">Dubai</SelectItem>
+                    <SelectItem value="Sharjah">Sharjah</SelectItem>
+                    <SelectItem value="Ajman">Ajman</SelectItem>
+                    <SelectItem value="Fujairah">Fujairah</SelectItem>
+                    <SelectItem value="Ras Al Khaimah">Ras Al Khaimah</SelectItem>
+                    <SelectItem value="Umm Al Quwain">Umm Al Quwain</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -230,11 +404,20 @@ export function TradingInterface() {
               
               <Button 
                 onClick={handleBuyOrder}
-                disabled={!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility}
+                disabled={!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate || placingOrder}
                 className="w-full bg-rectify-green hover:bg-rectify-green-dark text-white disabled:opacity-50"
               >
-                <FileCheck className="h-4 w-4 mr-2" />
-                Place Buy Order
+                {placingOrder ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Placing Order...
+                  </>
+                ) : (
+                  <>
+                    <FileCheck className="h-4 w-4 mr-2" />
+                    Place Buy Order
+                  </>
+                )}
               </Button>
             </TabsContent>
             
@@ -246,12 +429,37 @@ export function TradingInterface() {
                     <SelectValue placeholder="Select I-REC to sell" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="solar-maktoum-2024">Solar - Maktoum Park 2024 (450 MWh)</SelectItem>
-                    <SelectItem value="wind-dhafra-2024">Wind - Al Dhafra 2024 (280 MWh)</SelectItem>
-                    <SelectItem value="nuclear-barakah-2024">Nuclear - Barakah 2024 (820 MWh)</SelectItem>
+                    {holdings.length > 0 ? (
+                      holdings.map((holding) => (
+                        <SelectItem key={holding._id} value={holding._id}>
+                          {holding.energyType.charAt(0).toUpperCase() + holding.energyType.slice(1)} - {holding.facilityName} {holding.vintage} ({holding.quantity.toLocaleString()} MWh)
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        No tradeable holdings available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
+              
+              {sellHolding && holdings.find(h => h._id === sellHolding) && (
+                <div className="bg-rectify-accent p-3 rounded-lg border border-rectify-border">
+                  <div className="text-sm space-y-1">
+                    <div className="font-medium">Holding Details:</div>
+                    <div className="text-rectify-green-dark">
+                      Available: {holdings.find(h => h._id === sellHolding)?.quantity.toLocaleString()} MWh
+                    </div>
+                    <div className="text-rectify-green-dark">
+                      Avg. Purchase Price: AED {holdings.find(h => h._id === sellHolding)?.averagePurchasePrice.toFixed(2)}
+                    </div>
+                    <div className="text-rectify-green-dark">
+                      Location: {holdings.find(h => h._id === sellHolding)?.emirate}
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -307,10 +515,17 @@ export function TradingInterface() {
               
               <Button 
                 onClick={handleSellOrder}
-                disabled={!sellQuantity || !sellPrice || !sellHolding}
+                disabled={!sellQuantity || !sellPrice || !sellHolding || placingOrder}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
               >
-                Place Sell Order
+                {placingOrder ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Placing Order...
+                  </>
+                ) : (
+                  'Place Sell Order'
+                )}
               </Button>
             </TabsContent>
           </Tabs>
@@ -319,55 +534,109 @@ export function TradingInterface() {
       
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <span>Order Book</span>
-            <Calculator className="h-4 w-4" />
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span>Order Book</span>
+              <Calculator className="h-4 w-4" />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchOrderBook}
+              disabled={orderBookLoading}
+            >
+              {orderBookLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                'Refresh'
+              )}
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium mb-2 text-rectify-green flex items-center space-x-2">
-                <span>Buy Orders (AED/MWh)</span>
-              </h4>
-              <div className="space-y-1">
-                {[
-                  { price: 167.25, quantity: 150, facility: "Maktoum" },
-                  { price: 167.20, quantity: 200, facility: "Dubai Solar" },
-                  { price: 167.15, quantity: 100, facility: "Maktoum" },
-                  { price: 167.10, quantity: 300, facility: "Al Dhafra" }
-                ].map((order, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-rectify-green">AED {order.price}</span>
-                    <span>{order.quantity} MWh</span>
-                    <span className="text-muted-foreground text-xs">{order.facility}</span>
-                  </div>
-                ))}
-              </div>
+          {orderBookLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-rectify-green" />
             </div>
-            
-            <Separator />
-            
-            <div>
-              <h4 className="text-sm font-medium mb-2 text-orange-500">
-                Sell Orders (AED/MWh)
-              </h4>
-              <div className="space-y-1">
-                {[
-                  { price: 167.35, quantity: 120, facility: "Barakah" },
-                  { price: 167.40, quantity: 180, facility: "Maktoum" },
-                  { price: 167.45, quantity: 250, facility: "Al Dhafra" },
-                  { price: 167.50, quantity: 90, facility: "Dubai Solar" }
-                ].map((order, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-orange-500">AED {order.price}</span>
-                    <span>{order.quantity} MWh</span>
-                    <span className="text-muted-foreground text-xs">{order.facility}</span>
-                  </div>
-                ))}
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-rectify-green flex items-center space-x-2">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Buy Orders (AED/MWh)</span>
+                  <Badge variant="secondary">{orderBook.buyOrders.length}</Badge>
+                </h4>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {orderBook.buyOrders.length > 0 ? (
+                    orderBook.buyOrders.map((order) => (
+                      <div key={order._id} className="flex justify-between items-center text-sm p-2 bg-green-50 rounded border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-rectify-green font-medium">AED {order.price.toFixed(2)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            by {order.createdBy}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div>{order.remainingQuantity.toLocaleString()} MWh</div>
+                          <div className="text-xs text-muted-foreground capitalize">
+                            {order.energyType} • {order.emirate}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No buy orders available
+                    </div>
+                  )}
+                </div>
               </div>
+              
+              <Separator />
+              
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-orange-500 flex items-center space-x-2">
+                  <TrendingDown className="h-4 w-4" />
+                  <span>Sell Orders (AED/MWh)</span>
+                  <Badge variant="secondary">{orderBook.sellOrders.length}</Badge>
+                </h4>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {orderBook.sellOrders.length > 0 ? (
+                    orderBook.sellOrders.map((order) => (
+                      <div key={order._id} className="flex justify-between items-center text-sm p-2 bg-orange-50 rounded border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-orange-500 font-medium">AED {order.price.toFixed(2)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            by {order.createdBy}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div>{order.remainingQuantity.toLocaleString()} MWh</div>
+                          <div className="text-xs text-muted-foreground capitalize">
+                            {order.energyType} • {order.emirate}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No sell orders available
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {orderBook.buyOrders.length === 0 && orderBook.sellOrders.length === 0 && (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No active orders in the market</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Be the first to place an order and start trading!
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

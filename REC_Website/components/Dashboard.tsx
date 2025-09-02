@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
@@ -10,6 +10,7 @@ import { EmissionsReport } from "./EmissionsReport";
 import RECRegistration from "./RECRegistration";
 import { BarChart3, TrendingUp, DollarSign, Activity, FileText, Leaf, Shield } from "lucide-react";
 import { useAuth } from "./AuthContext";
+import apiService from "../services/api";
 
 interface DashboardProps {
   initialTab?: string;
@@ -18,6 +19,57 @@ interface DashboardProps {
 export function Dashboard({ initialTab = "overview" }: DashboardProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const { user } = useAuth();
+  const [portfolioData, setPortfolioData] = useState({
+    totalValue: 0,
+    totalQuantity: 0,
+    uniqueFacilities: 0,
+    energyTypes: 0
+  });
+  const [activeOrders, setActiveOrders] = useState(0);
+  const [monthlyTrading, setMonthlyTrading] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch holdings data
+      const holdingsResponse = await apiService.getUserHoldings();
+      if (holdingsResponse.success) {
+        const summary = holdingsResponse.data.summary;
+        setPortfolioData({
+          totalValue: summary.totalValue || 0,
+          totalQuantity: summary.totalQuantity || 0,
+          uniqueFacilities: summary.uniqueFacilities?.length || 0,
+          energyTypes: summary.energyTypes?.length || 0
+        });
+      }
+
+      // Fetch active orders
+      const ordersResponse = await apiService.getUserOrders();
+      if (ordersResponse.success) {
+        const activeOrdersCount = ordersResponse.data.filter((order: any) => order.status === 'active').length;
+        setActiveOrders(activeOrdersCount);
+      }
+
+      // Fetch recent transactions for monthly trading
+      const transactionsResponse = await apiService.getUserTransactions(30, 'completed');
+      if (transactionsResponse.success) {
+        const thisMonth = new Date();
+        thisMonth.setDate(1);
+        const monthlyTxns = transactionsResponse.data.filter((txn: any) => 
+          new Date(txn.completedAt) >= thisMonth
+        );
+        const monthlyQuantity = monthlyTxns.reduce((sum: number, txn: any) => sum + txn.quantity, 0);
+        setMonthlyTrading(monthlyQuantity);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
 
   const tabs = [
     { value: "overview", label: "Overview", icon: BarChart3 },
@@ -110,8 +162,8 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-lg sm:text-2xl font-bold">AED 45,231.89</div>
-                <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                <div className="text-lg sm:text-2xl font-bold">AED {portfolioData.totalValue.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">{portfolioData.uniqueFacilities} facilities</p>
               </CardContent>
             </Card>
             <Card>
@@ -120,7 +172,7 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
                 <Leaf className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-lg sm:text-2xl font-bold">1,234</div>
+                <div className="text-lg sm:text-2xl font-bold">{portfolioData.totalQuantity.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">MWh Certificates</p>
               </CardContent>
             </Card>
@@ -130,8 +182,8 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-lg sm:text-2xl font-bold">+573</div>
-                <p className="text-xs text-muted-foreground">+201% from last month</p>
+                <div className="text-lg sm:text-2xl font-bold">+{monthlyTrading.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">{portfolioData.energyTypes} energy types</p>
               </CardContent>
             </Card>
             <Card>
@@ -140,8 +192,8 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-lg sm:text-2xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground">3 buy, 9 sell orders</p>
+                <div className="text-lg sm:text-2xl font-bold">{activeOrders}</div>
+                <p className="text-xs text-muted-foreground">pending orders</p>
               </CardContent>
             </Card>
           </div>
