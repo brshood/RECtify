@@ -50,6 +50,24 @@ interface Holding {
   isLocked: boolean;
 }
 
+interface AvailableForBuy {
+  facilities: {
+    facilityName: string;
+    facilityId: string;
+    energyType: string;
+    vintage: number;
+    emirate: string;
+    minPrice: number;
+    maxPrice: number;
+    totalQuantity: number;
+    orderCount: number;
+  }[];
+  energyTypes: string[];
+  emirates: string[];
+  vintages: number[];
+  totalSellOrders: number;
+}
+
 export function TradingInterface() {
   const { user } = useAuth();
   
@@ -70,11 +88,20 @@ export function TradingInterface() {
   // Data state
   const [orderBook, setOrderBook] = useState<OrderBook>({ buyOrders: [], sellOrders: [] });
   const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [availableForBuy, setAvailableForBuy] = useState<AvailableForBuy>({
+    facilities: [],
+    energyTypes: [],
+    emirates: [],
+    vintages: [],
+    totalSellOrders: 0
+  });
   const [loading, setLoading] = useState(false);
   const [orderBookLoading, setOrderBookLoading] = useState(true);
   const [holdingsLoading, setHoldingsLoading] = useState(false);
+  const [availableForBuyLoading, setAvailableForBuyLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [holdingsError, setHoldingsError] = useState<string | null>(null);
+  const [availableForBuyError, setAvailableForBuyError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
   // Constants
@@ -89,7 +116,8 @@ export function TradingInterface() {
         try {
           await Promise.all([
             fetchOrderBook(),
-            fetchHoldings()
+            fetchHoldings(),
+            fetchAvailableForBuy()
           ]);
         } catch (error) {
           console.error('Error loading initial data:', error);
@@ -111,6 +139,37 @@ export function TradingInterface() {
       toast.error('Failed to load order book');
     } finally {
       setOrderBookLoading(false);
+    }
+  };
+
+  const fetchAvailableForBuy = async (filters?: {
+    energyType?: string;
+    emirate?: string;
+    vintage?: number;
+  }) => {
+    try {
+      setAvailableForBuyLoading(true);
+      setAvailableForBuyError(null);
+      
+      const response = await apiService.getAvailableForBuy(filters);
+      if (response.success && response.data) {
+        // Ensure data structure is valid
+        const data = response.data;
+        setAvailableForBuy({
+          facilities: Array.isArray(data.facilities) ? data.facilities : [],
+          energyTypes: Array.isArray(data.energyTypes) ? data.energyTypes : [],
+          emirates: Array.isArray(data.emirates) ? data.emirates : [],
+          vintages: Array.isArray(data.vintages) ? data.vintages : [],
+          totalSellOrders: typeof data.totalSellOrders === 'number' ? data.totalSellOrders : 0
+        });
+      } else {
+        setAvailableForBuyError(response.message || 'Failed to load available options');
+      }
+    } catch (error: any) {
+      console.error('Error fetching available for buy:', error);
+      setAvailableForBuyError(error.message || 'Failed to load available options');
+    } finally {
+      setAvailableForBuyLoading(false);
     }
   };
 
@@ -154,6 +213,34 @@ export function TradingInterface() {
     }
   }, [sellHolding]);
 
+  // Refresh available options when buy form selections change
+  useEffect(() => {
+    if (user && (buyEnergyType || buyEmirate || buyVintage)) {
+      const filters: any = {};
+      if (buyEnergyType) filters.energyType = buyEnergyType;
+      if (buyEmirate) filters.emirate = buyEmirate;
+      if (buyVintage) filters.vintage = parseInt(buyVintage);
+      
+      fetchAvailableForBuy(filters);
+    }
+  }, [buyEnergyType, buyEmirate, buyVintage, user]);
+
+  // Auto-populate form fields when facility is selected
+  useEffect(() => {
+    if (buyFacility && availableForBuy.facilities.length > 0) {
+      const selectedFacility = availableForBuy.facilities.find(f => f.facilityId === buyFacility);
+      if (selectedFacility) {
+        // Auto-populate energy type, emirate, and vintage if not already set
+        if (!buyEnergyType) setBuyEnergyType(selectedFacility.energyType);
+        if (!buyEmirate) setBuyEmirate(selectedFacility.emirate);
+        if (!buyVintage) setBuyVintage(selectedFacility.vintage.toString());
+        
+        // Set suggested price to the minimum available price
+        if (!buyPrice) setBuyPrice(selectedFacility.minPrice.toString());
+      }
+    }
+  }, [buyFacility, availableForBuy.facilities, buyEnergyType, buyEmirate, buyVintage]);
+
   const handleBuyOrder = async () => {
     if (!user?.permissions.canTrade) {
       toast.error('You do not have trading permissions');
@@ -165,16 +252,25 @@ export function TradingInterface() {
       return;
     }
 
+    // Check if selected facility is still available
+    const selectedFacility = availableForBuy.facilities.find(f => f.facilityId === buyFacility);
+    if (!selectedFacility) {
+      toast.error('Selected facility is no longer available. Please refresh and try again.');
+      await fetchAvailableForBuy();
+      return;
+    }
+
     try {
       setPlacingOrder(true);
+      
       const response = await apiService.createBuyOrder({
-        facilityName: buyFacility,
-        facilityId: `${buyFacility.toLowerCase().replace(/\s+/g, '-')}-${buyVintage}`,
-        energyType: buyEnergyType,
-        vintage: parseInt(buyVintage),
+        facilityName: selectedFacility.facilityName,
+        facilityId: selectedFacility.facilityId,
+        energyType: selectedFacility.energyType,
+        vintage: selectedFacility.vintage,
         quantity: parseFloat(buyQuantity),
         price: parseFloat(buyPrice),
-        emirate: buyEmirate,
+        emirate: selectedFacility.emirate,
         purpose: buyPurpose,
         certificationStandard: 'I-REC'
       });
@@ -194,7 +290,8 @@ export function TradingInterface() {
         // Refresh data
         await Promise.all([
           fetchOrderBook(),
-          fetchHoldings(false) // Don't show loading for background refresh
+          fetchHoldings(false), // Don't show loading for background refresh
+          fetchAvailableForBuy() // Refresh available options
         ]);
       } else {
         toast.error(response.message || 'Failed to place buy order');
@@ -251,7 +348,8 @@ export function TradingInterface() {
         // Refresh data
         await Promise.all([
           fetchOrderBook(),
-          fetchHoldings(false) // Don't show loading for background refresh
+          fetchHoldings(false), // Don't show loading for background refresh
+          fetchAvailableForBuy() // Refresh available options
         ]);
       } else {
         toast.error(response.message || 'Failed to place sell order');
@@ -324,32 +422,157 @@ export function TradingInterface() {
             </TabsList>
             
             <TabsContent value="buy" className="space-y-4 mt-4">
+              {/* Market Info */}
+              {!availableForBuyLoading && !availableForBuyError && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <div className="text-sm space-y-1">
+                    <div className="font-medium text-blue-900">Market Overview</div>
+                    <div className="text-blue-700">
+                      {availableForBuy.totalSellOrders > 0 ? (
+                        <>
+                          {availableForBuy.totalSellOrders} sell orders available across {availableForBuy.facilities.length} facilities
+                        </>
+                      ) : (
+                        "No sell orders currently available in the market"
+                      )}
+                    </div>
+                    {availableForBuy.energyTypes.length > 0 && (
+                      <div className="text-blue-600 text-xs">
+                        Energy types: {availableForBuy.energyTypes.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="buy-energy-type">Energy Source</Label>
                 <Select value={buyEnergyType} onValueChange={setBuyEnergyType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select energy type" />
+                    <SelectValue placeholder={
+                      availableForBuyLoading 
+                        ? "Loading energy types..." 
+                        : availableForBuyError 
+                          ? "Error loading options" 
+                          : "Select energy type"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="solar">Solar PV</SelectItem>
-                    <SelectItem value="wind">Wind</SelectItem>
-                    <SelectItem value="nuclear">Nuclear</SelectItem>
-                    <SelectItem value="csp">Concentrated Solar Power</SelectItem>
+                    {availableForBuyLoading ? (
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Loading energy types...</span>
+                        </div>
+                      </SelectItem>
+                    ) : availableForBuyError ? (
+                      <SelectItem value="error" disabled>
+                        <div className="flex items-center space-x-2 text-red-500">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Error loading options</span>
+                        </div>
+                      </SelectItem>
+                    ) : availableForBuy.energyTypes.length > 0 ? (
+                      availableForBuy.energyTypes.map((energyType) => (
+                        <SelectItem key={energyType} value={energyType}>
+                          {energyType.charAt(0).toUpperCase() + energyType.slice(1)} 
+                          {energyType === 'solar' ? ' PV' : ''}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-options" disabled>
+                        <div className="text-center py-2">
+                          <div className="text-sm text-muted-foreground">
+                            No energy types available
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            No sell orders found in the market
+                          </div>
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
+                {availableForBuyError && (
+                  <div className="flex items-center space-x-2 text-sm text-red-500">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{availableForBuyError}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchAvailableForBuy()}
+                      className="ml-auto"
+                      disabled={availableForBuyLoading}
+                    >
+                      {availableForBuyLoading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Retrying...
+                        </>
+                      ) : (
+                        'Retry'
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="buy-facility">UAE Facility</Label>
                 <Select value={buyFacility} onValueChange={setBuyFacility}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select certified facility" />
+                    <SelectValue placeholder={
+                      availableForBuyLoading 
+                        ? "Loading facilities..." 
+                        : availableForBuyError 
+                          ? "Error loading options" 
+                          : "Select certified facility"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="maktoum">Mohammed bin Rashid Al Maktoum Solar Park</SelectItem>
-                    <SelectItem value="dhafra">Al Dhafra Wind Farm</SelectItem>
-                    <SelectItem value="barakah">Barakah Nuclear Power Plant</SelectItem>
-                    <SelectItem value="dubai-solar">Dubai Solar Park</SelectItem>
+                    {availableForBuyLoading ? (
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Loading facilities...</span>
+                        </div>
+                      </SelectItem>
+                    ) : availableForBuyError ? (
+                      <SelectItem value="error" disabled>
+                        <div className="flex items-center space-x-2 text-red-500">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Error loading options</span>
+                        </div>
+                      </SelectItem>
+                    ) : availableForBuy.facilities.length > 0 ? (
+                      availableForBuy.facilities
+                        .filter(facility => 
+                          !buyEnergyType || facility.energyType === buyEnergyType
+                        )
+                        .map((facility) => (
+                          <SelectItem key={facility.facilityId} value={facility.facilityId}>
+                            <div className="flex flex-col">
+                              <span>{facility.facilityName}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {facility.energyType.charAt(0).toUpperCase() + facility.energyType.slice(1)} • {facility.vintage} • 
+                                AED {facility.minPrice.toFixed(2)}-{facility.maxPrice.toFixed(2)}/MWh • 
+                                {facility.totalQuantity.toLocaleString()} MWh available
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <SelectItem value="no-options" disabled>
+                        <div className="text-center py-2">
+                          <div className="text-sm text-muted-foreground">
+                            No facilities available
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {buyEnergyType ? `No ${buyEnergyType} facilities found` : 'No sell orders found in the market'}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -382,12 +605,51 @@ export function TradingInterface() {
                 <Label htmlFor="buy-vintage">Vintage Year</Label>
                 <Select value={buyVintage} onValueChange={setBuyVintage}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select vintage" />
+                    <SelectValue placeholder={
+                      availableForBuyLoading 
+                        ? "Loading vintages..." 
+                        : availableForBuyError 
+                          ? "Error loading options" 
+                          : "Select vintage"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2024">2024</SelectItem>
-                    <SelectItem value="2023">2023</SelectItem>
-                    <SelectItem value="2022">2022</SelectItem>
+                    {availableForBuyLoading ? (
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Loading vintages...</span>
+                        </div>
+                      </SelectItem>
+                    ) : availableForBuyError ? (
+                      <SelectItem value="error" disabled>
+                        <div className="flex items-center space-x-2 text-red-500">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Error loading options</span>
+                        </div>
+                      </SelectItem>
+                    ) : availableForBuy.vintages.length > 0 ? (
+                      availableForBuy.vintages
+                        .filter(vintage => 
+                          !buyEnergyType || availableForBuy.facilities.some(f => f.energyType === buyEnergyType && f.vintage === vintage)
+                        )
+                        .map((vintage) => (
+                          <SelectItem key={vintage} value={vintage.toString()}>
+                            {vintage}
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <SelectItem value="no-options" disabled>
+                        <div className="text-center py-2">
+                          <div className="text-sm text-muted-foreground">
+                            No vintages available
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            No sell orders found in the market
+                          </div>
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -411,16 +673,51 @@ export function TradingInterface() {
                 <Label htmlFor="buy-emirate">Emirate</Label>
                 <Select value={buyEmirate} onValueChange={setBuyEmirate}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select emirate" />
+                    <SelectValue placeholder={
+                      availableForBuyLoading 
+                        ? "Loading emirates..." 
+                        : availableForBuyError 
+                          ? "Error loading options" 
+                          : "Select emirate"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Abu Dhabi">Abu Dhabi</SelectItem>
-                    <SelectItem value="Dubai">Dubai</SelectItem>
-                    <SelectItem value="Sharjah">Sharjah</SelectItem>
-                    <SelectItem value="Ajman">Ajman</SelectItem>
-                    <SelectItem value="Fujairah">Fujairah</SelectItem>
-                    <SelectItem value="Ras Al Khaimah">Ras Al Khaimah</SelectItem>
-                    <SelectItem value="Umm Al Quwain">Umm Al Quwain</SelectItem>
+                    {availableForBuyLoading ? (
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Loading emirates...</span>
+                        </div>
+                      </SelectItem>
+                    ) : availableForBuyError ? (
+                      <SelectItem value="error" disabled>
+                        <div className="flex items-center space-x-2 text-red-500">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Error loading options</span>
+                        </div>
+                      </SelectItem>
+                    ) : availableForBuy.emirates.length > 0 ? (
+                      availableForBuy.emirates
+                        .filter(emirate => 
+                          !buyEnergyType || availableForBuy.facilities.some(f => f.energyType === buyEnergyType && f.emirate === emirate)
+                        )
+                        .map((emirate) => (
+                          <SelectItem key={emirate} value={emirate}>
+                            {emirate}
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <SelectItem value="no-options" disabled>
+                        <div className="text-center py-2">
+                          <div className="text-sm text-muted-foreground">
+                            No emirates available
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            No sell orders found in the market
+                          </div>
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
