@@ -157,6 +157,36 @@ class ApiService {
     return this.request(`/orders/book${queryString ? `?${queryString}` : ''}`);
   }
 
+  async getAvailableForBuy(filters?: {
+    energyType?: string;
+    emirate?: string;
+    vintage?: number;
+  }): Promise<ApiResponse> {
+    const params = new URLSearchParams();
+    if (filters?.energyType) params.append('energyType', filters.energyType);
+    if (filters?.emirate) params.append('emirate', filters.emirate);
+    if (filters?.vintage) params.append('vintage', filters.vintage.toString());
+    
+    const queryString = params.toString();
+    
+    try {
+      return await this.request(`/orders/available-for-buy${queryString ? `?${queryString}` : ''}`);
+    } catch (error) {
+      // If backend is not available, return empty data structure
+      console.warn('Backend not available for available-for-buy, returning empty data');
+      return {
+        success: true,
+        data: {
+          facilities: [],
+          energyTypes: [],
+          emirates: [],
+          vintages: [],
+          totalSellOrders: 0
+        }
+      };
+    }
+  }
+
   async createBuyOrder(orderData: {
     facilityName: string;
     facilityId: string;

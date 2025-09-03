@@ -84,6 +84,108 @@ router.get('/book', [
   }
 });
 
+// @route   GET /api/orders/available-for-buy
+// @desc    Get available sell orders for buy form dropdowns
+// @access  Private
+router.get('/available-for-buy', [
+  auth,
+  query('energyType').optional().isIn(['solar', 'wind', 'hydro', 'biomass', 'geothermal', 'nuclear']).withMessage('Invalid energy type'),
+  query('emirate').optional().isIn(['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Fujairah', 'Ras Al Khaimah', 'Umm Al Quwain']).withMessage('Invalid emirate'),
+  query('vintage').optional().isInt({ min: 2000, max: new Date().getFullYear() }).withMessage('Invalid vintage year')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { energyType, emirate, vintage } = req.query;
+    
+    // Build query for available sell orders
+    const orderQuery = {
+      orderType: 'sell',
+      status: { $in: ['pending', 'partial'] },
+      isPublic: true,
+      expiresAt: { $gt: new Date() },
+      userId: { $ne: req.user.userId } // Don't show user's own orders
+    };
+
+    // Add filters if provided
+    if (energyType) orderQuery.energyType = energyType;
+    if (emirate) orderQuery.emirate = emirate;
+    if (vintage) orderQuery.vintage = parseInt(vintage);
+
+    const sellOrders = await Order.find(orderQuery)
+      .populate('userId', 'firstName lastName company')
+      .sort({ price: 1, createdAt: 1 }) // Lowest price first
+      .lean();
+
+    // Group by facility and energy type to get unique options
+    const facilities = {};
+    const energyTypes = new Set();
+    const emirates = new Set();
+    const vintages = new Set();
+
+    sellOrders.forEach(order => {
+      // Group by facility
+      const facilityKey = `${order.facilityName}-${order.energyType}-${order.vintage}`;
+      if (!facilities[facilityKey]) {
+        facilities[facilityKey] = {
+          facilityName: order.facilityName,
+          facilityId: order.facilityId,
+          energyType: order.energyType,
+          vintage: order.vintage,
+          emirate: order.emirate,
+          minPrice: order.price,
+          maxPrice: order.price,
+          totalQuantity: order.remainingQuantity,
+          orderCount: 1
+        };
+      } else {
+        facilities[facilityKey].minPrice = Math.min(facilities[facilityKey].minPrice, order.price);
+        facilities[facilityKey].maxPrice = Math.max(facilities[facilityKey].maxPrice, order.price);
+        facilities[facilityKey].totalQuantity += order.remainingQuantity;
+        facilities[facilityKey].orderCount += 1;
+      }
+
+      // Collect unique values for dropdowns
+      energyTypes.add(order.energyType);
+      emirates.add(order.emirate);
+      vintages.add(order.vintage);
+    });
+
+    // Convert to arrays and sort
+    const facilityOptions = Object.values(facilities).sort((a, b) => {
+      // Sort by energy type, then by facility name
+      if (a.energyType !== b.energyType) {
+        return a.energyType.localeCompare(b.energyType);
+      }
+      return a.facilityName.localeCompare(b.facilityName);
+    });
+
+    res.json({
+      success: true,
+      data: {
+        facilities: facilityOptions,
+        energyTypes: Array.from(energyTypes).sort(),
+        emirates: Array.from(emirates).sort(),
+        vintages: Array.from(vintages).sort((a, b) => b - a), // Most recent first
+        totalSellOrders: sellOrders.length
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching available sell orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching available sell orders'
+    });
+  }
+});
+
 // @route   POST /api/orders/buy
 // @desc    Create buy order
 // @access  Private
