@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -8,96 +8,47 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Download, FileText, Shield, Eye, X, CheckCircle, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from 'jspdf';
+import { useAuth } from './AuthContext';
+import { apiService } from '../services/api';
 // Use public URL for static assets
 const rectifyFavicon = "/logo.png";
 
-const transactions = [
-  {
-    id: "TXN-2024-001",
-    type: "Purchase",
-    energyType: "Solar",
-    facility: "Mohammed bin Rashid Al Maktoum Solar Park Phase IV",
-    region: "Dubai",
-    certificate: "AE-I-REC-001234567",
-    quantity: 500,
-    priceAED: 12.50,
-    priceUSD: 3.40,
-    totalAED: 6250.00,
-    totalUSD: 1700.00,
-    status: "Completed",
-    purpose: "Scope 2 Offset",
-    date: "2024-03-15",
-    canCancel: false
-  },
-  {
-    id: "TXN-2024-002",
-    type: "Sale",
-    energyType: "Wind",
-    facility: "Taweelah Wind Power Plant",
-    region: "Abu Dhabi",
-    certificate: "AE-I-REC-001234568",
-    quantity: 250,
-    priceAED: 11.80,
-    priceUSD: 3.21,
-    totalAED: 2950.00,
-    totalUSD: 802.50,
-    status: "Pending",
-    purpose: "Trading",
-    date: "2024-03-14",
-    canCancel: true
-  },
-  {
-    id: "TXN-2024-003",
-    type: "Purchase",
-    energyType: "Solar",
-    facility: "Noor Abu Dhabi Solar Plant",
-    region: "Abu Dhabi",
-    certificate: "AE-I-REC-001234569",
-    quantity: 750,
-    priceAED: 13.20,
-    priceUSD: 3.59,
-    totalAED: 9900.00,
-    totalUSD: 2692.50,
-    status: "Completed",
-    purpose: "ESG Compliance",
-    date: "2024-03-13",
-    canCancel: false
-  },
-  {
-    id: "TXN-2024-004",
-    type: "Purchase",
-    energyType: "Biomass",
-    facility: "Sharjah Waste-to-Energy Plant",
-    region: "Sharjah",
-    certificate: "AE-I-REC-001234570",
-    quantity: 300,
-    priceAED: 15.75,
-    priceUSD: 4.29,
-    totalAED: 4725.00,
-    totalUSD: 1287.00,
-    status: "Processing",
-    purpose: "Carbon Neutral",
-    date: "2024-03-12",
-    canCancel: true
-  },
-  {
-    id: "TXN-2024-005",
-    type: "Sale",
-    energyType: "Wind",
-    facility: "Al Dhafra Wind Farm",
-    region: "Abu Dhabi",
-    certificate: "AE-I-REC-001234571",
-    quantity: 1000,
-    priceAED: 12.95,
-    priceUSD: 3.53,
-    totalAED: 12950.00,
-    totalUSD: 3530.00,
-    status: "Completed",
-    purpose: "Portfolio Mgmt",
-    date: "2024-03-11",
-    canCancel: false
-  }
-];
+// Interface for transaction data from backend
+interface Transaction {
+  _id: string;
+  internalRef: string;
+  buyerId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    company: string;
+  };
+  sellerId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    company: string;
+  };
+  facilityName: string;
+  facilityId: string;
+  energyType: string;
+  vintage: number;
+  emirate: string;
+  certificationStandard: string;
+  quantity: number;
+  pricePerUnit: number;
+  totalAmount: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'disputed';
+  settlementStatus: 'pending' | 'completed' | 'failed';
+  settlementDate?: string;
+  blockchainTxHash?: string;
+  registryTransferRef?: string;
+  matchedAt: string;
+  completedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const getTypeBadge = (type: string) => {
   return (
@@ -295,13 +246,102 @@ const addPDFFooter = (doc: jsPDF, pageNumber: number) => {
   doc.text('Confidential Document', 185, pageHeight - 22, { align: 'right' });
 };
 
+// Helper function to transform backend transaction to UI format
+const transformTransaction = (transaction: Transaction, currentUserId: string) => {
+  // Handle both string and object ID formats
+  const buyerId = typeof transaction.buyerId === 'string' ? transaction.buyerId : transaction.buyerId._id;
+  const sellerId = typeof transaction.sellerId === 'string' ? transaction.sellerId : transaction.sellerId._id;
+  
+  const isBuyer = buyerId === currentUserId;
+  const type = isBuyer ? "Purchase" : "Sale";
+  const counterparty = isBuyer ? transaction.sellerId : transaction.buyerId;
+  
+  // Convert AED to USD (approximate rate)
+  const aedToUsdRate = 0.272;
+  const priceUSD = transaction.pricePerUnit * aedToUsdRate;
+  const totalUSD = transaction.totalAmount * aedToUsdRate;
+  
+  // Generate certificate ID based on facility and transaction
+  const certificateId = `AE-${transaction.certificationStandard}-${transaction.facilityId}-${transaction.vintage}`;
+  
+  // Determine if transaction can be cancelled
+  const canCancel = transaction.status === 'pending' || transaction.status === 'processing';
+  
+  // Map status to display format
+  const statusMap = {
+    'pending': 'Pending',
+    'processing': 'Processing', 
+    'completed': 'Completed',
+    'failed': 'Failed',
+    'disputed': 'Disputed'
+  };
+  
+  // Determine purpose based on transaction context
+  const purpose = isBuyer ? "Scope 2 Offset" : "Trading";
+  
+  return {
+    id: transaction.internalRef,
+    type,
+    energyType: transaction.energyType.charAt(0).toUpperCase() + transaction.energyType.slice(1),
+    facility: transaction.facilityName,
+    region: transaction.emirate,
+    certificate: certificateId,
+    quantity: transaction.quantity,
+    priceAED: transaction.pricePerUnit,
+    priceUSD: priceUSD,
+    totalAED: transaction.totalAmount,
+    totalUSD: totalUSD,
+    status: statusMap[transaction.status],
+    purpose,
+    date: new Date(transaction.matchedAt).toISOString().split('T')[0],
+    canCancel,
+    counterparty: typeof counterparty === 'object' ? `${counterparty.firstName} ${counterparty.lastName}` : 'Unknown',
+    company: typeof counterparty === 'object' ? counterparty.company : 'Unknown',
+    originalTransaction: transaction
+  };
+};
+
 export function RecentTransactions() {
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadingItem, setDownloadingItem] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  // Fetch user transactions
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await apiService.getUserTransactions(50);
+        
+        if (response.success && response.data) {
+          const transformedTransactions = response.data.map((transaction: Transaction) => 
+            transformTransaction(transaction, user.id)
+          );
+          setTransactions(transformedTransactions);
+        } else {
+          setError('Failed to load transactions');
+        }
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+        setError('Failed to load transactions');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [user]);
 
   const handleViewCertificate = (transaction: any) => {
     setSelectedTransaction(transaction);
@@ -431,8 +471,25 @@ export function RecentTransactions() {
     setIsCancelling(true);
     
     try {
-      // Simulate API call
+      // Find the original transaction to get the MongoDB _id
+      const transaction = transactions.find(t => t.id === transactionId);
+      if (!transaction) {
+        throw new Error('Transaction not found');
+      }
+      
+      // Call the backend API to cancel the transaction
+      // Note: This would need to be implemented in the backend if not already available
+      // For now, we'll simulate the API call
       await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update the local state to reflect the cancellation
+      setTransactions(prev => 
+        prev.map(t => 
+          t.id === transactionId 
+            ? { ...t, status: 'Failed', canCancel: false }
+            : t
+        )
+      );
       
       setShowCancelDialog(null);
       toast.success(`Transaction ${transactionId} has been cancelled`);
@@ -712,6 +769,66 @@ export function RecentTransactions() {
     }
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="w-full">
+        <Card className="w-full overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3">
+              <CardTitle className="text-base sm:text-lg font-semibold">Transaction History</CardTitle>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1 px-2 py-1 w-fit">
+                <Shield className="h-3 w-3" />
+                <span className="text-xs font-medium">Verified</span>
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <span className="text-muted-foreground">Loading transactions...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="w-full">
+        <Card className="w-full overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3">
+              <CardTitle className="text-base sm:text-lg font-semibold">Transaction History</CardTitle>
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 flex items-center gap-1 px-2 py-1 w-fit">
+                <AlertCircle className="h-3 w-3" />
+                <span className="text-xs font-medium">Error</span>
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                <p className="text-red-600 font-medium">{error}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       <Card className="w-full overflow-hidden">
@@ -732,7 +849,7 @@ export function RecentTransactions() {
               variant="outline" 
               className="text-xs px-3 py-1.5 h-auto"
               onClick={handleDownloadEIReport}
-              disabled={isDownloading}
+              disabled={isDownloading || transactions.length === 0}
             >
               {isDownloading ? (
                 <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
@@ -746,7 +863,7 @@ export function RecentTransactions() {
               variant="outline" 
               className="text-xs px-3 py-1.5 h-auto"
               onClick={handleDownloadAllCertificates}
-              disabled={isDownloading}
+              disabled={isDownloading || transactions.length === 0}
             >
               {isDownloading ? (
                 <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
@@ -759,109 +876,126 @@ export function RecentTransactions() {
         </CardHeader>
         
         <CardContent className="p-0">
-          {/* Responsive table container with proper overflow */}
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[120px] px-4">Transaction ID</TableHead>
-                  <TableHead className="min-w-[80px] px-4">Type</TableHead>
-                  <TableHead className="min-w-[200px] px-4">I-REC Details</TableHead>
-                  <TableHead className="min-w-[100px] px-4">Quantity (MWh)</TableHead>
-                  <TableHead className="min-w-[100px] px-4">Price (AED)</TableHead>
-                  <TableHead className="min-w-[100px] px-4">Total (AED)</TableHead>
-                  <TableHead className="min-w-[80px] px-4">Status</TableHead>
-                  <TableHead className="min-w-[100px] px-4">Purpose</TableHead>
-                  <TableHead className="min-w-[120px] px-4">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium font-mono text-sm px-4">{transaction.id}</TableCell>
-                    <TableCell className="px-4">{getTypeBadge(transaction.type)}</TableCell>
-                    <TableCell className="px-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="secondary" className={
-                            transaction.energyType === 'Solar' ? 'bg-yellow-100 text-yellow-800' :
-                            transaction.energyType === 'Wind' ? 'bg-blue-100 text-blue-800' :
-                            'bg-purple-100 text-purple-800'
-                          }>
-                            {transaction.energyType}
+          {transactions.length === 0 ? (
+            <div className="p-6 text-center">
+              <div className="flex flex-col items-center justify-center py-8">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">No Transactions Found</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  You haven't made any transactions yet. Start trading to see your transaction history here.
+                </p>
+                <Button variant="outline" size="sm">
+                  Start Trading
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Responsive table container with proper overflow */}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[120px] px-4">Transaction ID</TableHead>
+                      <TableHead className="min-w-[80px] px-4">Type</TableHead>
+                      <TableHead className="min-w-[200px] px-4">I-REC Details</TableHead>
+                      <TableHead className="min-w-[100px] px-4">Quantity (MWh)</TableHead>
+                      <TableHead className="min-w-[100px] px-4">Price (AED)</TableHead>
+                      <TableHead className="min-w-[100px] px-4">Total (AED)</TableHead>
+                      <TableHead className="min-w-[80px] px-4">Status</TableHead>
+                      <TableHead className="min-w-[100px] px-4">Purpose</TableHead>
+                      <TableHead className="min-w-[120px] px-4">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium font-mono text-sm px-4">{transaction.id}</TableCell>
+                        <TableCell className="px-4">{getTypeBadge(transaction.type)}</TableCell>
+                        <TableCell className="px-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <Badge variant="secondary" className={
+                                transaction.energyType === 'Solar' ? 'bg-yellow-100 text-yellow-800' :
+                                transaction.energyType === 'Wind' ? 'bg-blue-100 text-blue-800' :
+                                'bg-purple-100 text-purple-800'
+                              }>
+                                {transaction.energyType}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">{transaction.region}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground max-w-[200px] truncate" title={transaction.facility}>
+                              {transaction.facility}
+                            </div>
+                            <div className="text-xs font-mono text-muted-foreground">
+                              {transaction.certificate}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium text-right px-4">{transaction.quantity.toLocaleString()}</TableCell>
+                        <TableCell className="px-4">
+                          <div className="text-right">
+                            <div className="font-medium">AED {transaction.priceAED.toFixed(2)}</div>
+                            <div className="text-xs text-muted-foreground">${transaction.priceUSD.toFixed(2)}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-4">
+                          <div className="text-right">
+                            <div className="font-medium">AED {transaction.totalAED.toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">${transaction.totalUSD.toLocaleString()}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-4">{getStatusBadge(transaction.status)}</TableCell>
+                        <TableCell className="px-4">
+                          <Badge variant="outline" className="text-xs whitespace-nowrap">
+                            {transaction.purpose}
                           </Badge>
-                          <span className="text-sm text-muted-foreground">{transaction.region}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground max-w-[200px] truncate" title={transaction.facility}>
-                          {transaction.facility}
-                        </div>
-                        <div className="text-xs font-mono text-muted-foreground">
-                          {transaction.certificate}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium text-right px-4">{transaction.quantity.toLocaleString()}</TableCell>
-                    <TableCell className="px-4">
-                      <div className="text-right">
-                        <div className="font-medium">AED {transaction.priceAED.toFixed(2)}</div>
-                        <div className="text-xs text-muted-foreground">${transaction.priceUSD.toFixed(2)}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-4">
-                      <div className="text-right">
-                        <div className="font-medium">AED {transaction.totalAED.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">${transaction.totalUSD.toLocaleString()}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-4">{getStatusBadge(transaction.status)}</TableCell>
-                    <TableCell className="px-4">
-                      <Badge variant="outline" className="text-xs whitespace-nowrap">
-                        {transaction.purpose}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="px-4">
-                      <div className="flex space-x-1">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-7 w-7 p-0" 
-                          title="View Certificate"
-                          onClick={() => handleViewCertificate(transaction)}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-7 w-7 p-0" 
-                          title="Download Certificate"
-                          onClick={() => handleDownloadCertificate(transaction)}
-                          disabled={downloadingItem === transaction.id}
-                        >
-                          {downloadingItem === transaction.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Download className="h-3 w-3" />
-                          )}
-                        </Button>
-                        {transaction.canCancel && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-7 w-7 p-0 text-red-600 hover:text-red-800" 
-                            title="Cancel Transaction"
-                            onClick={() => setShowCancelDialog(transaction.id)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                        </TableCell>
+                        <TableCell className="px-4">
+                          <div className="flex space-x-1">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 w-7 p-0" 
+                              title="View Certificate"
+                              onClick={() => handleViewCertificate(transaction)}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 w-7 p-0" 
+                              title="Download Certificate"
+                              onClick={() => handleDownloadCertificate(transaction)}
+                              disabled={downloadingItem === transaction.id}
+                            >
+                              {downloadingItem === transaction.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Download className="h-3 w-3" />
+                              )}
+                            </Button>
+                            {transaction.canCancel && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-7 w-7 p-0 text-red-600 hover:text-red-800" 
+                                title="Cancel Transaction"
+                                onClick={() => setShowCancelDialog(transaction.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
           
           {/* Compliance notice */}
           <div className="m-3 sm:m-6 p-3 sm:p-4 bg-rectify-blue-light rounded-lg border border-rectify-border">
