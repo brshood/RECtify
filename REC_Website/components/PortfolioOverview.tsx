@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { TrendingUp, TrendingDown, DollarSign, Zap, Leaf, FileCheck, Sparkles, Shield, Globe, AlertCircle, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";import { TrendingUp, TrendingDown, DollarSign, Zap, Leaf, FileCheck, Sparkles, Shield, Globe, X, AlertCircle, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from "recharts";
 import { useAuth } from "./AuthContext";
 import apiService from "../services/api";
@@ -67,6 +66,7 @@ const ENERGY_TYPE_COLORS: Record<string, string> = {
 };
 
 export function PortfolioOverview() {
+  const [isWelcomeBannerVisible, setIsWelcomeBannerVisible] = useState(true);
   const { user } = useAuth();
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [summary, setSummary] = useState<HoldingSummary>({ totalQuantity: 0, totalValue: 0, uniqueFacilities: [], energyTypes: [] });
@@ -86,25 +86,30 @@ export function PortfolioOverview() {
       setLoading(true);
       setError(null);
 
-      // Fetch holdings
-      const holdingsResponse = await apiService.getUserHoldings();
+      const [holdingsResponse, transactionsResponse] = await Promise.all([
+        apiService.getUserHoldings(),
+        apiService.getUserTransactions()
+      ]);
+
       if (holdingsResponse.success) {
-        setHoldings(holdingsResponse.data.holdings || []);
-        setSummary(holdingsResponse.data.summary || { totalQuantity: 0, totalValue: 0, uniqueFacilities: [], energyTypes: [] });
-        setByFacility(holdingsResponse.data.byFacility || []);
+        setHoldings(holdingsResponse.data?.holdings || []);
+        setSummary(holdingsResponse.data?.summary || { totalQuantity: 0, totalValue: 0, uniqueFacilities: [], energyTypes: [] });
+        setByFacility(holdingsResponse.data?.byFacility || []);
       }
 
-      // Fetch recent transactions
-      const transactionsResponse = await apiService.getUserTransactions(20, 'completed');
       if (transactionsResponse.success) {
-        setTransactions(transactionsResponse.data || []);
+        setTransactions(transactionsResponse.data?.transactions || []);
       }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      setError('Failed to load portfolio data. Please try again.');
+    } catch (err) {
+      console.error('Failed to fetch user data:', err);
+      setError('Failed to load portfolio data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseBanner = () => {
+    setIsWelcomeBannerVisible(false);
   };
 
   // Prepare energy sources distribution data
@@ -137,8 +142,7 @@ export function PortfolioOverview() {
     .map((transaction, index) => ({
       month: new Date(transaction.completedAt).toLocaleDateString('en-US', { month: 'short' }),
       value: transaction.totalAmount,
-      certificates: transaction.quantity,
-      date: transaction.completedAt
+      certificates: transaction.quantity
     }));
 
   if (!user) {
@@ -146,7 +150,8 @@ export function PortfolioOverview() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Please log in to view your portfolio</p>
+          <h3 className="text-lg font-semibold text-muted-foreground mb-2">Authentication Required</h3>
+          <p className="text-sm text-muted-foreground">Please log in to view your portfolio.</p>
         </div>
       </div>
     );
@@ -156,8 +161,8 @@ export function PortfolioOverview() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 text-rectify-green animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your portfolio...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-rectify-green mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Loading portfolio data...</p>
         </div>
       </div>
     );
@@ -168,7 +173,8 @@ export function PortfolioOverview() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-500 mb-4">{error}</p>
+          <h3 className="text-lg font-semibold text-red-500 mb-2">Error Loading Portfolio</h3>
+          <p className="text-sm text-muted-foreground mb-4">{error}</p>
           <button 
             onClick={fetchUserData}
             className="px-4 py-2 bg-rectify-green text-white rounded-lg hover:bg-rectify-green-dark transition-colors"
@@ -182,8 +188,19 @@ export function PortfolioOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner with Real User Data */}
-      <div className="bg-gradient-to-br from-rectify-green-light via-rectify-accent to-rectify-blue-light rounded-xl p-4 sm:p-6 lg:p-8 border border-rectify-border shadow-sm relative overflow-hidden">
+      {/* Redesigned Welcome Banner */}
+      {isWelcomeBannerVisible && (
+        <div className="bg-gradient-to-br from-rectify-green-light via-rectify-accent to-rectify-blue-light rounded-xl p-4 sm:p-6 lg:p-8 border border-rectify-border shadow-sm relative overflow-hidden">
+        {/* Close Button */}
+        <button
+          onClick={handleCloseBanner}
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-colors duration-200 group"
+          aria-label="Close welcome banner"
+        >
+          <X className="h-4 w-4 text-rectify-green-dark group-hover:text-rectify-green" />
+        </button>
+
+        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-4 right-4">
             <Sparkles className="h-16 w-16 text-rectify-green" />
@@ -267,7 +284,8 @@ export function PortfolioOverview() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Portfolio Analytics */}
       <div className="space-y-4">
