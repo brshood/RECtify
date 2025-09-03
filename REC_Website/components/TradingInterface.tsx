@@ -249,13 +249,23 @@ export function TradingInterface() {
   }, [buyFacility, availableForBuy.facilities, buyEnergyType, buyEmirate, buyVintage]);
 
   const handleBuyOrder = async () => {
-    if (!user?.permissions.canTrade) {
+    console.log('🛒 Buy order button clicked');
+    console.log('👤 User:', user);
+    console.log('🔑 User permissions:', user?.permissions);
+    
+    if (!user) {
+      toast.error('Please log in to place orders');
+      return;
+    }
+
+    if (!user?.permissions?.canTrade) {
       toast.error('You do not have trading permissions');
       return;
     }
 
     if (!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate) {
       toast.error('Please fill in all required fields');
+      console.log('❌ Missing fields:', { buyQuantity, buyPrice, buyEnergyType, buyFacility, buyVintage, buyPurpose, buyEmirate });
       return;
     }
 
@@ -269,8 +279,9 @@ export function TradingInterface() {
 
     try {
       setPlacingOrder(true);
+      console.log('📤 Sending buy order request...');
       
-      const response = await apiService.createBuyOrder({
+      const orderData = {
         facilityName: selectedFacility.facilityName,
         facilityId: selectedFacility.facilityId,
         energyType: selectedFacility.energyType,
@@ -280,7 +291,12 @@ export function TradingInterface() {
         emirate: selectedFacility.emirate,
         purpose: buyPurpose,
         certificationStandard: 'I-REC'
-      });
+      };
+      
+      console.log('📋 Order data:', orderData);
+      
+      const response = await apiService.createBuyOrder(orderData);
+      console.log('📥 API response:', response);
 
       if (response.success) {
         toast.success(`Buy order placed successfully in the network! ${response.data.matchedQuantity > 0 ? `${response.data.matchedQuantity} I-RECs matched immediately with other network participants.` : 'Your order is now visible to all network participants.'}`);
@@ -304,8 +320,9 @@ export function TradingInterface() {
         toast.error(response.message || 'Failed to place buy order');
       }
     } catch (error: any) {
-      console.error('Error placing buy order:', error);
-      toast.error(error.message || 'Failed to place buy order');
+      console.error('❌ Error placing buy order:', error);
+      console.error('❌ Error details:', error.response?.data);
+      toast.error(error.response?.data?.message || error.message || 'Failed to place buy order');
     } finally {
       setPlacingOrder(false);
     }
@@ -413,16 +430,8 @@ export function TradingInterface() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle>
             <span>Network Trading</span>
-            <Badge variant="outline" className="flex items-center space-x-1">
-              <Shield className="h-3 w-3" />
-              <span>KYC Verified</span>
-            </Badge>
-            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300 flex items-center space-x-1">
-              <Wifi className="h-3 w-3" />
-              <span>Network Connected</span>
-            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -437,11 +446,8 @@ export function TradingInterface() {
               {!availableForBuyLoading && !availableForBuyError && (
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                   <div className="text-sm space-y-1">
-                    <div className="font-medium text-blue-900 flex items-center space-x-2">
+                    <div className="font-medium text-blue-900">
                       <span>Network Market Overview</span>
-                      <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
-                        Live
-                      </Badge>
                     </div>
                     <div className="text-blue-700">
                       {availableForBuy.totalSellOrders > 0 ? (
@@ -974,9 +980,6 @@ export function TradingInterface() {
             <div className="flex items-center space-x-2">
               <span>Network Order Book</span>
               <Calculator className="h-4 w-4" />
-              <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
-                Live
-              </Badge>
             </div>
             <Button
               variant="outline"
@@ -1049,19 +1052,14 @@ export function TradingInterface() {
                           <span className="text-xs text-muted-foreground">
                             by {order.createdBy}
                           </span>
-                          <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
-                            {order.status === 'partial' ? 'Partial' : 'Active'}
-                          </Badge>
+
                         </div>
                         <div className="text-right">
                           <div className="font-medium">{order.remainingQuantity.toLocaleString()} MWh</div>
                           <div className="text-xs text-muted-foreground capitalize">
                             {order.energyType} • {order.emirate}
                           </div>
-                          <div className="text-xs text-green-600 font-medium flex items-center space-x-1">
-                            <Wifi className="h-3 w-3" />
-                            <span>Network Connected</span>
-                          </div>
+
                         </div>
                       </div>
                     ))
@@ -1091,19 +1089,14 @@ export function TradingInterface() {
                           <span className="text-xs text-muted-foreground">
                             by {order.createdBy}
                           </span>
-                          <Badge variant="outline" className="text-xs bg-orange-100 text-orange-700 border-orange-300">
-                            {order.status === 'partial' ? 'Partial' : 'Active'}
-                          </Badge>
+
                         </div>
                         <div className="text-right">
                           <div className="font-medium">{order.remainingQuantity.toLocaleString()} MWh</div>
                           <div className="text-xs text-muted-foreground capitalize">
                             {order.energyType} • {order.emirate}
                           </div>
-                          <div className="text-xs text-orange-600 font-medium flex items-center space-x-1">
-                            <Wifi className="h-3 w-3" />
-                            <span>Network Connected</span>
-                          </div>
+
                         </div>
                       </div>
                     ))
