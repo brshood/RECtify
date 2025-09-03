@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { TrendingUp, TrendingDown, Shield, MapPin, Eye, ShoppingCart, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Shield, MapPin, Eye, ShoppingCart, AlertCircle, CheckCircle2, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 export function MarketData() {
@@ -161,13 +161,45 @@ export function MarketData() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <span>UAE I-REC Market</span>
-              <Badge variant="outline" className="flex items-center space-x-1">
-                <Shield className="h-3 w-3" />
-                <span>Blockchain Verified</span>
-              </Badge>
             </CardTitle>
             <div className="text-sm text-muted-foreground">
               Live prices updated every 5 minutes
+            </div>
+          </div>
+          
+          {/* Demo Disclaimer Bar */}
+          <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-medium text-yellow-800">
+                  Demo Data: This market data is for demonstration purposes only and does not reflect real market conditions.
+                </span>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-yellow-700 border-yellow-300 hover:bg-yellow-200"
+                  onClick={() => window.open('https://www.argusmedia.com/en/methodology/key-commodity-prices/argus-international-renewable-energy-certificate-i-recs', '_blank')}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Argus I-REC
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-yellow-700 border-yellow-300 hover:bg-yellow-200"
+                  onClick={() => window.open('https://prod-us3.plattslive.com/price-assessments/energy-transition/i-recs', '_blank')}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  S&P Global
+                </Button>
+              </div>
+            </div>
+            <div className="mt-2 text-xs text-yellow-700">
+              For real I-REC market data, visit: <a href="https://www.argusmedia.com/en/methodology/key-commodity-prices/argus-international-renewable-energy-certificate-i-recs" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-800">Argus I-REC Pricing</a> • 
+              <a href="https://prod-us3.plattslive.com/price-assessments/energy-transition/i-recs" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-800 ml-1">S&P Global I-RECs</a>
             </div>
           </div>
         </CardHeader>

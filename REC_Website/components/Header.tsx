@@ -36,9 +36,7 @@ export function Header({ onNavigateHome, showNavigation = true, onOpenLogin, onO
 							/>
 						</div>
 						
-						<div className="md:hidden sm:block">
-							<Badge variant="secondary" className="text-xs px-1.5 py-0.5">UAE</Badge>
-						</div>
+
 					</div>
 					
 					{showNavigation && (
@@ -48,23 +46,12 @@ export function Header({ onNavigateHome, showNavigation = true, onOpenLogin, onO
 								<span>Home</span>
 							</button>
 							<a href="#" className="text-foreground hover:text-rectify-green transition-colors">Dashboard</a>
-							<a href="#" className="text-muted-foreground hover:text-rectify-green transition-colors">Trade I-RECs</a>
-							<a href="#" className="text-muted-foreground hover:text-rectify-green transition-colors">EI Reports</a>
-							<a href="#" className="text-muted-foreground hover:text-rectify-green transition-colors">Compliance</a>
 						</nav>
 					)}
 				</div>
 				
 				<div className="flex items-center space-x-2 sm:space-x-3">
 					<div className="hidden md:flex items-center space-x-3 lg:space-x-4">
-						<div className="flex items-center space-x-2">
-							<Badge variant="secondary" className="text-xs">UAE</Badge>
-							<Badge variant="outline" className="text-xs flex items-center space-x-1">
-								<Shield className="h-3 w-3" />
-								<span className="hidden lg:inline">I-REC Certified</span>
-								<span className="lg:hidden">I-REC</span>
-							</Badge>
-						</div>
 						<div className="hidden lg:flex items-center space-x-2 text-sm text-muted-foreground">
 							<Globe className="h-4 w-4" />
 							<span>AED | USD</span>
