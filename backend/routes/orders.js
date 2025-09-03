@@ -71,9 +71,24 @@ router.get('/book', [
     const limit = parseInt(req.query.limit) || 50;
     const orderBook = await Order.getOrderBook(limit);
 
+    // Add network statistics
+    const networkStats = {
+      totalActiveOrders: orderBook.buyOrders.length + orderBook.sellOrders.length,
+      totalBuyOrders: orderBook.buyOrders.length,
+      totalSellOrders: orderBook.sellOrders.length,
+      uniqueParticipants: new Set([
+        ...orderBook.buyOrders.map(o => o.userId._id.toString()),
+        ...orderBook.sellOrders.map(o => o.userId._id.toString())
+      ]).size,
+      lastUpdated: new Date()
+    };
+
     res.json({
       success: true,
-      data: orderBook
+      data: {
+        ...orderBook,
+        networkStats
+      }
     });
   } catch (error) {
     console.error('Error fetching order book:', error);
