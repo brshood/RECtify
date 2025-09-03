@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -72,7 +72,10 @@ export function TradingInterface() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(false);
   const [orderBookLoading, setOrderBookLoading] = useState(true);
+  const [holdingsLoading, setHoldingsLoading] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
+  const [holdingsError, setHoldingsError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Constants
   const PLATFORM_FEE_RATE = 0.02; // 2%
@@ -82,8 +85,17 @@ export function TradingInterface() {
   // Fetch data on component mount
   useEffect(() => {
     if (user) {
-      fetchOrderBook();
-      fetchHoldings();
+      const loadInitialData = async () => {
+        try {
+          await Promise.all([
+            fetchOrderBook(),
+            fetchHoldings()
+          ]);
+        } catch (error) {
+          console.error('Error loading initial data:', error);
+        }
+      };
+      loadInitialData();
     }
   }, [user]);
 
@@ -102,16 +114,45 @@ export function TradingInterface() {
     }
   };
 
-  const fetchHoldings = async () => {
+  const fetchHoldings = useCallback(async (showLoading = true) => {
     try {
+      if (showLoading) {
+        setHoldingsLoading(true);
+      }
+      setHoldingsError(null);
+      setRetryCount(0);
+      
       const response = await apiService.getUserHoldings();
       if (response.success) {
-        setHoldings(response.data.holdings.filter((h: Holding) => !h.isLocked && h.quantity > 0));
+        const tradeableHoldings = response.data.holdings.filter((h: Holding) => !h.isLocked && h.quantity > 0);
+        setHoldings(tradeableHoldings);
+        
+        // If no tradeable holdings and we had a selected holding, clear it
+        if (tradeableHoldings.length === 0 && sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings') {
+          setSellHolding("");
+        } else if (sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings' && !tradeableHoldings.find(h => h._id === sellHolding)) {
+          // If the selected holding is no longer available, clear it
+          setSellHolding("");
+        }
+      } else {
+        setHoldingsError(response.message || 'Failed to load holdings');
+        toast.error('Failed to load holdings data');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching holdings:', error);
+      setHoldingsError(error.message || 'Failed to load holdings');
+      setRetryCount(prev => prev + 1);
+      
+      // Only show toast for first error, not retries
+      if (retryCount === 0) {
+        toast.error('Failed to load holdings data');
+      }
+    } finally {
+      if (showLoading) {
+        setHoldingsLoading(false);
+      }
     }
-  };
+  }, [sellHolding]);
 
   const handleBuyOrder = async () => {
     if (!user?.permissions.canTrade) {
@@ -151,8 +192,10 @@ export function TradingInterface() {
         setBuyEmirate("");
         
         // Refresh data
-        fetchOrderBook();
-        fetchHoldings();
+        await Promise.all([
+          fetchOrderBook(),
+          fetchHoldings(false) // Don't show loading for background refresh
+        ]);
       } else {
         toast.error(response.message || 'Failed to place buy order');
       }
@@ -170,7 +213,7 @@ export function TradingInterface() {
       return;
     }
 
-    if (!sellQuantity || !sellPrice || !sellHolding) {
+    if (!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings') {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -188,11 +231,14 @@ export function TradingInterface() {
 
     try {
       setPlacingOrder(true);
-      const response = await apiService.createSellOrder({
+      
+      const orderData = {
         holdingId: sellHolding,
         quantity: parseFloat(sellQuantity),
         price: parseFloat(sellPrice)
-      });
+      };
+      
+      const response = await apiService.createSellOrder(orderData);
 
       if (response.success) {
         toast.success(`Sell order placed successfully! ${response.data.matchedQuantity > 0 ? `${response.data.matchedQuantity} I-RECs matched immediately.` : ''}`);
@@ -203,8 +249,10 @@ export function TradingInterface() {
         setSellHolding("");
         
         // Refresh data
-        fetchOrderBook();
-        fetchHoldings();
+        await Promise.all([
+          fetchOrderBook(),
+          fetchHoldings(false) // Don't show loading for background refresh
+        ]);
       } else {
         toast.error(response.message || 'Failed to place sell order');
       }
@@ -423,28 +471,103 @@ export function TradingInterface() {
             
             <TabsContent value="sell" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="sell-holdings">Select from Portfolio</Label>
-                <Select value={sellHolding} onValueChange={setSellHolding}>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="sell-holdings">Select from Portfolio</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fetchHoldings()}
+                    disabled={holdingsLoading}
+                    className="h-6 px-2 text-xs"
+                  >
+                    {holdingsLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      'Refresh'
+                    )}
+                  </Button>
+                </div>
+                <Select 
+                  value={sellHolding} 
+                  onValueChange={setSellHolding}
+                  disabled={holdingsLoading || placingOrder}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select I-REC to sell" />
+                    <SelectValue 
+                      placeholder={
+                        holdingsLoading 
+                          ? "Loading holdings..." 
+                          : holdingsError 
+                            ? "Error loading holdings" 
+                            : "Select I-REC to sell"
+                      } 
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {holdings.length > 0 ? (
+                    {holdingsLoading ? (
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Loading holdings...</span>
+                        </div>
+                      </SelectItem>
+                    ) : holdingsError ? (
+                      <SelectItem value="error" disabled>
+                        <div className="flex items-center space-x-2 text-red-500">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Error loading holdings</span>
+                        </div>
+                      </SelectItem>
+                    ) : holdings.length > 0 ? (
                       holdings.map((holding) => (
                         <SelectItem key={holding._id} value={holding._id}>
                           {holding.energyType.charAt(0).toUpperCase() + holding.energyType.slice(1)} - {holding.facilityName} {holding.vintage} ({holding.quantity.toLocaleString()} MWh)
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="" disabled>
-                        No tradeable holdings available
+                      <SelectItem value="no-holdings" disabled>
+                        <div className="text-center py-2">
+                          <div className="text-sm text-muted-foreground">
+                            No tradeable holdings available
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Holdings may be locked or have zero quantity
+                          </div>
+                        </div>
                       </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
+                {holdingsError && (
+                  <div className="flex items-center space-x-2 text-sm text-red-500">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{holdingsError}</span>
+                    {retryCount > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        (Attempt {retryCount + 1})
+                      </span>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchHoldings()}
+                      className="ml-auto"
+                      disabled={holdingsLoading}
+                    >
+                      {holdingsLoading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Retrying...
+                        </>
+                      ) : (
+                        'Retry'
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
               
-              {sellHolding && holdings.find(h => h._id === sellHolding) && (
+              {sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings' && holdings.find(h => h._id === sellHolding) && (
                 <div className="bg-rectify-accent p-3 rounded-lg border border-rectify-border">
                   <div className="text-sm space-y-1">
                     <div className="font-medium">Holding Details:</div>
@@ -515,7 +638,7 @@ export function TradingInterface() {
               
               <Button 
                 onClick={handleSellOrder}
-                disabled={!sellQuantity || !sellPrice || !sellHolding || placingOrder}
+                disabled={!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings' || placingOrder || holdingsLoading || holdingsError}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
               >
                 {placingOrder ? (
