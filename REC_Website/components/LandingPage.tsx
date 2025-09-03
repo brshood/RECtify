@@ -326,7 +326,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               animate="animate"
             >
               {[
-                { value: "5,000", label: "MWh Available", color: "text-rectify-green" },
+                { value: "0", label: "MWh Available", color: "text-rectify-green" },
                 { value: "99.9%", label: "Platform Uptime", color: "text-rectify-blue" },
                 { value: "24/7", label: "Trading Available", color: "text-rectify-green" }
               ].map((stat, index) => (

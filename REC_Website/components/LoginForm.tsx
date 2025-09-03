@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useAuth, UserRole } from './AuthContext';
-import { Loader2, Shield, Users, Building, FileCheck, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormProps {
   onClose?: () => void;
@@ -69,43 +69,7 @@ export function LoginForm({ onClose }: LoginFormProps) {
     }
   };
 
-  const demoCredentials = [
-    { email: 'ahmed.alshamsi@adnoc.ae', password: 'demo123', role: 'Facility Owner', company: 'ADNOC Clean Energy', tier: 'Enterprise' },
-    { email: 'fatima.hassan@masdar.ae', password: 'demo123', role: 'Trader', company: 'Masdar City', tier: 'Premium' },
-    { email: 'omar.khalil@dewa.gov.ae', password: 'demo123', role: 'Compliance Officer', company: 'DEWA', tier: 'Enterprise' },
-    { email: 'demo@rectify.ae', password: 'demo123', role: 'Basic Trader', company: 'RECtify Demo', tier: 'Basic' }
-  ];
 
-  const fillDemoCredentials = (email: string, password: string) => {
-    setLoginData({ email, password });
-  };
-
-  const getRoleIcon = (role: string) => {
-    switch (role.toLowerCase()) {
-      case 'facility owner':
-        return <Building className="h-4 w-4" />;
-      case 'trader':
-      case 'basic trader':
-        return <Users className="h-4 w-4" />;
-      case 'compliance officer':
-        return <FileCheck className="h-4 w-4" />;
-      default:
-        return <Shield className="h-4 w-4" />;
-    }
-  };
-
-  const getTierColor = (tier: string) => {
-    switch (tier.toLowerCase()) {
-      case 'enterprise':
-        return 'bg-purple-100 text-purple-800';
-      case 'premium':
-        return 'bg-blue-100 text-blue-800';
-      case 'basic':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -177,40 +141,7 @@ export function LoginForm({ onClose }: LoginFormProps) {
                 </Button>
               </form>
 
-              <div className="space-y-3">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Demo Accounts</span>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  {demoCredentials.map((demo, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => fillDemoCredentials(demo.email, demo.password)}
-                      className="w-full p-3 text-left border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          {getRoleIcon(demo.role)}
-                          <div>
-                            <div className="font-medium text-sm">{demo.role}</div>
-                            <div className="text-xs text-muted-foreground">{demo.company}</div>
-                          </div>
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${getTierColor(demo.tier)}`}>
-                          {demo.tier}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4">
