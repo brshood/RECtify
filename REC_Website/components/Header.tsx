@@ -1,5 +1,5 @@
 import { Button } from "./ui/button";
-import { Bell, User, Menu, Shield, Globe, Home, LogIn } from "lucide-react";
+import { Bell, User, Menu, Shield, Home, LogIn } from "lucide-react";
 import { Badge } from "./ui/badge";
 // Use public URL for static assets
 const rectifyFullLogo = "/logo.png";
@@ -51,12 +51,6 @@ export function Header({ onNavigateHome, showNavigation = true, onOpenLogin, onO
 				</div>
 				
 				<div className="flex items-center space-x-2 sm:space-x-3">
-					<div className="hidden md:flex items-center space-x-3 lg:space-x-4">
-						<div className="hidden lg:flex items-center space-x-2 text-sm text-muted-foreground">
-							<Globe className="h-4 w-4" />
-							<span>AED | USD</span>
-						</div>
-					</div>
 					
 					<Button variant="ghost" size="sm" className="h-8 w-8 p-0" type="button" aria-label="Notifications">
 						<Bell className="h-4 w-4" />
