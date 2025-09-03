@@ -225,10 +225,11 @@ orderSchema.statics.findMatchingOrders = async function(order) {
     ? { price: { $lte: order.price } } // Buy order matches sell orders at or below buy price
     : { price: { $gte: order.price } }; // Sell order matches buy orders at or above sell price
 
+  // For network trading, we match based on energy type, vintage, emirate, and certification standard
+  // Users can buy from any facility that meets their criteria, not just the exact same facility
   return await this.find({
     orderType: oppositeType,
     status: { $in: ['pending', 'partial'] },
-    facilityName: order.facilityName,
     energyType: order.energyType,
     vintage: order.vintage,
     emirate: order.emirate,

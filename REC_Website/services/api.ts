@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 // Debug: Log the API URL being used
 console.log('🔍 API_BASE_URL:', API_BASE_URL);
@@ -245,6 +245,20 @@ class ApiService {
       // If backend is not available, return mock data for testing
       console.warn('Backend not available, returning mock transaction data');
       return this.getMockTransactions(limit, status);
+    }
+  }
+
+  async getTransactionHistory(limit?: number): Promise<ApiResponse> {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    
+    const queryString = params.toString();
+    
+    try {
+      return await this.request(`/transactions/history${queryString ? `?${queryString}` : ''}`);
+    } catch (error) {
+      console.error('Error fetching transaction history:', error);
+      throw error;
     }
   }
 

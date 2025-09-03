@@ -102,10 +102,12 @@ export function TradingInterface() {
     vintages: [],
     totalSellOrders: 0
   });
+  const [transactionHistory, setTransactionHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [orderBookLoading, setOrderBookLoading] = useState(true);
   const [holdingsLoading, setHoldingsLoading] = useState(false);
   const [availableForBuyLoading, setAvailableForBuyLoading] = useState(true);
+  const [transactionHistoryLoading, setTransactionHistoryLoading] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [holdingsError, setHoldingsError] = useState<string | null>(null);
   const [availableForBuyError, setAvailableForBuyError] = useState<string | null>(null);
@@ -124,7 +126,8 @@ export function TradingInterface() {
           await Promise.all([
             fetchOrderBook(),
             fetchHoldings(),
-            fetchAvailableForBuy()
+            fetchAvailableForBuy(),
+            fetchTransactionHistory()
           ]);
         } catch (error) {
           console.error('Error loading initial data:', error);
@@ -146,6 +149,21 @@ export function TradingInterface() {
       toast.error('Failed to load order book');
     } finally {
       setOrderBookLoading(false);
+    }
+  };
+
+  const fetchTransactionHistory = async () => {
+    try {
+      setTransactionHistoryLoading(true);
+      const response = await apiService.getTransactionHistory(20);
+      if (response.success) {
+        setTransactionHistory(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching transaction history:', error);
+      toast.error('Failed to load transaction history');
+    } finally {
+      setTransactionHistoryLoading(false);
     }
   };
 
@@ -314,7 +332,8 @@ export function TradingInterface() {
         await Promise.all([
           fetchOrderBook(),
           fetchHoldings(false), // Don't show loading for background refresh
-          fetchAvailableForBuy() // Refresh available options
+          fetchAvailableForBuy(), // Refresh available options
+          fetchTransactionHistory() // Refresh transaction history
         ]);
       } else {
         toast.error(response.message || 'Failed to place buy order');
@@ -373,7 +392,8 @@ export function TradingInterface() {
         await Promise.all([
           fetchOrderBook(),
           fetchHoldings(false), // Don't show loading for background refresh
-          fetchAvailableForBuy() // Refresh available options
+          fetchAvailableForBuy(), // Refresh available options
+          fetchTransactionHistory() // Refresh transaction history
         ]);
       } else {
         toast.error(response.message || 'Failed to place sell order');
@@ -978,24 +998,34 @@ export function TradingInterface() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span>Network Order Book</span>
+              <span>Order Book</span>
               <Calculator className="h-4 w-4" />
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchOrderBook}
-              disabled={orderBookLoading}
+              onClick={() => {
+                fetchOrderBook();
+                fetchTransactionHistory();
+              }}
+              disabled={orderBookLoading || transactionHistoryLoading}
             >
-              {orderBookLoading ? (
+              {(orderBookLoading || transactionHistoryLoading) ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                'Refresh Network'
+                'Refresh'
               )}
             </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <Tabs defaultValue="orders" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="orders">Live Orders</TabsTrigger>
+              <TabsTrigger value="transactions">Transaction History</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="orders" className="space-y-4 mt-4">
           {orderBookLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-rectify-green" />
@@ -1123,6 +1153,53 @@ export function TradingInterface() {
               )}
             </div>
           )}
+            </TabsContent>
+            
+            <TabsContent value="transactions" className="space-y-4 mt-4">
+              {transactionHistoryLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-rectify-green" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transactionHistory.length > 0 ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {transactionHistory.map((transaction) => (
+                        <div key={transaction._id} className="flex justify-between items-center text-sm p-3 bg-green-50 rounded border border-green-200 hover:bg-green-100 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="text-green-600 font-semibold">
+                              {transaction.buyerId.firstName} {transaction.buyerId.lastName}
+                            </span>
+                            <span className="text-muted-foreground">bought from</span>
+                            <span className="text-orange-600 font-semibold">
+                              {transaction.sellerId.firstName} {transaction.sellerId.lastName}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{transaction.quantity} MWh</div>
+                            <div className="text-xs text-muted-foreground">
+                              AED {transaction.pricePerUnit.toFixed(2)}/MWh • {transaction.energyType} • {transaction.emirate}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(transaction.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No completed transactions yet</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Completed trades will appear here
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
