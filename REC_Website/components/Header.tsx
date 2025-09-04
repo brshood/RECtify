@@ -1,5 +1,5 @@
 import { Button } from "./ui/button";
-import { Bell, User, Menu, Shield, Home, LogIn } from "lucide-react";
+import { User, Menu, Shield, Home, LogIn } from "lucide-react";
 import { Badge } from "./ui/badge";
 // Use public URL for static assets
 const rectifyFullLogo = "/logo.png";
@@ -51,10 +51,6 @@ export function Header({ onNavigateHome, showNavigation = true, onOpenLogin, onO
 				</div>
 				
 				<div className="flex items-center space-x-2 sm:space-x-3">
-					
-					<Button variant="ghost" size="sm" className="h-8 w-8 p-0" type="button" aria-label="Notifications">
-						<Bell className="h-4 w-4" />
-					</Button>
 					<Button variant="ghost" size="sm" className="h-8 w-8 p-0" type="button" aria-label="Profile" onClick={() => onOpenProfile?.()}>
 						<User className="h-4 w-4" />
 					</Button>
