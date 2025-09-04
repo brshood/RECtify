@@ -11,6 +11,7 @@ import { Shield, FileCheck, Calculator, Loader2, AlertCircle, TrendingUp, Trendi
 import { useAuth } from "./AuthContext";
 import apiService from "../services/api";
 import { toast } from "sonner";
+import BlockchainMonitor from "./BlockchainMonitor";
 
 interface Order {
   _id: string;
@@ -447,7 +448,9 @@ export function TradingInterface() {
   const formatUSD = (amount: number) => `$${amount.toFixed(2)}`;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-6">
+      {/* Main Trading Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
           <CardTitle>
@@ -1191,6 +1194,10 @@ export function TradingInterface() {
           </Tabs>
         </CardContent>
       </Card>
+      </div>
+
+      {/* Blockchain Monitor */}
+      <BlockchainMonitor />
     </div>
   );
 }

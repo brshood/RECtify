@@ -15,7 +15,9 @@ const userRoutes = require('./routes/users');
 const holdingsRoutes = require('./routes/holdings');
 const ordersRoutes = require('./routes/orders');
 const transactionsRoutes = require('./routes/transactions');
+const recSecurityRoutes = require('./routes/recSecurity');
 const { xssProtection, validateRequestSize, securityHeaders } = require('./middleware/security');
+const RECSecurityService = require('./services/RECSecurityService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -169,6 +171,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/holdings', holdingsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/transactions', transactionsRoutes);
+app.use('/api/rec-security', recSecurityRoutes);
 
 // Health check endpoint - Enhanced for production monitoring
 app.get('/api/health', async (req, res) => {
@@ -270,9 +273,24 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`🚀 RECtify API server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Initialize blockchain service for REC security
+  try {
+    console.log('🔒 Initializing REC Security Service...');
+    const blockchainInit = await RECSecurityService.initialize();
+    if (blockchainInit.success) {
+      console.log(`✅ REC Security Service initialized: ${blockchainInit.message}`);
+      console.log(`🌐 Network: ${blockchainInit.network}`);
+      console.log(`🎯 Purpose: ${blockchainInit.purpose}`);
+    } else {
+      console.log(`⚠️ REC Security Service initialization failed: ${blockchainInit.message}`);
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize REC Security Service:', error.message);
+  }
 });
 
 // Graceful shutdown handling
