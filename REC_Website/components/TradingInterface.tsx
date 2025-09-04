@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
-import { Shield, FileCheck, Calculator, Loader2, AlertCircle, TrendingUp, TrendingDown } from "lucide-react";
+import { Shield, FileCheck, Calculator, Loader2, AlertCircle, TrendingUp, TrendingDown, Wifi, Users, Activity } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import apiService from "../services/api";
 import { toast } from "sonner";
@@ -34,6 +34,13 @@ interface Order {
 interface OrderBook {
   buyOrders: Order[];
   sellOrders: Order[];
+  networkStats?: {
+    totalActiveOrders: number;
+    totalBuyOrders: number;
+    totalSellOrders: number;
+    uniqueParticipants: number;
+    lastUpdated: string;
+  };
 }
 
 interface Holding {
@@ -95,10 +102,12 @@ export function TradingInterface() {
     vintages: [],
     totalSellOrders: 0
   });
+  const [transactionHistory, setTransactionHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [orderBookLoading, setOrderBookLoading] = useState(true);
   const [holdingsLoading, setHoldingsLoading] = useState(false);
   const [availableForBuyLoading, setAvailableForBuyLoading] = useState(true);
+  const [transactionHistoryLoading, setTransactionHistoryLoading] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [holdingsError, setHoldingsError] = useState<string | null>(null);
   const [availableForBuyError, setAvailableForBuyError] = useState<string | null>(null);
@@ -117,7 +126,8 @@ export function TradingInterface() {
           await Promise.all([
             fetchOrderBook(),
             fetchHoldings(),
-            fetchAvailableForBuy()
+            fetchAvailableForBuy(),
+            fetchTransactionHistory()
           ]);
         } catch (error) {
           console.error('Error loading initial data:', error);
@@ -139,6 +149,21 @@ export function TradingInterface() {
       toast.error('Failed to load order book');
     } finally {
       setOrderBookLoading(false);
+    }
+  };
+
+  const fetchTransactionHistory = async () => {
+    try {
+      setTransactionHistoryLoading(true);
+      const response = await apiService.getTransactionHistory(20);
+      if (response.success) {
+        setTransactionHistory(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching transaction history:', error);
+      toast.error('Failed to load transaction history');
+    } finally {
+      setTransactionHistoryLoading(false);
     }
   };
 
@@ -242,13 +267,23 @@ export function TradingInterface() {
   }, [buyFacility, availableForBuy.facilities, buyEnergyType, buyEmirate, buyVintage]);
 
   const handleBuyOrder = async () => {
-    if (!user?.permissions.canTrade) {
+    console.log('🛒 Buy order button clicked');
+    console.log('👤 User:', user);
+    console.log('🔑 User permissions:', user?.permissions);
+    
+    if (!user) {
+      toast.error('Please log in to place orders');
+      return;
+    }
+
+    if (!user?.permissions?.canTrade) {
       toast.error('You do not have trading permissions');
       return;
     }
 
     if (!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate) {
       toast.error('Please fill in all required fields');
+      console.log('❌ Missing fields:', { buyQuantity, buyPrice, buyEnergyType, buyFacility, buyVintage, buyPurpose, buyEmirate });
       return;
     }
 
@@ -262,8 +297,9 @@ export function TradingInterface() {
 
     try {
       setPlacingOrder(true);
+      console.log('📤 Sending buy order request...');
       
-      const response = await apiService.createBuyOrder({
+      const orderData = {
         facilityName: selectedFacility.facilityName,
         facilityId: selectedFacility.facilityId,
         energyType: selectedFacility.energyType,
@@ -273,10 +309,15 @@ export function TradingInterface() {
         emirate: selectedFacility.emirate,
         purpose: buyPurpose,
         certificationStandard: 'I-REC'
-      });
+      };
+      
+      console.log('📋 Order data:', orderData);
+      
+      const response = await apiService.createBuyOrder(orderData);
+      console.log('📥 API response:', response);
 
       if (response.success) {
-        toast.success(`Buy order placed successfully! ${response.data.matchedQuantity > 0 ? `${response.data.matchedQuantity} I-RECs matched immediately.` : ''}`);
+        toast.success(`Buy order placed successfully in the network! ${response.data.matchedQuantity > 0 ? `${response.data.matchedQuantity} I-RECs matched immediately with other network participants.` : 'Your order is now visible to all network participants.'}`);
         
         // Reset form
         setBuyQuantity("");
@@ -291,14 +332,16 @@ export function TradingInterface() {
         await Promise.all([
           fetchOrderBook(),
           fetchHoldings(false), // Don't show loading for background refresh
-          fetchAvailableForBuy() // Refresh available options
+          fetchAvailableForBuy(), // Refresh available options
+          fetchTransactionHistory() // Refresh transaction history
         ]);
       } else {
         toast.error(response.message || 'Failed to place buy order');
       }
     } catch (error: any) {
-      console.error('Error placing buy order:', error);
-      toast.error(error.message || 'Failed to place buy order');
+      console.error('❌ Error placing buy order:', error);
+      console.error('❌ Error details:', error.response?.data);
+      toast.error(error.response?.data?.message || error.message || 'Failed to place buy order');
     } finally {
       setPlacingOrder(false);
     }
@@ -349,7 +392,8 @@ export function TradingInterface() {
         await Promise.all([
           fetchOrderBook(),
           fetchHoldings(false), // Don't show loading for background refresh
-          fetchAvailableForBuy() // Refresh available options
+          fetchAvailableForBuy(), // Refresh available options
+          fetchTransactionHistory() // Refresh transaction history
         ]);
       } else {
         toast.error(response.message || 'Failed to place sell order');
@@ -406,12 +450,8 @@ export function TradingInterface() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <span>Trade I-RECs</span>
-            <Badge variant="outline" className="flex items-center space-x-1">
-              <Shield className="h-3 w-3" />
-              <span>KYC Verified</span>
-            </Badge>
+          <CardTitle>
+            <span>Network Trading</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -426,14 +466,16 @@ export function TradingInterface() {
               {!availableForBuyLoading && !availableForBuyError && (
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                   <div className="text-sm space-y-1">
-                    <div className="font-medium text-blue-900">Market Overview</div>
+                    <div className="font-medium text-blue-900">
+                      <span>Network Market Overview</span>
+                    </div>
                     <div className="text-blue-700">
                       {availableForBuy.totalSellOrders > 0 ? (
                         <>
-                          {availableForBuy.totalSellOrders} sell orders available across {availableForBuy.facilities.length} facilities
+                          {availableForBuy.totalSellOrders} pending sell orders available across {availableForBuy.facilities.length} facilities in the network
                         </>
                       ) : (
-                        "No sell orders currently available in the market"
+                        "No pending sell orders currently available in the network"
                       )}
                     </div>
                     {availableForBuy.energyTypes.length > 0 && (
@@ -962,10 +1004,13 @@ export function TradingInterface() {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchOrderBook}
-              disabled={orderBookLoading}
+              onClick={() => {
+                fetchOrderBook();
+                fetchTransactionHistory();
+              }}
+              disabled={orderBookLoading || transactionHistoryLoading}
             >
-              {orderBookLoading ? (
+              {(orderBookLoading || transactionHistoryLoading) ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
                 'Refresh'
@@ -974,39 +1019,84 @@ export function TradingInterface() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <Tabs defaultValue="orders" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="orders">Live Orders</TabsTrigger>
+              <TabsTrigger value="transactions">Transaction History</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="orders" className="space-y-4 mt-4">
           {orderBookLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-rectify-green" />
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Network Statistics */}
+              {orderBook.networkStats && (
+                <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border border-blue-200">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div className="flex flex-col items-center">
+                      <Activity className="h-5 w-5 text-blue-600 mb-1" />
+                      <div className="text-2xl font-bold text-blue-600">{orderBook.networkStats.totalActiveOrders}</div>
+                      <div className="text-xs text-muted-foreground">Active Orders</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <TrendingUp className="h-5 w-5 text-green-600 mb-1" />
+                      <div className="text-2xl font-bold text-green-600">{orderBook.networkStats.totalBuyOrders}</div>
+                      <div className="text-xs text-muted-foreground">Buy Orders</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <TrendingDown className="h-5 w-5 text-orange-600 mb-1" />
+                      <div className="text-2xl font-bold text-orange-600">{orderBook.networkStats.totalSellOrders}</div>
+                      <div className="text-xs text-muted-foreground">Sell Orders</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <Users className="h-5 w-5 text-purple-600 mb-1" />
+                      <div className="text-2xl font-bold text-purple-600">{orderBook.networkStats.uniqueParticipants}</div>
+                      <div className="text-xs text-muted-foreground">Participants</div>
+                    </div>
+                  </div>
+                  <div className="text-center mt-2">
+                    <div className="text-xs text-muted-foreground">
+                      Last updated: {new Date(orderBook.networkStats.lastUpdated).toLocaleTimeString()}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <Separator />
+              
               <div>
                 <h4 className="text-sm font-medium mb-2 text-rectify-green flex items-center space-x-2">
                   <TrendingUp className="h-4 w-4" />
-                  <span>Buy Orders (AED/MWh)</span>
+                  <span>Pending Buy Orders (AED/MWh)</span>
                   <Badge variant="secondary">{orderBook.buyOrders.length}</Badge>
                 </h4>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {orderBook.buyOrders.length > 0 ? (
                     orderBook.buyOrders.map((order) => (
-                      <div key={order._id} className="flex justify-between items-center text-sm p-2 bg-green-50 rounded border">
+                      <div key={order._id} className="flex justify-between items-center text-sm p-3 bg-green-50 rounded border border-green-200 hover:bg-green-100 transition-colors">
                         <div className="flex items-center gap-2">
-                          <span className="text-rectify-green font-medium">AED {order.price.toFixed(2)}</span>
+                          <span className="text-rectify-green font-semibold">AED {order.price.toFixed(2)}</span>
                           <span className="text-xs text-muted-foreground">
                             by {order.createdBy}
                           </span>
+
                         </div>
                         <div className="text-right">
-                          <div>{order.remainingQuantity.toLocaleString()} MWh</div>
+                          <div className="font-medium">{order.remainingQuantity.toLocaleString()} MWh</div>
                           <div className="text-xs text-muted-foreground capitalize">
                             {order.energyType} • {order.emirate}
                           </div>
+
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-4 text-muted-foreground">
-                      No buy orders available
+                      <div className="text-sm">No pending buy orders in network</div>
+                      <div className="text-xs mt-1">Place a buy order to start trading</div>
                     </div>
                   )}
                 </div>
@@ -1017,30 +1107,33 @@ export function TradingInterface() {
               <div>
                 <h4 className="text-sm font-medium mb-2 text-orange-500 flex items-center space-x-2">
                   <TrendingDown className="h-4 w-4" />
-                  <span>Sell Orders (AED/MWh)</span>
+                  <span>Pending Sell Orders (AED/MWh)</span>
                   <Badge variant="secondary">{orderBook.sellOrders.length}</Badge>
                 </h4>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {orderBook.sellOrders.length > 0 ? (
                     orderBook.sellOrders.map((order) => (
-                      <div key={order._id} className="flex justify-between items-center text-sm p-2 bg-orange-50 rounded border">
+                      <div key={order._id} className="flex justify-between items-center text-sm p-3 bg-orange-50 rounded border border-orange-200 hover:bg-orange-100 transition-colors">
                         <div className="flex items-center gap-2">
-                          <span className="text-orange-500 font-medium">AED {order.price.toFixed(2)}</span>
+                          <span className="text-orange-500 font-semibold">AED {order.price.toFixed(2)}</span>
                           <span className="text-xs text-muted-foreground">
                             by {order.createdBy}
                           </span>
+
                         </div>
                         <div className="text-right">
-                          <div>{order.remainingQuantity.toLocaleString()} MWh</div>
+                          <div className="font-medium">{order.remainingQuantity.toLocaleString()} MWh</div>
                           <div className="text-xs text-muted-foreground capitalize">
                             {order.energyType} • {order.emirate}
                           </div>
+
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-4 text-muted-foreground">
-                      No sell orders available
+                      <div className="text-sm">No pending sell orders in network</div>
+                      <div className="text-xs mt-1">Place a sell order to start trading</div>
                     </div>
                   )}
                 </div>
@@ -1049,14 +1142,64 @@ export function TradingInterface() {
               {orderBook.buyOrders.length === 0 && orderBook.sellOrders.length === 0 && (
                 <div className="text-center py-8">
                   <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No active orders in the market</p>
+                  <p className="text-muted-foreground">No active orders in the network</p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Be the first to place an order and start trading!
+                    Be the first to place an order and start network trading!
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your orders will be visible to all network participants
                   </p>
                 </div>
               )}
             </div>
           )}
+            </TabsContent>
+            
+            <TabsContent value="transactions" className="space-y-4 mt-4">
+              {transactionHistoryLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-rectify-green" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transactionHistory.length > 0 ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {transactionHistory.map((transaction) => (
+                        <div key={transaction._id} className="flex justify-between items-center text-sm p-3 bg-green-50 rounded border border-green-200 hover:bg-green-100 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="text-green-600 font-semibold">
+                              {transaction.buyerId.firstName} {transaction.buyerId.lastName}
+                            </span>
+                            <span className="text-muted-foreground">bought from</span>
+                            <span className="text-orange-600 font-semibold">
+                              {transaction.sellerId.firstName} {transaction.sellerId.lastName}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{transaction.quantity} MWh</div>
+                            <div className="text-xs text-muted-foreground">
+                              AED {transaction.pricePerUnit.toFixed(2)}/MWh • {transaction.energyType} • {transaction.emirate}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(transaction.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No completed transactions yet</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Completed trades will appear here
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

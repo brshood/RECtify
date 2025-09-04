@@ -58,6 +58,47 @@ router.get('/', [
   }
 });
 
+// @route   GET /api/transactions/history
+// @desc    Get all completed transactions for order book display
+// @access  Private
+router.get('/history', [
+  auth,
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const limit = parseInt(req.query.limit) || 20;
+
+    const transactions = await Transaction.find({
+      status: 'completed'
+    })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate('buyerId', 'firstName lastName company')
+      .populate('sellerId', 'firstName lastName company')
+      .lean();
+
+    res.json({
+      success: true,
+      data: transactions
+    });
+  } catch (error) {
+    console.error('Error fetching transaction history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching transaction history'
+    });
+  }
+});
+
 // @route   GET /api/transactions/:id
 // @desc    Get transaction details
 // @access  Private

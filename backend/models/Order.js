@@ -193,16 +193,33 @@ orderSchema.statics.getOrderBook = async function(limit = 50) {
   .populate('userId', 'firstName lastName company')
   .lean();
 
-  const sellOrders = await this.find({
+  const allSellOrders = await this.find({
     orderType: 'sell',
     status: { $in: ['pending', 'partial'] },
     isPublic: true,
     expiresAt: { $gt: new Date() }
   })
   .sort({ price: 1, createdAt: 1 }) // Lowest price first for sell orders
-  .limit(limit)
   .populate('userId', 'firstName lastName company')
   .lean();
+
+  // Deduplicate sell orders: keep only the lowest price for each unique facility/product combination
+  const sellOrderMap = new Map();
+  
+  allSellOrders.forEach(order => {
+    // Create a unique key for each facility/product combination
+    const key = `${order.facilityName}-${order.energyType}-${order.emirate}-${order.vintage}-${order.certificationStandard}`;
+    
+    // If this is the first order for this combination, or if this order has a lower price
+    if (!sellOrderMap.has(key) || order.price < sellOrderMap.get(key).price) {
+      sellOrderMap.set(key, order);
+    }
+  });
+  
+  // Convert map back to array and limit results
+  const sellOrders = Array.from(sellOrderMap.values())
+    .sort((a, b) => a.price - b.price) // Sort by price ascending
+    .slice(0, limit);
 
   return { buyOrders, sellOrders };
 };
@@ -225,10 +242,11 @@ orderSchema.statics.findMatchingOrders = async function(order) {
     ? { price: { $lte: order.price } } // Buy order matches sell orders at or below buy price
     : { price: { $gte: order.price } }; // Sell order matches buy orders at or above sell price
 
+  // For network trading, we match based on energy type, vintage, emirate, and certification standard
+  // Users can buy from any facility that meets their criteria, not just the exact same facility
   return await this.find({
     orderType: oppositeType,
     status: { $in: ['pending', 'partial'] },
-    facilityName: order.facilityName,
     energyType: order.energyType,
     vintage: order.vintage,
     emirate: order.emirate,

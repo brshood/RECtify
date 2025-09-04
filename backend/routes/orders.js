@@ -71,9 +71,24 @@ router.get('/book', [
     const limit = parseInt(req.query.limit) || 50;
     const orderBook = await Order.getOrderBook(limit);
 
+    // Add network statistics
+    const networkStats = {
+      totalActiveOrders: orderBook.buyOrders.length + orderBook.sellOrders.length,
+      totalBuyOrders: orderBook.buyOrders.length,
+      totalSellOrders: orderBook.sellOrders.length,
+      uniqueParticipants: new Set([
+        ...orderBook.buyOrders.map(o => o.userId._id.toString()),
+        ...orderBook.sellOrders.map(o => o.userId._id.toString())
+      ]).size,
+      lastUpdated: new Date()
+    };
+
     res.json({
       success: true,
-      data: orderBook
+      data: {
+        ...orderBook,
+        networkStats
+      }
     });
   } catch (error) {
     console.error('Error fetching order book:', error);
@@ -245,7 +260,9 @@ router.post('/buy', [
       energyType,
       vintage,
       quantity,
+      remainingQuantity: quantity,
       price,
+      totalValue: quantity * price,
       emirate,
       purpose,
       certificationStandard,
@@ -276,17 +293,21 @@ router.post('/buy', [
           sellerId: sellOrder.userId,
           buyOrderId: order._id,
           sellOrderId: sellOrder._id,
-          facilityName: order.facilityName,
-          facilityId: order.facilityId,
-          energyType: order.energyType,
-          vintage: order.vintage,
-          emirate: order.emirate,
-          certificationStandard: order.certificationStandard,
+          facilityName: sellOrder.facilityName, // Use seller's facility details
+          facilityId: sellOrder.facilityId,
+          energyType: sellOrder.energyType,
+          vintage: sellOrder.vintage,
+          emirate: sellOrder.emirate,
+          certificationStandard: sellOrder.certificationStandard,
           quantity: matchQuantity,
           pricePerUnit: sellOrder.price, // Seller's price takes precedence
+          totalAmount: matchQuantity * sellOrder.price,
           buyerPlatformFee: matchQuantity * sellOrder.price * order.platformFeeRate,
           sellerPlatformFee: matchQuantity * sellOrder.price * sellOrder.platformFeeRate,
-          blockchainFee: order.blockchainFee
+          blockchainFee: order.blockchainFee,
+          status: 'completed',
+          settlementStatus: 'completed',
+          settlementDate: new Date()
         });
 
         await transaction.save();
@@ -308,13 +329,13 @@ router.post('/buy', [
             await sellerHolding.save();
           }
 
-          // Add to buyer's holding
+          // Add to buyer's holding (using seller's facility details)
           let buyerHolding = await RECHolding.findOne({
             userId: order.userId,
-            facilityId: order.facilityId,
-            energyType: order.energyType,
-            vintage: order.vintage,
-            certificationStandard: order.certificationStandard
+            facilityId: sellOrder.facilityId,
+            energyType: sellOrder.energyType,
+            vintage: sellOrder.vintage,
+            certificationStandard: sellOrder.certificationStandard
           });
 
           if (buyerHolding) {
@@ -327,14 +348,15 @@ router.post('/buy', [
           } else {
             buyerHolding = new RECHolding({
               userId: order.userId,
-              facilityName: order.facilityName,
-              facilityId: order.facilityId,
-              energyType: order.energyType,
-              vintage: order.vintage,
+              facilityName: sellOrder.facilityName,
+              facilityId: sellOrder.facilityId,
+              energyType: sellOrder.energyType,
+              vintage: sellOrder.vintage,
               quantity: matchQuantity,
               averagePurchasePrice: sellOrder.price,
-              emirate: order.emirate,
-              certificationStandard: order.certificationStandard
+              totalValue: matchQuantity * sellOrder.price,
+              emirate: sellOrder.emirate,
+              certificationStandard: sellOrder.certificationStandard
             });
             await buyerHolding.save();
           }
@@ -355,7 +377,7 @@ router.post('/buy', [
       }
     }
 
-    const updatedOrder = await Order.findById(order._id).populate('userId', 'firstName lastName company');
+    const updatedOrder = await Order.findById(order._id).populate('userId', 'firstName lastName company').lean();
 
     res.status(201).json({
       success: true,
@@ -367,9 +389,11 @@ router.post('/buy', [
     });
   } catch (error) {
     console.error('Error creating buy order:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Server error while creating buy order'
+      message: 'Server error while creating buy order',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -448,7 +472,9 @@ router.post('/sell', [
       energyType: holding.energyType,
       vintage: holding.vintage,
       quantity,
+      remainingQuantity: quantity,
       price,
+      totalValue: quantity * price,
       emirate: holding.emirate,
       certificationStandard: holding.certificationStandard,
       holdingId,
@@ -482,7 +508,7 @@ router.post('/sell', [
           sellerId: order.userId,
           buyOrderId: buyOrder._id,
           sellOrderId: order._id,
-          facilityName: order.facilityName,
+          facilityName: order.facilityName, // Use seller's facility details
           facilityId: order.facilityId,
           energyType: order.energyType,
           vintage: order.vintage,
@@ -490,9 +516,13 @@ router.post('/sell', [
           certificationStandard: order.certificationStandard,
           quantity: matchQuantity,
           pricePerUnit: order.price, // Seller's price
+          totalAmount: matchQuantity * order.price,
           buyerPlatformFee: matchQuantity * order.price * buyOrder.platformFeeRate,
           sellerPlatformFee: matchQuantity * order.price * order.platformFeeRate,
-          blockchainFee: order.blockchainFee
+          blockchainFee: order.blockchainFee,
+          status: 'completed',
+          settlementStatus: 'completed',
+          settlementDate: new Date()
         });
 
         await transaction.save();
@@ -514,7 +544,7 @@ router.post('/sell', [
             await sellerHolding.save();
           }
 
-          // Add to buyer's holding
+          // Add to buyer's holding (using seller's facility details)
           let buyerHolding = await RECHolding.findOne({
             userId: buyOrder.userId,
             facilityId: order.facilityId,
@@ -539,6 +569,7 @@ router.post('/sell', [
               vintage: order.vintage,
               quantity: matchQuantity,
               averagePurchasePrice: order.price,
+              totalValue: matchQuantity * order.price,
               emirate: order.emirate,
               certificationStandard: order.certificationStandard
             });
@@ -561,7 +592,7 @@ router.post('/sell', [
       }
     }
 
-    const updatedOrder = await Order.findById(order._id).populate('userId', 'firstName lastName company');
+    const updatedOrder = await Order.findById(order._id).populate('userId', 'firstName lastName company').lean();
 
     res.status(201).json({
       success: true,
