@@ -20,6 +20,9 @@ import {
   ChevronUp
 } from 'lucide-react';
 
+// API base URL for blockchain endpoints
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
 interface BlockchainStatus {
   initialized: boolean;
   network: string;
@@ -67,7 +70,7 @@ const BlockchainMonitor: React.FC<BlockchainMonitorProps> = ({ className }) => {
 
   // Check authentication status
   const checkAuthentication = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('rectify-token');
     const authenticated = !!token;
     setIsAuthenticated(authenticated);
     if (!authenticated) {
@@ -83,8 +86,8 @@ const BlockchainMonitor: React.FC<BlockchainMonitorProps> = ({ className }) => {
     try {
       if (!checkAuthentication()) return;
 
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/rec-security/status', {
+      const token = localStorage.getItem('rectify-token');
+      const response = await fetch(`${API_BASE_URL}/rec-security/status`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -111,8 +114,8 @@ const BlockchainMonitor: React.FC<BlockchainMonitorProps> = ({ className }) => {
     try {
       if (!checkAuthentication()) return;
 
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/rec-security/network-info', {
+      const token = localStorage.getItem('rectify-token');
+      const response = await fetch(`${API_BASE_URL}/rec-security/network-info`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -136,8 +139,8 @@ const BlockchainMonitor: React.FC<BlockchainMonitorProps> = ({ className }) => {
     try {
       if (!checkAuthentication()) return;
 
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/rec-security/transaction-history?limit=20', {
+      const token = localStorage.getItem('rectify-token');
+      const response = await fetch(`${API_BASE_URL}/rec-security/transaction-history?limit=20`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -167,8 +170,8 @@ const BlockchainMonitor: React.FC<BlockchainMonitorProps> = ({ className }) => {
         return;
       }
 
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/rec-security/initialize', {
+      const token = localStorage.getItem('rectify-token');
+      const response = await fetch(`${API_BASE_URL}/rec-security/initialize`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -218,7 +221,13 @@ const BlockchainMonitor: React.FC<BlockchainMonitorProps> = ({ className }) => {
   useEffect(() => {
     checkAuthentication();
     if (isAuthenticated) {
-      fetchAllData();
+      // Auto-initialize blockchain service if not already initialized
+      fetchAllData().then(() => {
+        // If blockchain status shows not initialized, try to initialize
+        if (!blockchainStatus?.initialized) {
+          initializeBlockchain();
+        }
+      });
     }
     const interval = setInterval(() => {
       if (isAuthenticated) {

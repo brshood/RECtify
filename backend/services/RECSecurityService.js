@@ -59,11 +59,25 @@ class RECSecurityService {
    */
   async initializeLocalProvider() {
     const localUrl = process.env.LOCAL_BLOCKCHAIN_URL || 'http://localhost:8545';
-    this.provider = new ethers.JsonRpcProvider(localUrl);
     
-    // Test connection
-    const network = await this.provider.getNetwork();
-    console.log(`🏠 Local blockchain connected: ${network.name} (Chain ID: ${network.chainId})`);
+    try {
+      this.provider = new ethers.JsonRpcProvider(localUrl);
+      
+      // Test connection with timeout
+      const network = await Promise.race([
+        this.provider.getNetwork(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 5000))
+      ]);
+      
+      console.log(`🏠 Local blockchain connected: ${network.name} (Chain ID: ${network.chainId})`);
+    } catch (error) {
+      console.log(`⚠️ Local blockchain not available at ${localUrl}, using mock mode for development`);
+      // Set a mock provider for development
+      this.provider = {
+        getNetwork: () => Promise.resolve({ name: 'mock-local', chainId: 1337 }),
+        getBlockNumber: () => Promise.resolve(12345)
+      };
+    }
   }
 
   /**
@@ -307,6 +321,13 @@ class RECSecurityService {
       totalTransactions: this.transactionQueue.size,
       status: this.isInitialized ? 'active' : 'inactive'
     };
+  }
+
+  /**
+   * Get transaction queue for monitoring
+   */
+  getTransactionQueue() {
+    return this.transactionQueue;
   }
 
   /**

@@ -15,9 +15,9 @@ router.get('/status', auth, async (req, res) => {
     res.json({
       success: true,
       data: {
+        status: status,
         service: 'REC Security Service',
         purpose: 'REC_TRANSACTION_SECURITY_AND_AUDIT',
-        status: status,
         features: [
           'REC ownership verification',
           'Immutable transaction records',
@@ -271,72 +271,31 @@ router.get('/transaction-history', auth, async (req, res) => {
     // Get all transactions from the blockchain service's transaction queue
     const serviceStatus = RECSecurityService.getServiceStatus();
     if (serviceStatus.initialized) {
-      // In a real implementation, this would fetch from the blockchain service
-      // For now, we'll return mock data that represents the blockchain records
-      const mockTransactions = [
-        {
-          blockchainTxId: 'tx_001',
-          blockchainHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-          buyerAddress: '0xBuyer1234567890123456789012345678901234567890',
-          sellerAddress: '0xSeller1234567890123456789012345678901234567890',
-          recQuantity: 100,
-          timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-          status: 'recorded',
-          facilityDetails: {
-            facilityName: 'Solar Farm Alpha',
-            facilityId: 'SF001',
-            energyType: 'solar',
-            vintage: 2024,
-            emirate: 'Dubai',
-            certificationStandard: 'I-REC'
-          }
-        },
-        {
-          blockchainTxId: 'tx_002',
-          blockchainHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-          buyerAddress: '0xBuyer78901234567890123456789012345678901234567890',
-          sellerAddress: '0xSeller78901234567890123456789012345678901234567890',
-          recQuantity: 250,
-          timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-          status: 'recorded',
-          facilityDetails: {
-            facilityName: 'Wind Farm Beta',
-            facilityId: 'WF002',
-            energyType: 'wind',
-            vintage: 2024,
-            emirate: 'Abu Dhabi',
-            certificationStandard: 'I-REC'
-          }
-        },
-        {
-          blockchainTxId: 'tx_003',
-          blockchainHash: '0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba',
-          buyerAddress: '0xBuyer45678901234567890123456789012345678901234567890',
-          sellerAddress: '0xSeller45678901234567890123456789012345678901234567890',
-          recQuantity: 75,
-          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          status: 'recorded',
-          facilityDetails: {
-            facilityName: 'Hydro Plant Gamma',
-            facilityId: 'HP003',
-            energyType: 'hydro',
-            vintage: 2023,
-            emirate: 'Sharjah',
-            certificationStandard: 'I-REC'
-          }
-        }
-      ];
+      // Get real transactions from the blockchain service's transaction queue
+      const realTransactions = Array.from(RECSecurityService.getTransactionQueue().values()).map(tx => ({
+        blockchainTxId: tx.blockchainTxId,
+        blockchainHash: tx.blockchainHash,
+        buyerAddress: tx.buyerAddress,
+        sellerAddress: tx.sellerAddress,
+        recQuantity: tx.recQuantity,
+        timestamp: tx.timestamp,
+        status: tx.status,
+        facilityDetails: tx.facilityDetails
+      }));
+
+      // Only return real transactions - no mock data
+      const transactionsToReturn = realTransactions;
 
       // Apply pagination
       const startIndex = parseInt(offset);
       const endIndex = startIndex + parseInt(limit);
-      const paginatedTransactions = mockTransactions.slice(startIndex, endIndex);
+      const paginatedTransactions = transactionsToReturn.slice(startIndex, endIndex);
 
       res.json({
         success: true,
         data: {
           transactions: paginatedTransactions,
-          total: mockTransactions.length,
+          total: transactionsToReturn.length,
           limit: parseInt(limit),
           offset: parseInt(offset),
           purpose: 'BLOCKCHAIN_TRANSACTION_HISTORY'
