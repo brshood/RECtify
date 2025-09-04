@@ -4,17 +4,11 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { TrendingUp, TrendingDown, Shield, MapPin, Eye, ShoppingCart, AlertCircle, CheckCircle2, Loader2, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
+import { TrendingUp, TrendingDown, Shield, MapPin, Eye, AlertCircle, ExternalLink, CheckCircle2 } from "lucide-react";
 
 export function MarketData() {
   const [selectedREC, setSelectedREC] = useState<any>(null);
-  const [showBuyModal, setShowBuyModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [buyQuantity, setBuyQuantity] = useState("100");
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const marketData = [
     {
@@ -99,59 +93,9 @@ export function MarketData() {
     }
   ];
 
-  const handleBuyClick = (rec: any) => {
-    setSelectedREC(rec);
-    setShowBuyModal(true);
-    setBuyQuantity("100");
-  };
-
   const handleDetailsClick = (rec: any) => {
     setSelectedREC(rec);
     setShowDetailsModal(true);
-  };
-
-  const handleBuySubmit = async () => {
-    if (!selectedREC || !buyQuantity || parseInt(buyQuantity) <= 0) {
-      toast.error("Please enter a valid quantity");
-      return;
-    }
-
-    const quantity = parseInt(buyQuantity);
-    const available = parseInt(selectedREC.available.replace(",", ""));
-    
-    if (quantity > available) {
-      toast.error(`Only ${selectedREC.available} MWh available`);
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const totalCostAED = (selectedREC.price * quantity).toFixed(2);
-      const totalCostUSD = (selectedREC.priceUSD * quantity).toFixed(2);
-
-      toast.success(
-        `Successfully purchased ${quantity} MWh of ${selectedREC.type} I-RECs for AED ${Number(totalCostAED).toLocaleString()}`
-      );
-
-      setShowBuyModal(false);
-    } catch (error) {
-      toast.error("Failed to process purchase. Please try again.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const calculateTotal = () => {
-    if (!selectedREC || !buyQuantity) return { aed: "0.00", usd: "0.00" };
-    const quantity = parseInt(buyQuantity) || 0;
-    return {
-      aed: (selectedREC.price * quantity).toFixed(2),
-      usd: (selectedREC.priceUSD * quantity).toFixed(2)
-    };
   };
 
   return (
@@ -275,25 +219,15 @@ export function MarketData() {
                       {rec.available}
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          size="sm" 
-                          className="bg-rectify-green hover:bg-rectify-green-dark text-white flex items-center gap-1"
-                          onClick={() => handleBuyClick(rec)}
-                        >
-                          <ShoppingCart className="h-3 w-3" />
-                          Buy
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="border-rectify-border hover:bg-rectify-accent flex items-center gap-1"
-                          onClick={() => handleDetailsClick(rec)}
-                        >
-                          <Eye className="h-3 w-3" />
-                          Details
-                        </Button>
-                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-rectify-border hover:bg-rectify-accent flex items-center gap-1"
+                        onClick={() => handleDetailsClick(rec)}
+                      >
+                        <Eye className="h-3 w-3" />
+                        Details
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -333,107 +267,6 @@ export function MarketData() {
         </CardContent>
       </Card>
 
-      {/* Buy Modal */}
-      <Dialog open={showBuyModal} onOpenChange={setShowBuyModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-rectify-green" />
-              Purchase I-RECs
-            </DialogTitle>
-            <DialogDescription>
-              Buy {selectedREC?.type} I-RECs from {selectedREC?.facility}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedREC && (
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>I-REC ID:</span>
-                  <span className="font-mono">{selectedREC.id}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Energy Type:</span>
-                  <Badge className={
-                    selectedREC.type === 'Solar' ? 'bg-yellow-100 text-yellow-800' :
-                    selectedREC.type === 'Wind' ? 'bg-blue-100 text-blue-800' :
-                    selectedREC.type === 'Nuclear' ? 'bg-purple-100 text-purple-800' :
-                    'bg-green-100 text-green-800'
-                  }>
-                    {selectedREC.type}
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Price per MWh:</span>
-                  <div className="text-right">
-                    <div>AED {selectedREC.price.toFixed(2)}</div>
-                    <div className="text-xs text-muted-foreground">${selectedREC.priceUSD.toFixed(2)}</div>
-                  </div>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Available:</span>
-                  <span>{selectedREC.available} MWh</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity (MWh)</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  max={parseInt(selectedREC.available.replace(",", ""))}
-                  value={buyQuantity}
-                  onChange={(e) => setBuyQuantity(e.target.value)}
-                  placeholder="Enter quantity"
-                />
-              </div>
-
-              <div className="p-4 bg-rectify-accent rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Cost:</span>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">AED {Number(calculateTotal().aed).toLocaleString()}</div>
-                    <div className="text-sm text-muted-foreground">${Number(calculateTotal().usd).toLocaleString()}</div>
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-muted-foreground">
-                  Carbon offset: ~{((parseFloat(buyQuantity) || 0) * parseFloat(selectedREC.carbonOffset)).toFixed(2)} tCO₂e
-                </div>
-              </div>
-
-              <div className="flex space-x-2 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowBuyModal(false)}
-                  disabled={isProcessing}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleBuySubmit}
-                  disabled={isProcessing || !buyQuantity || parseInt(buyQuantity) <= 0}
-                  className="bg-rectify-green hover:bg-rectify-green-dark text-white flex-1"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Confirm Purchase
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Details Modal */}
       <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
@@ -543,16 +376,6 @@ export function MarketData() {
                   onClick={() => setShowDetailsModal(false)}
                 >
                   Close
-                </Button>
-                <Button 
-                  className="bg-rectify-green hover:bg-rectify-green-dark text-white"
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    handleBuyClick(selectedREC);
-                  }}
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Purchase I-RECs
                 </Button>
               </div>
             </div>
