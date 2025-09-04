@@ -462,30 +462,6 @@ export function TradingInterface() {
             </TabsList>
             
             <TabsContent value="buy" className="space-y-4 mt-4">
-              {/* Market Info */}
-              {!availableForBuyLoading && !availableForBuyError && (
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  <div className="text-sm space-y-1">
-                    <div className="font-medium text-blue-900">
-                      <span>Network Market Overview</span>
-                    </div>
-                    <div className="text-blue-700">
-                      {availableForBuy.totalSellOrders > 0 ? (
-                        <>
-                          {availableForBuy.totalSellOrders} pending sell orders available across {availableForBuy.facilities.length} facilities in the network
-                        </>
-                      ) : (
-                        "No pending sell orders currently available in the network"
-                      )}
-                    </div>
-                    {availableForBuy.energyTypes.length > 0 && (
-                      <div className="text-blue-600 text-xs">
-                        Energy types: {availableForBuy.energyTypes.join(', ')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
               
               <div className="space-y-2">
                 <Label htmlFor="buy-energy-type">Energy Source</Label>
@@ -1164,28 +1140,41 @@ export function TradingInterface() {
                 <div className="space-y-4">
                   {transactionHistory.length > 0 ? (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {transactionHistory.map((transaction) => (
-                        <div key={transaction._id} className="flex justify-between items-center text-sm p-3 bg-green-50 rounded border border-green-200 hover:bg-green-100 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <span className="text-green-600 font-semibold">
-                              {transaction.buyerId.firstName} {transaction.buyerId.lastName}
-                            </span>
-                            <span className="text-muted-foreground">bought from</span>
-                            <span className="text-orange-600 font-semibold">
-                              {transaction.sellerId.firstName} {transaction.sellerId.lastName}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-medium">{transaction.quantity} MWh</div>
-                            <div className="text-xs text-muted-foreground">
-                              AED {transaction.pricePerUnit.toFixed(2)}/MWh • {transaction.energyType} • {transaction.emirate}
+                      {transactionHistory.map((transaction) => {
+                        // Determine if current user is the buyer or seller
+                        const isCurrentUserBuyer = user && transaction.buyerId._id === user.id;
+                        const isCurrentUserSeller = user && transaction.sellerId._id === user.id;
+                        
+                        // Set colors based on user's role in transaction
+                        const bgColor = isCurrentUserBuyer ? 'bg-blue-50' : isCurrentUserSeller ? 'bg-red-50' : 'bg-green-50';
+                        const borderColor = isCurrentUserBuyer ? 'border-blue-200' : isCurrentUserSeller ? 'border-red-200' : 'border-green-200';
+                        const hoverColor = isCurrentUserBuyer ? 'hover:bg-blue-100' : isCurrentUserSeller ? 'hover:bg-red-100' : 'hover:bg-green-100';
+                        const buyerTextColor = isCurrentUserBuyer ? 'text-blue-600' : 'text-green-600';
+                        const sellerTextColor = isCurrentUserSeller ? 'text-red-600' : 'text-orange-600';
+                        
+                        return (
+                          <div key={transaction._id} className={`flex justify-between items-center text-sm p-3 ${bgColor} rounded border ${borderColor} ${hoverColor} transition-colors`}>
+                            <div className="flex items-center gap-2">
+                              <span className={`${buyerTextColor} font-semibold`}>
+                                {transaction.buyerId.firstName} {transaction.buyerId.lastName}
+                              </span>
+                              <span className="text-muted-foreground">bought from</span>
+                              <span className={`${sellerTextColor} font-semibold`}>
+                                {transaction.sellerId.firstName} {transaction.sellerId.lastName}
+                              </span>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(transaction.createdAt).toLocaleString()}
+                            <div className="text-right">
+                              <div className="font-medium">{transaction.quantity} MWh</div>
+                              <div className="text-xs text-muted-foreground">
+                                AED {transaction.pricePerUnit.toFixed(2)}/MWh • {transaction.energyType} • {transaction.emirate}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(transaction.createdAt).toLocaleString()}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8">
