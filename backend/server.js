@@ -45,6 +45,7 @@ app.use(cors({
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       'https://rectifygo.netlify.app',
+      'https://rectifygo.com',
       'http://localhost:5173',
       'http://localhost:3000'
     ].filter(Boolean);
