@@ -47,6 +47,11 @@ NODE_ENV=production
 FRONTEND_URL=https://your-app.netlify.app
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
+
+# MongoDB Atlas API credentials for automatic IP management (recommended for Railway)
+MONGODB_ATLAS_PROJECT_ID=<YOUR_ATLAS_PROJECT_ID>
+MONGODB_ATLAS_PUBLIC_KEY=<YOUR_ATLAS_PUBLIC_KEY>
+MONGODB_ATLAS_PRIVATE_KEY=<YOUR_ATLAS_PRIVATE_KEY>
 ```
 
 ### Frontend Production

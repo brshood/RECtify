@@ -18,6 +18,7 @@ const transactionsRoutes = require('./routes/transactions');
 const recSecurityRoutes = require('./routes/recSecurity');
 const { xssProtection, validateRequestSize, securityHeaders } = require('./middleware/security');
 const RECSecurityService = require('./services/RECSecurityService');
+const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -148,23 +149,72 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB Atlas connection
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => {
-  console.log('✅ Connected to MongoDB Atlas');
-  // Log the outbound IP for Railway IP identification
-  fetch('https://api.ipify.org?format=json')
-    .then(res => res.json())
-    .then(data => console.log('🌐 Railway connecting from IP:', data.ip))
-    .catch(err => console.log('Could not determine outbound IP:', err.message));
-})
-.catch((error) => {
-  console.error('❌ MongoDB Atlas connection error:', error);
-  // Exit process in production if DB connection fails
-  if (process.env.NODE_ENV === 'production') {
-    process.exit(1);
+// MongoDB Atlas connection with automatic IP management
+async function connectToMongoDB() {
+  const ipManager = new MongoAtlasIPManager();
+  
+  try {
+    // Update IP whitelist before attempting connection
+    if (ipManager.isConfigured()) {
+      console.log('🔄 Managing MongoDB Atlas IP whitelist...');
+      const ipUpdateSuccess = await ipManager.updateRailwayIP();
+      
+      if (!ipUpdateSuccess) {
+        console.log('⚠️ IP whitelist update failed, but continuing with connection attempt...');
+      } else {
+        // Wait a moment for Atlas to propagate the changes
+        console.log('⏳ Waiting for Atlas to propagate IP changes...');
+        await new Promise(resolve => setTimeout(resolve, 10000));
+      }
+    }
+
+    // Attempt MongoDB connection
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to MongoDB Atlas');
+    
+    // Log the outbound IP for verification
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => console.log('🌐 Railway connecting from IP:', data.ip))
+      .catch(err => console.log('Could not determine outbound IP:', err.message));
+      
+    // Set up periodic IP monitoring (every 30 minutes)
+    if (ipManager.isConfigured()) {
+      setInterval(async () => {
+        try {
+          await ipManager.checkAndUpdateIP();
+        } catch (error) {
+          console.error('❌ Periodic IP check failed:', error.message);
+        }
+      }, 30 * 60 * 1000); // 30 minutes
+      console.log('🕐 Periodic IP monitoring started (every 30 minutes)');
+    }
+      
+  } catch (error) {
+    console.error('❌ MongoDB Atlas connection error:', error);
+    
+    // If connection fails due to IP issues, try updating IP and retry once
+    if (error.message.includes('IP') || error.message.includes('not authorized') || error.message.includes('authentication failed')) {
+      console.log('🔄 Connection failed, attempting IP update and retry...');
+      try {
+        await ipManager.updateRailwayIP();
+        await new Promise(resolve => setTimeout(resolve, 15000)); // Wait longer for propagation
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log('✅ Connected to MongoDB Atlas after IP update');
+      } catch (retryError) {
+        console.error('❌ Retry connection failed:', retryError.message);
+        if (process.env.NODE_ENV === 'production') {
+          process.exit(1);
+        }
+      }
+    } else if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
-});
+}
+
+// Initialize MongoDB connection
+connectToMongoDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
