@@ -32,6 +32,7 @@ npm run dev
 
 Visit `http://localhost:3000` to see the application.
 the delpoyed netlify by brshood is https://rectifygo.netlify.app/
+https://rectifygo.com
 ## 📁 Project Structure
 
 ```
