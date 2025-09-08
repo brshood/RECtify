@@ -1,4 +1,4 @@
-[![Netlify Status](https://api.netlify.com/api/v1/badges/<BADGE_ID>/deploy-status)](https://app.netlify.com/sites/<SITE_NAME>/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/071fb70c-3178-4d09-8cd1-cf3b5feef18d/deploy-status)](https://app.netlify.com/projects/rectifygo/deploys)
 [![CI](https://github.com/<OWNER>/<REPO>/actions/workflows/<workflow>.yml/badge.svg)](https://github.com/<OWNER>/<REPO>/actions/workflows/<workflow>.yml)
 
 # RECtify
