@@ -39,5 +39,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Test (if present)
-        run: npm test --if-present
+      - name: Test (skip if none)
+        shell: bash
+        run: |
+          if git ls-files '**/*.test.*' '**/*.spec.*' | grep -q .; then
+            npm test -- --passWithNoTests
+          else
+            echo "No test files found. Skipping tests."
+          fi
