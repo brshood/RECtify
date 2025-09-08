@@ -134,7 +134,7 @@ VITE_EMAILJS_PUBLIC_KEY=...
 - Observe security and env handling guidelines.
 
 ## Acknowledgements
-- Contributors: Khaled Al Samri and collaborators involved in backend, frontend, and security hardening.
+- Contributors: Khaled Al Samri and Rashed Alneyadi involved in backend, frontend, and security hardening.
 
 ## License
 - Proprietary. All rights reserved (update if license changes).
