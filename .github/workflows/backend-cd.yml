@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   deploy:
+    environment: RECtify (natural-prosperity / production)
     runs-on: ubuntu-latest
-    environment: production
     defaults:
       run:
         working-directory: backend
@@ -33,6 +33,15 @@ jobs:
 
       - name: Install Railway CLI
         run: npm i -g @railway/cli
+
+      - name: Validate secrets present
+        shell: bash
+        run: |
+          for v in RAILWAY_TOKEN RAILWAY_PROJECT_ID RAILWAY_SERVICE_ID; do
+            if [ -z "${{ secrets[$v] || '' }}" ]; then
+              echo "Missing secret: $v"; exit 1;
+            fi
+          done
 
       - name: Link project
         env:
