@@ -1,8 +1,3 @@
-[![Backend CI](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/backend.yml?branch=main&label=Backend%20CI&style=flat-square&logo=github&labelColor=2f3437)](https://github.com/OWNER/REPO/actions/workflows/backend.yml)
-[![Frontend CI](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/frontend.yml?branch=main&label=Frontend%20CI&style=flat-square&logo=github&labelColor=2f3437)](https://github.com/OWNER/REPO/actions/workflows/frontend.yml)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/NETLIFY_SITE_ID/deploy-status)](https://app.netlify.com/sites/rectifygo/deploys)
-
-
 # RECtify
 
 RECtify is a full‑stack Renewable Energy Certificates (REC) trading platform with user‑specific portfolios, a shared network order book, and optional blockchain-backed audit trails for compliance. It includes a secure Node.js/Express backend with MongoDB Atlas and a modern Vite/React TypeScript frontend.
