@@ -1,3 +1,6 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/<BADGE_ID>/deploy-status)](https://app.netlify.com/sites/<SITE_NAME>/deploys)
+[![CI](https://github.com/<OWNER>/<REPO>/actions/workflows/<workflow>.yml/badge.svg)](https://github.com/<OWNER>/<REPO>/actions/workflows/<workflow>.yml)
+
 # RECtify
 
 RECtify is a full‑stack Renewable Energy Certificates (REC) trading platform with user‑specific portfolios, a shared network order book, and optional blockchain-backed audit trails for compliance. It includes a secure Node.js/Express backend with MongoDB Atlas and a modern Vite/React TypeScript frontend.
