@@ -4,11 +4,15 @@ on:
   push:
     paths:
       - 'REC_Website/**'
-      - '.github/workflows/frontend-ci.yml'
+      - '.github/workflows/frontend.yml'
   pull_request:
     paths:
       - 'REC_Website/**'
-      - '.github/workflows/frontend-ci.yml'
+      - '.github/workflows/frontend.yml'
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -16,6 +20,8 @@ jobs:
     defaults:
       run:
         working-directory: REC_Website
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,7 +33,7 @@ jobs:
           cache: npm
           cache-dependency-path: REC_Website/package-lock.json
 
-      - name: Install deps
+      - name: Install dependencies
         run: npm ci
 
       - name: Build

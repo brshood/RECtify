@@ -4,11 +4,15 @@ on:
   push:
     paths:
       - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
+      - '.github/workflows/backend.yml'
   pull_request:
     paths:
       - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
+      - '.github/workflows/backend.yml'
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
@@ -16,6 +20,8 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,7 +33,7 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      - name: Install deps
+      - name: Install dependencies
         run: npm ci
 
       - name: Build
