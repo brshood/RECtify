@@ -1,4 +1,14 @@
-# RECtify
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/atlas)
+[![Express](https://img.shields.io/badge/Express-4.18-lightgrey.svg)](https://expressjs.com/)
+[![Vite](https://img.shields.io/badge/Vite-4-purple.svg)](https://vitejs.dev/)
+[![Security](https://img.shields.io/badge/Security-Hardened-brightgreen.svg)](#security-posture)
+[![Lint Free](https://img.shields.io/badge/Code-Lint%20Free-brightgreen.svg)](#)
+[![Railway](https://img.shields.io/badge/Deploy-Railway-blueviolet.svg)](https://railway.app/)
+[![Netlify](https://img.shields.io/badge/Deploy-Netlify-00C7B7.svg)](https://www.netlify.com/)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](#license)
 
 RECtify is a full‑stack Renewable Energy Certificates (REC) trading platform with user‑specific portfolios, a shared network order book, and optional blockchain-backed audit trails for compliance. It includes a secure Node.js/Express backend with MongoDB Atlas and a modern Vite/React TypeScript frontend.
 
@@ -133,8 +143,20 @@ VITE_EMAILJS_PUBLIC_KEY=...
 - Branch, PR, lint and type‑check, add tests where applicable.
 - Observe security and env handling guidelines.
 
-## Acknowledgements
-- Contributors: Khaled Al Samri and Rashed Alneyadi involved in backend, frontend, and security hardening.
+## Team & Contributors
+
+### Core Team
+- **Khaled Al Samri** - Lead Developer & Project Architect
+- **Rashed Al Neyadi** - Co-Developer & System Design
+- Additional contributors involved in backend, frontend, and security hardening
+
+### Development Tags
+- 🔒 **Security Hardened** - Enterprise-grade security implementation
+- 🧪 **Fully Tested** - Comprehensive testing with demo data
+- 📦 **Production Ready** - Deployment-ready with CI/CD
+- 🌐 **Network Trading** - Real-time order book and matching
+- ⚡ **High Performance** - Optimized for scalability
+- 🔍 **Lint Free** - Clean, maintainable codebase
 
 ## License
 - Proprietary. All rights reserved (update if license changes).
