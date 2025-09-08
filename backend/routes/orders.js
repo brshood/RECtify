@@ -219,7 +219,8 @@ router.post('/buy', [
   body('certificationStandard').optional().isIn(['I-REC', 'TIGR', 'Green-e', 'EKOenergy']).withMessage('Invalid certification standard'),
   body('expiresAt').optional().isISO8601().withMessage('Invalid expiration date'),
   body('allowPartialFill').optional().isBoolean().withMessage('Allow partial fill must be boolean'),
-  body('minFillQuantity').optional().isFloat({ min: 1 }).withMessage('Minimum fill quantity must be at least 1')
+  body('minFillQuantity').optional().isFloat({ min: 1 }).withMessage('Minimum fill quantity must be at least 1'),
+  body('paymentIntentId').optional().isString().withMessage('Invalid payment intent id')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -251,8 +252,27 @@ router.post('/buy', [
       certificationStandard = 'I-REC',
       expiresAt,
       allowPartialFill = true,
-      minFillQuantity = 1
+      minFillQuantity = 1,
+      paymentIntentId
     } = req.body;
+
+    // Optional: verify Stripe payment intent if provided
+    if (paymentIntentId) {
+      try {
+        const Stripe = require('stripe');
+        if (!process.env.STRIPE_SECRET_KEY) {
+          return res.status(400).json({ success: false, message: 'Stripe is not configured on the server' });
+        }
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+        const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+        if (!['succeeded', 'processing', 'requires_capture'].includes(pi.status)) {
+          return res.status(402).json({ success: false, message: `Payment not completed (status: ${pi.status})` });
+        }
+      } catch (e) {
+        console.error('Stripe verification failed:', e);
+        return res.status(400).json({ success: false, message: 'Failed to verify payment' });
+      }
+    }
 
     const order = new Order({
       userId: req.user.userId,

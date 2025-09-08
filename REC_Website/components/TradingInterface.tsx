@@ -12,6 +12,7 @@ import { useAuth } from "./AuthContext";
 import apiService from "../services/api";
 import { toast } from "sonner";
 import BlockchainMonitor from "./BlockchainMonitor";
+import { loadStripe } from "@stripe/stripe-js";
 
 interface Order {
   _id: string;
@@ -114,6 +115,69 @@ export function TradingInterface() {
   const [availableForBuyError, setAvailableForBuyError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Stripe: open payment for buy orders and finalize after payment
+  const handleBuyOrderWithStripe = async () => {
+    if (!user) {
+      toast.error('Please log in to place orders');
+      return;
+    }
+    if (!user?.permissions?.canTrade) {
+      toast.error('You do not have trading permissions');
+      return;
+    }
+    if (!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    const selectedFacility = availableForBuy.facilities.find(f => f.facilityId === buyFacility);
+    if (!selectedFacility) {
+      toast.error('Selected facility is no longer available. Please refresh and try again.');
+      await fetchAvailableForBuy();
+      return;
+    }
+    try {
+      setPlacingOrder(true);
+      const quantity = parseFloat(buyQuantity);
+      const price = parseFloat(buyPrice);
+      const successUrl = window.location.origin + window.location.pathname + "?payment=success";
+      const cancelUrl = window.location.origin + window.location.pathname + "?payment=cancel";
+      const resp = await apiService.createCheckoutSession({
+        quantity,
+        price,
+        currency: 'aed',
+        successUrl: successUrl + '&session_id={CHECKOUT_SESSION_ID}',
+        cancelUrl,
+        facilityName: selectedFacility.facilityName,
+        facilityId: selectedFacility.facilityId,
+        energyType: selectedFacility.energyType,
+        vintage: selectedFacility.vintage,
+        emirate: selectedFacility.emirate,
+        purpose: buyPurpose,
+      });
+      if (!resp.success || !resp.data?.sessionId) {
+        toast.error(resp.message || 'Failed to start checkout');
+        return;
+      }
+      const pk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+      if (!pk) {
+        toast.error('Stripe publishable key is not configured');
+        return;
+      }
+      const stripe = await loadStripe(pk);
+      if (!stripe) {
+        toast.error('Failed to load Stripe');
+        return;
+      }
+      await stripe.redirectToCheckout({ sessionId: resp.data.sessionId });
+    } catch (e: any) {
+      toast.error(e.message || 'Checkout failed');
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
+  // Checkout redirect completes payment; final order matching remains server-side
+
   // Constants
   const PLATFORM_FEE_RATE = 0.02; // 2%
   const BLOCKCHAIN_FEE = 5.00; // Fixed AED 5.00
@@ -136,6 +200,72 @@ export function TradingInterface() {
       };
       loadInitialData();
     }
+  }, [user]);
+
+  // After Stripe Checkout returns, finalize order if payment succeeded
+  useEffect(() => {
+    const finalizeFromCheckout = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const payment = params.get('payment');
+        const sessionId = params.get('session_id');
+        if (!user || payment !== 'success' || !sessionId) return;
+
+        // Avoid duplicate processing on refresh
+        const dedupeKey = `rec-pay-session-${sessionId}`;
+        if (localStorage.getItem(dedupeKey)) return;
+
+        const sessionResp = await apiService.getCheckoutSession(sessionId);
+        if (!sessionResp.success || !sessionResp.data) return;
+
+        const data: any = sessionResp.data;
+        if (data.payment_status !== 'paid') return;
+
+        const md = data.metadata || {};
+        const orderData = {
+          facilityName: md.facilityName,
+          facilityId: md.facilityId,
+          energyType: md.energyType,
+          vintage: parseInt(md.vintage, 10),
+          quantity: parseFloat(md.quantity),
+          price: parseFloat(md.price),
+          emirate: md.emirate,
+          purpose: md.purpose,
+          certificationStandard: 'I-REC',
+          paymentIntentId: data.payment_intent as string,
+        } as any;
+
+        // Basic validation of required fields from metadata
+        if (!orderData.facilityId || !orderData.energyType || !orderData.vintage || !orderData.quantity || !orderData.price || !orderData.emirate || !orderData.purpose) {
+          return;
+        }
+
+        setPlacingOrder(true);
+        const createResp = await apiService.createBuyOrder(orderData);
+        if (createResp.success) {
+          localStorage.setItem(dedupeKey, '1');
+          toast.success(`Payment confirmed and order placed! ${createResp.data?.matchedQuantity > 0 ? `${createResp.data.matchedQuantity} I-RECs matched immediately.` : ''}`);
+          await Promise.all([
+            fetchOrderBook(),
+            fetchHoldings(false),
+            fetchAvailableForBuy(),
+            fetchTransactionHistory()
+          ]);
+        } else {
+          toast.error(createResp.message || 'Failed to place order after payment');
+        }
+      } catch (err: any) {
+        console.error('Finalize from checkout failed:', err);
+      } finally {
+        setPlacingOrder(false);
+        // Clean URL params
+        const url = new URL(window.location.href);
+        url.searchParams.delete('payment');
+        url.searchParams.delete('session_id');
+        window.history.replaceState({}, document.title, url.toString());
+      }
+    };
+    finalizeFromCheckout();
   }, [user]);
 
   const fetchOrderBook = async () => {
@@ -769,7 +899,7 @@ export function TradingInterface() {
               </div>
               
               <Button 
-                onClick={handleBuyOrder}
+                onClick={handleBuyOrderWithStripe}
                 disabled={!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate || placingOrder}
                 className="w-full bg-rectify-green hover:bg-rectify-green-dark text-white disabled:opacity-50"
               >
