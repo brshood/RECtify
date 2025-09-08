@@ -43,13 +43,20 @@ jobs:
           railway login --token "$RAILWAY_TOKEN" || true
           railway whoami || true
 
-      - name: Deploy (Nixpacks)
+      - name: Link project/service
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
         run: |
-          railway up --project "$RAILWAY_PROJECT_ID" --service "$RAILWAY_SERVICE_ID" --detach
+          # Try both flag styles (CLI versions differ)
+          railway link --project "$RAILWAY_PROJECT_ID" --service "$RAILWAY_SERVICE_ID" \
+          || railway link --projectId "$RAILWAY_PROJECT_ID" --serviceId "$RAILWAY_SERVICE_ID"
+
+      - name: Deploy (Nixpacks)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --detach
 
       - name: Show latest deployment
         if: always()
