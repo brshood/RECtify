@@ -15,8 +15,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # IMPORTANT: set this to the exact GitHub Environment that holds your three secrets.
-    # If yours isn't named "production", replace it accordingly.
+    # CHANGE if your GitHub Environment name is not "production"
     environment: production
     defaults:
       run:
@@ -65,5 +64,4 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-        run: |
-          railway deployments --service "$RAILWAY_SERVICE_ID" --limit 1 || true
+        run: railway deployments --service "$RAILWAY_SERVICE_ID" --limit 1 || true
