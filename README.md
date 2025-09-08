@@ -1,11 +1,7 @@
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/atlas)
-[![Express](https://img.shields.io/badge/Express-4.18-lightgrey.svg)](https://expressjs.com/)
-[![Vite](https://img.shields.io/badge/Vite-4-purple.svg)](https://vitejs.dev/)
-[![Security](https://img.shields.io/badge/Security-Hardened-brightgreen.svg)](#security-posture)
-[![Lint Free](https://img.shields.io/badge/Code-Lint%20Free-brightgreen.svg)](#)
-[![Railway](https://img.shields.io/badge/Deploy-Railway-blueviolet.svg)](https://railway.app/)
-[![Netlify](https://img.shields.io/badge/Deploy-Netlify-00C7B7.svg)](https://www.netlify.com/)
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](#license)
+[![Backend CI](https://github.com/OWNER/REPO/actions/workflows/backend.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/backend.yml)
+[![Frontend CI](https://github.com/OWNER/REPO/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/frontend.yml)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/NETLIFY_SITE_ID/deploy-status)](https://app.netlify.com/sites/YOUR-SITE-NAME/deploys)
+[![Backend Uptime](https://uptime.betterstack.com/status-badges/v1/monitor/MONITOR_ID.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
 # RECtify
 
