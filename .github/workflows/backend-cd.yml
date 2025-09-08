@@ -16,6 +16,10 @@ jobs:
   deploy:
     environment: RECtify (natural-prosperity / production)
     runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+      RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
     defaults:
       run:
         working-directory: backend
@@ -48,25 +52,14 @@ jobs:
           done
 
       - name: Link project
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
-        run: railway link --project "$RAILWAY_PROJECT_ID"
+        run: railway link --project "$RAILWAY_PROJECT_ID" --token "$RAILWAY_TOKEN"
 
       - name: Link service
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-        run: railway link --service "$RAILWAY_SERVICE_ID"
+        run: railway link --service "$RAILWAY_SERVICE_ID" --token "$RAILWAY_TOKEN"
 
       - name: Deploy (Nixpacks)
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --detach
+        run: railway up --detach --token "$RAILWAY_TOKEN"
 
       - name: Show latest deployment
         if: always()
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-        run: railway deployments --service "$RAILWAY_SERVICE_ID" --limit 1 || true
+        run: railway deployments --service "$RAILWAY_SERVICE_ID" --limit 1 --token "$RAILWAY_TOKEN" || true
