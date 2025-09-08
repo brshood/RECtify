@@ -1,5 +1,5 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/071fb70c-3178-4d09-8cd1-cf3b5feef18d/deploy-status)](https://app.netlify.com/projects/rectifygo/deploys)
-[![CI](https://github.com/<OWNER>/<REPO>/actions/workflows/<workflow>.yml/badge.svg)](https://github.com/<OWNER>/<REPO>/actions/workflows/<workflow>.yml)
+[![CI](https://github.com/brshood/RECtify/actions/workflows/frontend.yml/badge.svg)](https://github.com/brshood/RECtify/actions/workflows/frontend.yml)
 
 # RECtify
 
