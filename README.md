@@ -1,6 +1,6 @@
-[![Backend CI](https://github.com/OWNER/REPO/actions/workflows/backend.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/backend.yml)
-[![Frontend CI](https://github.com/OWNER/REPO/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/frontend.yml)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/NETLIFY_SITE_ID/deploy-status)](https://app.netlify.com/sites/YOUR-SITE-NAME/deploys)
+[![Backend CI](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/backend.yml?branch=main&label=Backend%20CI&style=flat-square&logo=github&labelColor=2f3437)](https://github.com/OWNER/REPO/actions/workflows/backend.yml)
+[![Frontend CI](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/frontend.yml?branch=main&label=Frontend%20CI&style=flat-square&logo=github&labelColor=2f3437)](https://github.com/OWNER/REPO/actions/workflows/frontend.yml)
+[![Netlify](https://img.shields.io/netlify/NETLIFY_SITE_ID?label=Netlify%20Deploy&style=flat-square&logo=netlify&labelColor=2f3437)](https://app.netlify.com/sites/YOUR-SITE-NAME/deploys)
 [![Backend Uptime](https://uptime.betterstack.com/status-badges/v1/monitor/MONITOR_ID.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
 # RECtify
