@@ -272,6 +272,37 @@ class ApiService {
     const queryString = params.toString();
     return this.request(`/transactions/market/price-history/${encodeURIComponent(facilityName)}${queryString ? `?${queryString}` : ''}`);
   }
+
+  // Payments
+  async createPaymentIntent(params: { quantity: number; price: number; currency?: 'aed' | 'usd' }): Promise<ApiResponse<{ clientSecret: string; paymentIntentId: string; amount: number; currency: string }>> {
+    return this.request('/payments/create-intent', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
+
+  async createCheckoutSession(params: {
+    quantity: number;
+    price: number;
+    currency?: 'aed' | 'usd';
+    successUrl?: string;
+    cancelUrl?: string;
+    facilityName: string;
+    facilityId: string;
+    energyType: string;
+    vintage: number;
+    emirate: string;
+    purpose: string;
+  }): Promise<ApiResponse<{ sessionId: string }>> {
+    return this.request('/payments/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
+
+  async getCheckoutSession(id: string): Promise<ApiResponse<{ id: string; payment_status: string; payment_intent: string; amount_total: number; currency: string; metadata: any }>> {
+    return this.request(`/payments/session/${id}`);
+  }
 }
 
 export const apiService = new ApiService();

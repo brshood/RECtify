@@ -16,6 +16,7 @@ const holdingsRoutes = require('./routes/holdings');
 const ordersRoutes = require('./routes/orders');
 const transactionsRoutes = require('./routes/transactions');
 const recSecurityRoutes = require('./routes/recSecurity');
+const paymentsRoutes = require('./routes/payments');
 const { xssProtection, validateRequestSize, securityHeaders } = require('./middleware/security');
 const RECSecurityService = require('./services/RECSecurityService');
 const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
@@ -23,19 +24,30 @@ const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Stripe webhook must be mounted BEFORE body parsers to preserve raw body
+const stripeWebhookHandler = require('./routes/paymentsWebhook');
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), stripeWebhookHandler);
+
 // Security middleware - Enhanced
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://js.stripe.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://rectifygo.com", "https://rectifygo.netlify.app", "https://rectify-production.up.railway.app"],
+      connectSrc: [
+        "'self'",
+        "https://rectifygo.com",
+        "https://rectifygo.netlify.app",
+        "https://rectify-production.up.railway.app",
+        "https://api.stripe.com",
+        "https://m.stripe.com"
+      ],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
     },
   },
   crossOriginEmbedderPolicy: false
@@ -166,6 +178,9 @@ async function connectToMongoDB() {
         console.log('⏳ Waiting for Atlas to propagate IP changes...');
         await new Promise(resolve => setTimeout(resolve, 10000));
       }
+    } else {
+      console.log('ℹ️ MongoDB Atlas IP management disabled - missing API credentials');
+      console.log('ℹ️ Make sure your current IP is whitelisted in MongoDB Atlas');
     }
 
     // Attempt MongoDB connection
@@ -223,6 +238,7 @@ app.use('/api/holdings', holdingsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/rec-security', recSecurityRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // Health check endpoint - Enhanced for production monitoring
 app.get('/api/health', async (req, res) => {
