@@ -5,6 +5,9 @@
 
 RECtify is a full‑stack Renewable Energy Certificates (REC) trading platform with user‑specific portfolios, a shared network order book, and optional blockchain-backed audit trails for compliance. It includes a secure Node.js/Express backend with MongoDB Atlas and a modern Vite/React TypeScript frontend.
 
+https://rectifygo.com/
+
+
 ## Overview
 - Purpose: Enable organizations to trade and manage RECs with transparent market visibility, user‑specific holdings, and auditable transactions.
 - Architecture: Node.js/Express API + MongoDB (backend) and Vite/React TS (frontend).
