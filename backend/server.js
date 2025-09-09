@@ -178,6 +178,9 @@ async function connectToMongoDB() {
         console.log('⏳ Waiting for Atlas to propagate IP changes...');
         await new Promise(resolve => setTimeout(resolve, 10000));
       }
+    } else {
+      console.log('ℹ️ MongoDB Atlas IP management disabled - missing API credentials');
+      console.log('ℹ️ Make sure your current IP is whitelisted in MongoDB Atlas');
     }
 
     // Attempt MongoDB connection
