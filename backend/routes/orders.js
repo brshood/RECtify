@@ -254,6 +254,13 @@ router.post('/buy', [
       minFillQuantity = 1
     } = req.body;
 
+    // Calculate total cost including applicable fees
+    const PLATFORM_FEE_RATE = 0.02;
+    const BLOCKCHAIN_FEE = 5.00;
+    const subtotal = quantity * price;
+    const platformFee = subtotal * PLATFORM_FEE_RATE;
+    const totalCost = subtotal + platformFee + BLOCKCHAIN_FEE;
+
     const order = new Order({
       userId: req.user.userId,
       orderType: 'buy',
@@ -275,6 +282,24 @@ router.post('/buy', [
     });
 
     await order.save();
+
+    // Reserve funds atomically against this order
+    const reserved = await User.findOneAndUpdate(
+      { _id: req.user.userId, cashBalance: { $gte: totalCost } },
+      { 
+        $inc: { cashBalance: -totalCost },
+        $push: { reservedFunds: { orderId: order._id, amount: totalCost, blockchainFeeCharged: false } }
+      },
+      { new: true }
+    );
+
+    if (!reserved) {
+      await Order.findByIdAndDelete(order._id);
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient funds. Required AED ${totalCost.toFixed(2)}`
+      });
+    }
 
     // Try to match with existing sell orders using blockchain-enabled trading
     const matchingOrders = await Order.findMatchingOrders(order);
@@ -584,6 +609,27 @@ router.put('/:id/cancel', [
       }
     }
 
+    // Release reservation if it's a buy order
+    if (order.orderType === 'buy') {
+      const userDoc = await User.findOne({ 'reservedFunds.orderId': order._id });
+      if (userDoc) {
+        const resv = userDoc.reservedFunds.find(r => r.orderId.toString() === order._id.toString());
+        if (resv) {
+          if (resv.amount > 0) {
+            await User.updateOne(
+              { _id: userDoc._id },
+              { $inc: { cashBalance: resv.amount }, $pull: { reservedFunds: { orderId: order._id } } }
+            );
+          } else {
+            await User.updateOne(
+              { _id: userDoc._id },
+              { $pull: { reservedFunds: { orderId: order._id } } }
+            );
+          }
+        }
+      }
+    }
+
     res.json({
       success: true,
       message: 'Order cancelled successfully',
@@ -805,6 +851,9 @@ async function executeBlockchainTrade(buyOrder, sellOrder, quantity) {
     // Update user portfolios
     await updateUserPortfolios(transaction);
 
+    // Cash settlement
+    await settleCashForTransaction(transaction);
+
     // Mark transaction as completed
     await transaction.markCompleted();
 
@@ -853,6 +902,9 @@ async function executeTraditionalMatch(buyOrder, sellOrder, quantity) {
 
     // Update user portfolios
     await updateUserPortfolios(transaction);
+
+    // Cash settlement
+    await settleCashForTransaction(transaction);
 
     // Mark transaction as completed
     await transaction.markCompleted();
@@ -960,3 +1012,38 @@ async function updateUserPortfolios(transaction) {
 }
 
 module.exports = router;
+ 
+// Cash settlement helper
+async function settleCashForTransaction(transaction) {
+  const PLATFORM_FEE_RATE = 0.02;
+  const BLOCKCHAIN_FEE = 5.00;
+
+  const gross = transaction.quantity * transaction.pricePerUnit;
+  const buyerPlatformFee = gross * PLATFORM_FEE_RATE;
+  const sellerPlatformFee = gross * PLATFORM_FEE_RATE;
+
+  // Seller: credit net in one atomic inc
+  await User.findByIdAndUpdate(transaction.sellerId, {
+    $inc: { cashBalance: (gross - sellerPlatformFee) }
+  });
+
+  // Buyer: consume reservation for buy order
+  const buyOrderId = transaction.buyOrderId;
+  const buyer = await User.findById(transaction.buyerId);
+  const resv = buyer?.reservedFunds?.find(r => r.orderId?.toString() === buyOrderId.toString());
+  if (!resv) return;
+
+  let consume = gross + buyerPlatformFee;
+  if (!resv.blockchainFeeCharged) {
+    consume += BLOCKCHAIN_FEE;
+  }
+  const consumeAmount = Math.min(consume, resv.amount);
+
+  await User.updateOne(
+    { _id: transaction.buyerId, 'reservedFunds.orderId': buyOrderId },
+    {
+      $inc: { 'reservedFunds.$.amount': -consumeAmount },
+      ...(resv.blockchainFeeCharged ? {} : { $set: { 'reservedFunds.$.blockchainFeeCharged': true } })
+    }
+  );
+}

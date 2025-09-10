@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
@@ -110,6 +111,7 @@ export function TradingInterface() {
   const [availableForBuyLoading, setAvailableForBuyLoading] = useState(true);
   const [transactionHistoryLoading, setTransactionHistoryLoading] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
+  const [confirmBuyOpen, setConfirmBuyOpen] = useState(false);
   const [holdingsError, setHoldingsError] = useState<string | null>(null);
   const [availableForBuyError, setAvailableForBuyError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -768,23 +770,52 @@ export function TradingInterface() {
                 </div>
               </div>
               
-              <Button 
-                onClick={handleBuyOrder}
-                disabled={!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate || placingOrder}
-                className="w-full bg-rectify-green hover:bg-rectify-green-dark text-white disabled:opacity-50"
-              >
-                {placingOrder ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Placing Order...
-                  </>
-                ) : (
-                  <>
-                    <FileCheck className="h-4 w-4 mr-2" />
-                    Place Buy Order
-                  </>
-                )}
-              </Button>
+              {(() => {
+                const requiredAED = buyCalculations.totalAED;
+                const availableAED = (user as any)?.cashBalance ?? 0;
+                const enough = availableAED >= requiredAED;
+                return (
+                  <AlertDialog open={confirmBuyOpen} onOpenChange={setConfirmBuyOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        disabled={!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate || placingOrder}
+                        className="w-full bg-rectify-green hover:bg-rectify-green-dark text-white disabled:opacity-50"
+                      >
+                        {placingOrder ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Placing Order...
+                          </>
+                        ) : (
+                          <>
+                            <FileCheck className="h-4 w-4 mr-2" />
+                            Place Buy Order
+                          </>
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Buy Order</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          You are buying {buyQuantity} MWh at AED {buyPrice}/MWh. Total including fees: AED {formatAED(requiredAED)}.
+                          {!enough && (
+                            <div className="text-red-600 mt-2">
+                              Insufficient funds. Required AED {formatAED(requiredAED)}, Available AED {formatAED(availableAED)}.
+                            </div>
+                          )}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction disabled={!enough} onClick={() => handleBuyOrder()}>
+                          {enough ? 'Confirm' : 'Add Funds'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                );
+              })()}
             </TabsContent>
             
             <TabsContent value="sell" className="space-y-4 mt-4">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -26,6 +26,8 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
+import TopupPayment from './TopupPayment';
+import api from '../services/api';
 
 interface UserProfileProps {
   onClose?: () => void;
@@ -35,6 +37,19 @@ export function UserProfile({ onClose }: UserProfileProps) {
   const { user, updateProfile, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(user || {});
+  const [balance, setBalance] = useState<number>((user as any)?.cashBalance ?? 0);
+  const [topupOpen, setTopupOpen] = useState(false);
+  const [topupAmount, setTopupAmount] = useState<string>('');
+  const [topupCurrency, setTopupCurrency] = useState<'aed' | 'usd'>('aed');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.getBalance();
+        if (res.success) setBalance((res.data as any).cashBalance || 0);
+      } catch {}
+    })();
+  }, []);
 
   if (!user) return null;
 
@@ -164,6 +179,20 @@ export function UserProfile({ onClose }: UserProfileProps) {
           {(user.portfolioValue !== undefined || user.totalRecs !== undefined) && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-rectify-green" />
+                          <span className="text-sm text-muted-foreground">Cash Balance</span>
+                        </div>
+                        <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
+                      </div>
+                      <Button onClick={() => setTopupOpen(true)}>Add Funds</Button>
+                    </div>
+                  </CardContent>
+                </Card>
                 {user.portfolioValue !== undefined && (
                   <Card>
                     <CardContent className="p-4">
@@ -297,6 +326,47 @@ export function UserProfile({ onClose }: UserProfileProps) {
           </div>
 
           <Separator />
+
+          {topupOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+              <Card className="w-full max-w-sm">
+                <CardHeader><CardTitle>Add Funds</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <Label>Amount</Label>
+                  <Input type="number" value={topupAmount} onChange={e => setTopupAmount(e.target.value)} placeholder="100.00" />
+                  <Label>Currency</Label>
+                  <Select value={topupCurrency} onValueChange={(v: any) => setTopupCurrency(v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="aed">AED</SelectItem>
+                      <SelectItem value="usd">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {Number(topupAmount) > 0 ? (
+                    <TopupPayment amount={Number(topupAmount)} currency={topupCurrency} onDone={async () => {
+                      // Poll balance briefly after payment
+                      try {
+                        for (let i = 0; i < 5; i++) {
+                          const res = await api.getBalance();
+                          if (res.success) {
+                            const newBal = (res.data as any).cashBalance || 0;
+                            setBalance(newBal);
+                          }
+                          await new Promise(r => setTimeout(r, 1500));
+                        }
+                      } catch {}
+                      setTopupOpen(false);
+                    }} />
+                  ) : (
+                    <div className="text-xs text-muted-foreground">Enter an amount to continue</div>
+                  )}
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setTopupOpen(false)}>Close</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           <div className="space-y-4">
             <h4 className="text-lg font-medium">Preferences</h4>

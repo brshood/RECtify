@@ -104,6 +104,25 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  cashBalance: {
+    type: Number,
+    default: 0
+  },
+  reservedFunds: [{
+    orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
+    amount: { type: Number, required: true },
+    blockchainFeeCharged: { type: Boolean, default: false },
+    reservedAt: { type: Date, default: Date.now }
+  }],
+  paymentHistory: [{
+    paymentIntentId: String,
+    amount: Number,
+    currency: String,
+    type: { type: String, enum: ['topup', 'withdrawal', 'fee', 'trade'] },
+    status: { type: String, enum: ['completed', 'failed', 'pending'] },
+    processedAt: { type: Date, default: Date.now },
+    failureReason: String
+  }],
   verificationStatus: {
     type: String,
     enum: ['pending', 'verified', 'rejected'],
@@ -287,6 +306,7 @@ userSchema.methods.toJSON = function() {
     permissions: user.permissions,
     portfolioValue: user.portfolioValue,
     totalRecs: user.totalRecs,
+    cashBalance: user.cashBalance || 0,
     verificationStatus: user.verificationStatus
   };
 };
