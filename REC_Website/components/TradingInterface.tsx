@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { Shield, FileCheck, Calculator, Loader2, AlertCircle, TrendingUp, TrendingDown, Wifi, Users, Activity } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog";
 import { useAuth } from "./AuthContext";
 import apiService from "../services/api";
 import { toast } from "sonner";
@@ -113,6 +114,10 @@ export function TradingInterface() {
   const [holdingsError, setHoldingsError] = useState<string | null>(null);
   const [availableForBuyError, setAvailableForBuyError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [confirmBuyOpen, setConfirmBuyOpen] = useState(false);
+  const [confirmSellOpen, setConfirmSellOpen] = useState(false);
+  const [wallet, setWallet] = useState<{ cashBalance: number; cashCurrency: 'AED' | 'USD' } | null>(null);
+  const [buyInsufficient, setBuyInsufficient] = useState(false);
 
   // Constants
   const PLATFORM_FEE_RATE = 0.02; // 2%
@@ -238,6 +243,17 @@ export function TradingInterface() {
       }
     }
   }, [sellHolding]);
+
+  const refreshWallet = useCallback(async () => {
+    try {
+      const res = await apiService.getCashBalance();
+      if (res.success) setWallet(res.data);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (user) refreshWallet();
+  }, [user]);
 
   // Refresh available options when buy form selections change
   useEffect(() => {
@@ -769,7 +785,18 @@ export function TradingInterface() {
               </div>
               
               <Button 
-                onClick={handleBuyOrder}
+                onClick={async () => {
+                  await refreshWallet();
+                  const balance = (wallet?.cashCurrency === 'AED') ? (wallet?.cashBalance || 0) : 0;
+                  const required = buyCalculations.totalAED;
+                  const insufficient = balance < required;
+                  setBuyInsufficient(insufficient);
+                  if (insufficient) {
+                    const shortfall = required - balance;
+                    toast.error(`Insufficient funds. Required AED ${required.toFixed(2)} • Available AED ${balance.toFixed(2)} • Shortfall AED ${shortfall.toFixed(2)}.`);
+                  }
+                  setConfirmBuyOpen(true);
+                }}
                 disabled={!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate || placingOrder}
                 className="w-full bg-rectify-green hover:bg-rectify-green-dark text-white disabled:opacity-50"
               >
@@ -955,7 +982,7 @@ export function TradingInterface() {
               </div>
               
               <Button 
-                onClick={handleSellOrder}
+                onClick={() => setConfirmSellOpen(true)}
                 disabled={!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings' || placingOrder || holdingsLoading || holdingsError}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
               >
@@ -1198,6 +1225,73 @@ export function TradingInterface() {
 
       {/* Blockchain Monitor */}
       <BlockchainMonitor />
+      {/* Confirmations */}
+      <AlertDialog open={confirmBuyOpen} onOpenChange={setConfirmBuyOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Buy Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to place a buy order for {buyQuantity || 0} MWh at AED {parseFloat(buyPrice || '0').toFixed(2)}/MWh.
+              Total including 2% fee and AED 5: AED {formatAED(buyCalculations.totalAED)}.
+              {buyInsufficient && (
+                <div className="mt-3 text-red-600 font-medium">Insufficient funds. Please add funds before proceeding.</div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={buyInsufficient} onClick={async () => {
+              if (!wallet) await refreshWallet();
+              const balance = (wallet?.cashCurrency === 'AED') ? (wallet?.cashBalance || 0) : 0;
+              if (balance < buyCalculations.totalAED) {
+                setConfirmBuyOpen(false);
+                const shortfall = buyCalculations.totalAED - balance;
+                toast.error(`Insufficient funds. Required AED ${buyCalculations.totalAED.toFixed(2)} • Available AED ${balance.toFixed(2)} • Shortfall AED ${shortfall.toFixed(2)}.`);
+                return;
+              }
+              setConfirmBuyOpen(false);
+              await handleBuyOrder();
+              await refreshWallet();
+            }}>Yes, Proceed</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmSellOpen} onOpenChange={setConfirmSellOpen}>
+        <AlertDialogContent className="max-w-[900px] w-[95vw]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl">Confirm Sell Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Quantity</div>
+                  <div className="text-4xl font-semibold">{sellQuantity || 0} MWh</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Price</div>
+                  <div className="text-4xl font-semibold">AED {parseFloat(sellPrice || '0').toFixed(2)}/MWh</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Gross</div>
+                  <div className="text-3xl font-medium">AED {formatAED(sellCalculations.subtotal)}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Platform Fee (2%)</div>
+                  <div className="text-3xl font-medium text-orange-600">- AED {formatAED(sellCalculations.platformFee)}</div>
+                </div>
+                <div className="md:col-span-2 border-t pt-4 flex items-center justify-between">
+                  <div className="text-lg">Net to receive</div>
+                  <div className="text-4xl font-bold text-rectify-green">AED {formatAED(sellCalculations.totalAED)}</div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { setConfirmSellOpen(false); await handleSellOrder(); }}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

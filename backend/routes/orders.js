@@ -254,6 +254,21 @@ router.post('/buy', [
       minFillQuantity = 1
     } = req.body;
 
+    // Integer math reservation in fils
+    const subtotalFils = Math.round(quantity * price * 100);
+    const platformFeeFils = Math.round(subtotalFils * 0.02);
+    const blockchainFeeFils = 500; // always charge AED 5 buyer fee
+    const requiredFils = subtotalFils + platformFeeFils + blockchainFeeFils;
+
+    // Check available (balance - reserved)
+    const availableAED = (user.cashBalance || 0) - (user.reservedBalance || 0);
+    if (availableAED < requiredFils / 100) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient funds. Required AED ${(requiredFils/100).toFixed(2)} including fees.`
+      });
+    }
+
     const order = new Order({
       userId: req.user.userId,
       orderType: 'buy',
@@ -271,10 +286,14 @@ router.post('/buy', [
       allowPartialFill,
       minFillQuantity,
       createdBy: `${user.firstName} ${user.lastName}`,
-      expiresAt: expiresAt ? new Date(expiresAt) : undefined
+      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+      buyerReservedFils: requiredFils
     });
 
-    await order.save();
+    // Reserve funds
+    user.reservedBalance = (user.reservedBalance || 0) + (requiredFils / 100);
+
+    await Promise.all([order.save(), user.save()]);
 
     // Try to match with existing sell orders using blockchain-enabled trading
     const matchingOrders = await Order.findMatchingOrders(order);
@@ -799,6 +818,9 @@ async function executeBlockchainTrade(buyOrder, sellOrder, quantity) {
     // Complete REC transfer
     await completeRECTransfer(transaction);
 
+    // Settle cash (always includes AED 5)
+    await RECTradingService.updateUserBalances(transaction);
+
     // Update order statuses
     await updateOrderStatuses(transaction);
 
@@ -847,6 +869,9 @@ async function executeTraditionalMatch(buyOrder, sellOrder, quantity) {
 
     // Complete REC transfer
     await completeRECTransfer(transaction);
+
+    // Settle cash (always includes AED 5)
+    await RECTradingService.updateUserBalances(transaction);
 
     // Update order statuses
     await updateOrderStatuses(transaction);
@@ -931,6 +956,17 @@ async function updateOrderStatuses(transaction) {
   const buyOrder = await Order.findById(buyOrderId);
   if (buyOrder) {
     await buyOrder.fillPartial(quantity);
+    // Release leftover reservation if completed
+    if (buyOrder.status === 'completed' && buyOrder.buyerReservedFils > 0) {
+      const buyer = await User.findById(buyOrder.userId);
+      if (buyer) {
+        const releaseAED = buyOrder.buyerReservedFils / 100;
+        buyer.reservedBalance = Math.max(0, (buyer.reservedBalance || 0) - releaseAED);
+        await buyer.save();
+      }
+      buyOrder.buyerReservedFils = 0;
+      await buyOrder.save();
+    }
   }
 
   // Update sell order

@@ -137,6 +137,20 @@ const userSchema = new mongoose.Schema({
   twoFactorEnabled: {
     type: Boolean,
     default: false
+  },
+  // Wallet fields
+  cashBalance: {
+    type: Number,
+    default: 0
+  },
+  reservedBalance: {
+    type: Number,
+    default: 0
+  },
+  cashCurrency: {
+    type: String,
+    enum: ['AED', 'USD'],
+    default: 'AED'
   }
 }, {
   timestamps: true
@@ -287,7 +301,10 @@ userSchema.methods.toJSON = function() {
     permissions: user.permissions,
     portfolioValue: user.portfolioValue,
     totalRecs: user.totalRecs,
-    verificationStatus: user.verificationStatus
+    verificationStatus: user.verificationStatus,
+    cashBalance: user.cashBalance,
+    reservedBalance: user.reservedBalance,
+    cashCurrency: user.cashCurrency
   };
 };
 
