@@ -13,6 +13,8 @@ class RECTradingService {
   constructor() {
     this.recSecurityService = RECSecurityService;
     this.isInitialized = false;
+    this.PLATFORM_FEE_RATE = 0.02;
+    this.BLOCKCHAIN_FEE_FILS = 500; // AED 5.00
   }
 
   /**
@@ -264,6 +266,44 @@ class RECTradingService {
       totalRecs: sellerSummary.totalQuantity,
       portfolioValue: sellerSummary.totalValue
     });
+  }
+
+  /**
+   * Settle cash using integer math (fils). Buyer pays gross + 2% + AED 5.
+   */
+  async updateUserBalances(transaction) {
+    const buyer = await User.findById(transaction.buyerId);
+    const seller = await User.findById(transaction.sellerId);
+
+    const grossFils = Math.round(transaction.quantity * transaction.pricePerUnit * 100);
+    const buyerFeeFils = Math.round(grossFils * this.PLATFORM_FEE_RATE);
+    const sellerFeeFils = Math.round(grossFils * this.PLATFORM_FEE_RATE);
+    const blockchainFeeFils = this.BLOCKCHAIN_FEE_FILS;
+
+    const buyerTotalDebitFils = grossFils + buyerFeeFils + blockchainFeeFils;
+
+    // Ensure reservation covers debit
+    const availableReservedFils = Math.round((buyer.reservedBalance || 0) * 100);
+    if (availableReservedFils < buyerTotalDebitFils) {
+      throw new Error('Insufficient reserved funds to settle this trade');
+    }
+
+    const buyerTotalDebitAED = buyerTotalDebitFils / 100;
+    buyer.reservedBalance = Math.max(0, (buyer.reservedBalance || 0) - buyerTotalDebitAED);
+    buyer.cashBalance = (buyer.cashBalance || 0) - buyerTotalDebitAED;
+
+    const sellerNetCreditAED = (grossFils - sellerFeeFils) / 100;
+    seller.cashBalance = (seller.cashBalance || 0) + sellerNetCreditAED;
+
+    // Decrement reservation on order
+    const Order = require('../models/Order');
+    const buyOrder = await Order.findById(transaction.buyOrderId);
+    if (buyOrder && buyOrder.buyerReservedFils > 0) {
+      buyOrder.buyerReservedFils = Math.max(0, buyOrder.buyerReservedFils - buyerTotalDebitFils);
+      await buyOrder.save();
+    }
+
+    await Promise.all([buyer.save(), seller.save()]);
   }
 
   /**

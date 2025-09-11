@@ -272,6 +272,18 @@ class ApiService {
     const queryString = params.toString();
     return this.request(`/transactions/market/price-history/${encodeURIComponent(facilityName)}${queryString ? `?${queryString}` : ''}`);
   }
+
+  // Payments / Wallet
+  async getCashBalance(): Promise<ApiResponse> {
+    return this.request('/payments/balance');
+  }
+
+  async createTopupSession(params: { amount: number; currency: 'AED' | 'USD' }): Promise<ApiResponse> {
+    return this.request('/payments/topup-session', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
 }
 
 export const apiService = new ApiService();

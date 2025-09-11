@@ -9,6 +9,10 @@ const xss = require('xss');
 const hpp = require('hpp');
 const morgan = require('morgan');
 require('dotenv').config();
+const payments = require('./routes/payments');
+const Order = require('./models/Order');
+const User = require('./models/User');
+const RECHolding = require('./models/RECHolding');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -21,6 +25,8 @@ const RECSecurityService = require('./services/RECSecurityService');
 const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
 
 const app = express();
+// Mount Stripe webhook BEFORE any body parsers or limiters
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), payments.webhookHandler);
 const PORT = process.env.PORT || 5000;
 
 // Security middleware - Enhanced
@@ -29,13 +35,13 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://js.stripe.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://rectifygo.com", "https://rectifygo.netlify.app", "https://rectify-production.up.railway.app"],
+      connectSrc: ["'self'", "https://rectifygo.com", "https://rectifygo.netlify.app", "https://rectify-production.up.railway.app", "https://api.stripe.com", "https://checkout.stripe.com"],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://checkout.stripe.com"],
     },
   },
   crossOriginEmbedderPolicy: false
@@ -79,6 +85,7 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path === '/api/payments/webhook'
 });
 app.use(limiter);
 
@@ -223,6 +230,7 @@ app.use('/api/holdings', holdingsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/rec-security', recSecurityRoutes);
+app.use('/api/payments', payments.router);
 
 // Health check endpoint - Enhanced for production monitoring
 app.get('/api/health', async (req, res) => {
@@ -342,6 +350,46 @@ const server = app.listen(PORT, async () => {
   } catch (error) {
     console.error('❌ Failed to initialize REC Security Service:', error.message);
   }
+  // Periodic expiry job to expire orders and release reservations/locks
+  async function expireOrdersJob() {
+    try {
+      const now = new Date();
+      const expiring = await Order.find({
+        status: { $in: ['pending', 'partial'] },
+        expiresAt: { $lt: now }
+      });
+
+      if (expiring.length === 0) return;
+
+      for (const order of expiring) {
+        order.status = 'expired';
+        await order.save();
+
+        if (order.orderType === 'buy' && order.buyerReservedFils > 0) {
+          const buyer = await User.findById(order.userId);
+          if (buyer) {
+            const releaseAED = order.buyerReservedFils / 100;
+            buyer.reservedBalance = Math.max(0, (buyer.reservedBalance || 0) - releaseAED);
+            await buyer.save();
+          }
+          order.buyerReservedFils = 0;
+          await order.save();
+        }
+
+        if (order.orderType === 'sell' && order.holdingId) {
+          const holding = await RECHolding.findById(order.holdingId);
+          if (holding) await holding.unlock();
+        }
+      }
+
+      console.log(`🕒 Expired ${expiring.length} orders and released reservations/locks`);
+    } catch (e) {
+      console.error('❌ expireOrdersJob error:', e);
+    }
+  }
+
+  await expireOrdersJob();
+  setInterval(expireOrdersJob, 10 * 60 * 1000);
 });
 
 // Graceful shutdown handling
