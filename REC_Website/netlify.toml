@@ -1,0 +1,74 @@
+[build]
+# Run everything from the REC_Website subdirectory (monorepo-style)
+base = "REC_Website"
+# Build command for Vite
+command = "npm run build"
+# Directory to publish (relative to base)
+publish = "dist"
+
+[build.environment]
+# Ensure a modern Node runtime on Netlify
+NODE_VERSION = "20"
+NPM_VERSION = "9"
+# API Configuration
+VITE_API_URL = "https://rectify-production.up.railway.app/api"
+# EmailJS Configuration
+VITE_EMAILJS_SERVICE_ID = "service_v0u3c8q"
+VITE_EMAILJS_TEMPLATE_ID = "template_t2a2eo7"
+VITE_EMAILJS_PUBLIC_KEY = "5ysm3GlzYJrVnKdL4"
+[[redirects]]
+# SPA fallback so client-side routes work
+from = "/*"
+to = "/index.html"
+status = 200
+
+[[headers]]
+# Security headers for all pages
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+X-XSS-Protection = "1; mode=block"
+Referrer-Policy = "strict-origin-when-cross-origin"
+Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+[[headers]]
+# Cache static assets
+for = "/assets/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+# Cache JavaScript files
+for = "/*.js"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+# Cache CSS files
+for = "/*.css"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+# Cache image files with proper content type
+for = "*.png"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+Content-Type = "image/png"
+
+[[headers]]
+# Cache JPEG images
+for = "*.jpg"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+Content-Type = "image/jpeg"
+
+[[headers]]
+# Cache JPEG images (alternative extension)
+for = "*.jpeg"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+Content-Type = "image/jpeg"
+
+
