@@ -108,6 +108,10 @@ app.use(morgan('combined', {
   }
 }));
 
+// Stripe webhook needs raw body; mount BEFORE JSON parser
+const paymentsWebhook = require('./routes/paymentsWebhook');
+app.use('/api/webhooks', paymentsWebhook);
+
 // Body parsing middleware - Secured
 app.use(express.json({ 
   limit: '1mb', // Reduced from 10mb for security
@@ -223,6 +227,8 @@ app.use('/api/holdings', holdingsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/rec-security', recSecurityRoutes);
+const paymentsRoutes = require('./routes/payments');
+app.use('/api/payments', paymentsRoutes);
 
 // Health check endpoint - Enhanced for production monitoring
 app.get('/api/health', async (req, res) => {
