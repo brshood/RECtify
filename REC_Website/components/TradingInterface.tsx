@@ -218,7 +218,13 @@ export function TradingInterface() {
         // If no tradeable holdings and we had a selected holding, clear it
         if (tradeableHoldings.length === 0 && sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings') {
           setSellHolding("");
-        } else if (sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings' && !tradeableHoldings.find(h => h._id === sellHolding)) {
+        } else if (
+          sellHolding &&
+          sellHolding !== 'loading' &&
+          sellHolding !== 'error' &&
+          sellHolding !== 'no-holdings' &&
+          !tradeableHoldings.find((h: Holding) => h._id === sellHolding)
+        ) {
           // If the selected holding is no longer available, clear it
           setSellHolding("");
         }
@@ -986,10 +992,10 @@ export function TradingInterface() {
                 </div>
               </div>
               
-              <AlertDialog open={confirmSellOpen} onOpenChange={setConfirmSellOpen}>
+              <AlertDialog open={confirmSellOpen} onOpenChange={(open) => setConfirmSellOpen(!!open)}>
                 <AlertDialogTrigger asChild>
                   <Button 
-                    disabled={!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings' || placingOrder || holdingsLoading || holdingsError}
+                    disabled={!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings' || placingOrder || holdingsLoading || !!holdingsError}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
                   >
                     {placingOrder ? (

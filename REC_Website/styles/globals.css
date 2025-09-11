@@ -1,0 +1,770 @@
+@import "tailwindcss";
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 14px;
+  --background: #fafbfc;
+  --foreground: #1a202c;
+  --card: #ffffff;
+  --card-foreground: #2d3748;
+  --popover: #ffffff;
+  --popover-foreground: #2d3748;
+  --primary: #16a085;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f9ff;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e0f7fa;
+  --accent-foreground: #0d9488;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: transparent;
+  --input-background: #f8fafc;
+  --switch-background: #cbd5e1;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #0d9488;
+  --chart-1: #16a085;
+  --chart-2: #3b82f6;
+  --chart-3: #8b5cf6;
+  --chart-4: #059669;
+  --chart-5: #ef4444;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #334155;
+  --sidebar-primary: #16a085;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0fdfa;
+  --sidebar-accent-foreground: #0f766e;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #0d9488;
+  
+  /* Typography Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  
+  /* RECtify Brand Colors - Enhanced Light Theme */
+  --rectify-green: #16a085;
+  --rectify-green-light: #ccfbf1;
+  --rectify-green-dark: #0f766e;
+  --rectify-blue: #3b82f6;
+  --rectify-blue-light: #dbeafe;
+  --rectify-blue-dark: #1d4ed8;
+  --rectify-accent: #e6fffa;
+  --rectify-surface: #ffffff;
+  --rectify-border: #b2f5ea;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #10b981;
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: #fbbf24;
+  --chart-2: #60a5fa;
+  --chart-3: #a78bfa;
+  --chart-4: #34d399;
+  --chart-5: #f87171;
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+  
+  /* RECtify Brand Colors - Dark Mode */
+  --rectify-green: #34d399;
+  --rectify-green-light: #064e3b;
+  --rectify-green-dark: #6ee7b7;
+  --rectify-blue: #60a5fa;
+  --rectify-blue-light: #1e3a8a;
+  --rectify-blue-dark: #93c5fd;
+  --rectify-accent: #064e3b;
+  --rectify-surface: #1f2937;
+  --rectify-border: #374151;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* RECtify Brand Utilities */
+  --color-rectify-green: var(--rectify-green);
+  --color-rectify-green-light: var(--rectify-green-light);
+  --color-rectify-green-dark: var(--rectify-green-dark);
+  --color-rectify-blue: var(--rectify-blue);
+  --color-rectify-blue-light: var(--rectify-blue-light);
+  --color-rectify-blue-dark: var(--rectify-blue-dark);
+  --color-rectify-accent: var(--rectify-accent);
+  --color-rectify-surface: var(--rectify-surface);
+  --color-rectify-border: var(--rectify-border);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+/* RECtify Custom Utilities */
+@layer utilities {
+  .bg-rectify-gradient {
+    background: linear-gradient(135deg, var(--rectify-green) 0%, var(--rectify-blue) 100%);
+  }
+  
+  .bg-rectify-gradient-light {
+    background: linear-gradient(135deg, var(--rectify-green-light) 0%, var(--rectify-blue-light) 100%);
+  }
+  
+  .text-rectify-gradient {
+    background: linear-gradient(135deg, var(--rectify-green) 0%, var(--rectify-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .border-rectify-gradient {
+    border-image: linear-gradient(135deg, var(--rectify-green) 0%, var(--rectify-blue) 100%) 1;
+  }
+  
+  .bg-rectify-surface {
+    background-color: var(--rectify-surface);
+  }
+  
+  .border-rectify {
+    border-color: var(--rectify-border);
+  }
+  
+  .text-rectify-green {
+    color: var(--rectify-green);
+  }
+  
+  .text-rectify-blue {
+    color: var(--rectify-blue);
+  }
+  
+  .bg-rectify-accent {
+    background-color: var(--rectify-accent);
+  }
+}
+
+/* Smooth scrolling behavior */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Improved focus outlines for accessibility */
+  *:focus-visible {
+    outline: 2px solid var(--rectify-green);
+    outline-offset: 2px;
+  }
+}
+
+/* Print Styles for Emissions Report */
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+    
+    @top-center {
+      content: "UAE Emissions Report - " attr(data-company-name);
+      font-size: 10px;
+      font-weight: bold;
+      color: #666;
+    }
+    
+    @bottom-center {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 10px;
+      color: #666;
+    }
+    
+    @bottom-right {
+      content: "Generated: " attr(data-generation-date);
+      font-size: 10px;
+      color: #666;
+    }
+  }
+  
+  /* Hide elements that shouldn't be printed */
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  /* Report container styling */
+  .report-container {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  /* Page styling */
+  .report-page {
+    min-height: 100vh;
+    page-break-after: always;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    border: none;
+  }
+  
+  .page-break {
+    page-break-before: always;
+  }
+  
+  .report-page:last-child {
+    page-break-after: avoid;
+  }
+  
+  /* Typography for print */
+  h1 {
+    font-size: 24px;
+    page-break-after: avoid;
+    margin-bottom: 16px;
+  }
+  
+  h2 {
+    font-size: 20px;
+    page-break-after: avoid;
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+  
+  h3 {
+    font-size: 16px;
+    page-break-after: avoid;
+    margin-bottom: 8px;
+    margin-top: 16px;
+  }
+  
+  h4 {
+    font-size: 14px;
+    page-break-after: avoid;
+    margin-bottom: 6px;
+    margin-top: 12px;
+  }
+  
+  /* Table styling for print */
+  table {
+    page-break-inside: avoid;
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    font-size: 10px;
+  }
+  
+  th {
+    background-color: #f5f5f5 !important;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  /* Background colors for print */
+  .bg-gray-50 {
+    background-color: #f9f9f9 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-blue-50 {
+    background-color: #eff6ff !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-green-50 {
+    background-color: #f0fdf4 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-orange-50 {
+    background-color: #fff7ed !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-yellow-50 {
+    background-color: #fefce8 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  /* Card styling for print */
+  .card {
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 8px 0;
+    page-break-inside: avoid;
+  }
+  
+  /* Badge styling for print */
+  .badge {
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    padding: 2px 6px;
+    font-size: 9px;
+    background-color: #f5f5f5 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  /* Icon replacement for print */
+  .lucide {
+    display: none;
+  }
+  
+  /* Ensure proper spacing */
+  .space-y-6 > * + * {
+    margin-top: 16px;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 12px;
+  }
+  
+  .space-y-3 > * + * {
+    margin-top: 8px;
+  }
+  
+  .space-y-2 > * + * {
+    margin-top: 6px;
+  }
+  
+  /* Grid layouts for print */
+  .grid {
+    display: block;
+  }
+  
+  .grid > * {
+    margin-bottom: 8px;
+  }
+  
+  /* Front page specific styling */
+  .report-page:first-child {
+    text-align: center;
+    padding-top: 100px;
+  }
+  
+  /* Signature area */
+  .signature-area {
+    min-height: 60px;
+    border-bottom: 1px solid #ccc;
+    margin-top: 20px;
+  }
+  
+  /* Avoid orphans and widows */
+  p, li {
+    orphans: 2;
+    widows: 2;
+  }
+  
+  /* Force page breaks */
+  .page-break-before {
+    page-break-before: always;
+  }
+  
+  .page-break-after {
+    page-break-after: always;
+  }
+  
+  .page-break-avoid {
+    page-break-inside: avoid;
+  }
+}
+
+/* Screen-only styles (hidden in print) */
+@media screen {
+  .report-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  
+  .report-page {
+    padding: 2cm;
+    min-height: calc(297mm - 4cm);
+    border-bottom: 1px solid #e5e5e5;
+  }
+  
+  .report-page:last-child {
+    border-bottom: none;
+  }
+}
+
+/* Utilities for report generation */
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-only {
+    display: block;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Mobile-specific fixes for layout collisions */
+@media (max-width: 640px) {
+  /* Container and spacing fixes */
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  /* Mobile tab selector styling */
+  .mobile-tab-selector {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  .mobile-tab-selector .select-trigger {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    min-height: 2.5rem;
+  }
+  
+  /* Card mobile optimizations */
+  .card-mobile-optimized {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .card-mobile-optimized .card-header {
+    padding-bottom: 0.5rem;
+  }
+  
+  .card-mobile-optimized .card-content {
+    padding-top: 0.5rem;
+  }
+  
+  /* Typography mobile adjustments */
+  .mobile-heading {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .mobile-text {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  /* Mobile grid adjustments */
+  .mobile-grid-stack > * {
+    margin-bottom: 0.75rem;
+  }
+  
+  .mobile-grid-stack > *:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Mobile tab content spacing */
+  .mobile-tab-content {
+    padding-top: 0.75rem;
+  }
+  
+  /* Prevent horizontal scroll */
+  .mobile-no-scroll {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  /* Mobile select dropdown improvements */
+  .mobile-select {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    background-color: #ffffff;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Mobile card grid improvements */
+  .mobile-card-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    width: 100%;
+  }
+  
+  /* Mobile metrics cards */
+  .mobile-metrics-card {
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  
+  .mobile-metrics-card .metrics-value {
+    font-size: 1.25rem;
+    font-weight: bold;
+    line-height: 1.75rem;
+  }
+  
+  .mobile-metrics-card .metrics-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1rem;
+  }
+}
+
+/* Extra small screen fixes (320px - 360px) */
+@media (max-width: 360px) {
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  /* Further reduce card padding */
+  .card-mobile-optimized {
+    padding: 0.5rem;
+  }
+  
+  /* Compact typography for very small screens */
+  .mobile-heading {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+  
+  .mobile-text {
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+  }
+  
+  /* Compact metrics cards for tiny screens */
+  .mobile-metrics-card .metrics-value {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+  
+  /* Reduce grid gap on tiny screens */
+  .mobile-card-grid {
+    gap: 0.5rem;
+  }
+  
+  /* Header adjustments for tiny screens */
+  .header-mobile-compact {
+    height: 3.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  /* Select dropdown for tiny screens */
+  .mobile-select {
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Tablet specific adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Tablet tab list improvements */
+  .tablet-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background-color: #f1f5f9;
+    border-radius: 0.5rem;
+  }
+  
+  .tablet-tab-trigger {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    text-align: center;
+    border-radius: 0.375rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets for mobile */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem;
+  }
+  
+  /* Improved button touch targets */
+  .mobile-button {
+    padding: 0.75rem 1rem;
+    min-height: 2.75rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Improved select touch target */
+  .mobile-select-touch {
+    min-height: 2.75rem;
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+}
+
+/* High DPI screen improvements */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Ensure crisp borders on high DPI */
+  .card {
+    border-width: 0.5px;
+  }
+  
+  .mobile-select {
+    border-width: 0.5px;
+  }
+}
