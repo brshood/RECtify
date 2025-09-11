@@ -9,6 +9,7 @@ const rashedImage = "/rashed-alneyadi.png.jpeg";
 import { InfoModal } from "./InfoModal";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Iridescence from './figma/Iridescence';
 import emailjs from '@emailjs/browser';
 
 interface LandingPageProps {
@@ -215,6 +216,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
+        <Iridescence color={[1,1,1]} mouseReact={false} amplitude={0.08} speed={0.7} />
         <motion.div 
           className="absolute inset-0 bg-rectify-gradient-light opacity-10"
           initial={{ opacity: 0 }}
