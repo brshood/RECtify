@@ -218,9 +218,9 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
       <section className="relative overflow-hidden">
         <Iridescence color={[1,1,1]} mouseReact={false} amplitude={0.08} speed={0.7} />
         <motion.div 
-          className="absolute inset-0 bg-rectify-gradient-light opacity-10"
+          className="absolute inset-0 bg-[#00FFAF78]"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.1 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 1.2 }}
         ></motion.div>
         <div className="relative container mx-auto px-6 py-24">
