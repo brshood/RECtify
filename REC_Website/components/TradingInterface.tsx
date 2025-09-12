@@ -220,7 +220,7 @@ export function TradingInterface() {
         // If no tradeable holdings and we had a selected holding, clear it
         if (tradeableHoldings.length === 0 && sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings') {
           setSellHolding("");
-        } else if (sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings' && !tradeableHoldings.find(h => h._id === sellHolding)) {
+        } else if (sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings' && !tradeableHoldings.find((h: Holding) => h._id === sellHolding)) {
           // If the selected holding is no longer available, clear it
           setSellHolding("");
         }
@@ -485,7 +485,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-energy-type">Energy Source</Label>
                 <Select value={buyEnergyType} onValueChange={setBuyEnergyType}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-energy-type">
                     <SelectValue placeholder={
                       availableForBuyLoading 
                         ? "Loading energy types..." 
@@ -557,7 +557,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-facility">UAE Facility</Label>
                 <Select value={buyFacility} onValueChange={setBuyFacility}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-facility">
                     <SelectValue placeholder={
                       availableForBuyLoading 
                         ? "Loading facilities..." 
@@ -623,6 +623,7 @@ export function TradingInterface() {
                     type="number" 
                     value={buyQuantity}
                     onChange={(e) => setBuyQuantity(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <div className="space-y-2">
@@ -634,6 +635,7 @@ export function TradingInterface() {
                     step="0.01"
                     value={buyPrice}
                     onChange={(e) => setBuyPrice(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -641,7 +643,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-vintage">Vintage Year</Label>
                 <Select value={buyVintage} onValueChange={setBuyVintage}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-vintage">
                     <SelectValue placeholder={
                       availableForBuyLoading 
                         ? "Loading vintages..." 
@@ -694,7 +696,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-purpose">Purpose</Label>
                 <Select value={buyPurpose} onValueChange={setBuyPurpose}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-purpose">
                     <SelectValue placeholder="Select purpose" />
                   </SelectTrigger>
                   <SelectContent>
@@ -709,7 +711,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-emirate">Emirate</Label>
                 <Select value={buyEmirate} onValueChange={setBuyEmirate}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-emirate">
                     <SelectValue placeholder={
                       availableForBuyLoading 
                         ? "Loading emirates..." 
@@ -837,7 +839,7 @@ export function TradingInterface() {
                   onValueChange={setSellHolding}
                   disabled={holdingsLoading || placingOrder}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="sell-holdings">
                     <SelectValue 
                       placeholder={
                         holdingsLoading 
@@ -938,6 +940,7 @@ export function TradingInterface() {
                     type="number"
                     value={sellQuantity}
                     onChange={(e) => setSellQuantity(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <div className="space-y-2">
@@ -949,6 +952,7 @@ export function TradingInterface() {
                     step="0.01"
                     value={sellPrice}
                     onChange={(e) => setSellPrice(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -983,7 +987,7 @@ export function TradingInterface() {
               
               <Button 
                 onClick={() => setConfirmSellOpen(true)}
-                disabled={!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings' || placingOrder || holdingsLoading || holdingsError}
+                disabled={!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings' || placingOrder || holdingsLoading || !!holdingsError}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
               >
                 {placingOrder ? (
