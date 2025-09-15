@@ -253,7 +253,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Arabic Text */}
             <motion.div 
-              className="text-2xl md:text-3xl mb-8 text-green-800 dark:text-green-600 font-semibold" 
+              className="text-2xl md:text-3xl mb-8 text-green-900 dark:text-green-400 font-bold" 
               dir="rtl"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -264,7 +264,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Subtitle */}
             <motion.p 
-              className="text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed"
+              className="text-2xl text-foreground/90 dark:text-foreground mb-12 max-w-2xl mx-auto leading-relaxed font-medium"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
@@ -297,7 +297,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   <Button 
                     size="lg" 
                     variant="outline"
-                    className="border-2 border-rectify-green text-rectify-green hover:bg-rectify-green hover:text-white px-8 py-6 text-lg"
+                    className="border-2 border-rectify-green text-rectify-green hover:bg-rectify-green hover:text-white px-8 py-6 text-lg bg-background/80 backdrop-blur-sm dark:bg-background/90"
                     onClick={onNavigateToEIReports}
                   >
                     Access EI Reports
