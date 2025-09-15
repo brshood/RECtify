@@ -480,11 +480,23 @@ export function UserProfile({ onClose }: UserProfileProps) {
                 </div>
                 <Switch
                   checked={user.preferences.darkMode}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked) => {
                     updateProfile({
                       preferences: { ...user.preferences, darkMode: checked }
-                    })
-                  }
+                    });
+                    // Apply dark mode to DOM
+                    if (checked) {
+                      document.documentElement.classList.add('dark');
+                      localStorage.setItem('theme', 'dark');
+                      const meta = document.querySelector('meta[name="theme-color"]');
+                      if (meta) meta.setAttribute('content', '#0b0f14');
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                      localStorage.setItem('theme', 'light');
+                      const meta = document.querySelector('meta[name="theme-color"]');
+                      if (meta) meta.setAttribute('content', '#16a085');
+                    }
+                  }}
                 />
               </div>
             </div>
