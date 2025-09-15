@@ -183,6 +183,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const response = await apiService.getCurrentUser();
           if (response.success && response.user) {
             setUser(response.user);
+            // Apply user's dark mode preference
+            if (response.user.preferences.darkMode) {
+              document.documentElement.classList.add('dark');
+              localStorage.setItem('theme', 'dark');
+              const meta = document.querySelector('meta[name="theme-color"]');
+              if (meta) meta.setAttribute('content', '#0b0f14');
+            } else {
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('theme', 'light');
+              const meta = document.querySelector('meta[name="theme-color"]');
+              if (meta) meta.setAttribute('content', '#16a085');
+            }
           } else {
             // Invalid token, clear it
             localStorage.removeItem('rectify-token');
@@ -205,6 +217,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.token && response.user) {
         localStorage.setItem('rectify-token', response.token);
         setUser(response.user);
+        // Apply user's dark mode preference
+        if (response.user.preferences.darkMode) {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', '#0b0f14');
+        } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', '#16a085');
+        }
         setIsLoading(false);
         return true;
       }

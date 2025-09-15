@@ -253,7 +253,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Arabic Text */}
             <motion.div 
-              className="text-2xl md:text-3xl mb-8 text-green-800 dark:text-green-600 font-semibold" 
+              className="text-2xl md:text-3xl mb-8 text-green-900 dark:text-green-400 font-bold" 
               dir="rtl"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -264,7 +264,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Subtitle */}
             <motion.p 
-              className="text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed"
+              className="text-2xl text-foreground/90 dark:text-white mb-12 max-w-2xl mx-auto leading-relaxed font-medium"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
@@ -297,7 +297,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   <Button 
                     size="lg" 
                     variant="outline"
-                    className="border-2 border-rectify-green text-rectify-green hover:bg-rectify-green hover:text-white px-8 py-6 text-lg"
+                    className="border-2 border-rectify-green text-rectify-green hover:bg-rectify-green hover:text-white px-8 py-6 text-lg bg-background/80 backdrop-blur-sm dark:bg-background/90"
                     onClick={onNavigateToEIReports}
                   >
                     Access EI Reports
@@ -1272,27 +1272,31 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   viewport={{ once: true }}
                 >
                   <motion.div variants={fadeInUp}>
-                    <label className="block text-sm font-medium mb-2">Your Name</label>
+                    <label htmlFor="contact-name" className="block text-sm font-medium mb-2">Your Name</label>
                     <motion.input
+                      id="contact-name"
                       type="text"
                       name="name"
                       value={contactForm.name}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-lg border border-rectify-border bg-rectify-accent/30 focus:outline-none focus:ring-2 focus:ring-rectify-green focus:border-transparent transition-all duration-300"
                       placeholder="Enter your full name"
+                      autoComplete="name"
                       required
                       whileFocus={{ scale: 1.02 }}
                     />
                   </motion.div>
                   <motion.div variants={fadeInUp}>
-                    <label className="block text-sm font-medium mb-2">Email Address</label>
+                    <label htmlFor="contact-email" className="block text-sm font-medium mb-2">Email Address</label>
                     <motion.input
+                      id="contact-email"
                       type="email"
                       name="email"
                       value={contactForm.email}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-lg border border-rectify-border bg-rectify-accent/30 focus:outline-none focus:ring-2 focus:ring-rectify-green focus:border-transparent transition-all duration-300"
                       placeholder="your.email@example.com"
+                      autoComplete="email"
                       required
                       whileFocus={{ scale: 1.02 }}
                     />
@@ -1304,14 +1308,16 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   transition={{ duration: 0.6, delay: 0.6 }}
                   viewport={{ once: true }}
                 >
-                  <label className="block text-sm font-medium mb-2">Subject</label>
+                  <label htmlFor="contact-subject" className="block text-sm font-medium mb-2">Subject</label>
                   <motion.input
+                    id="contact-subject"
                     type="text"
                     name="subject"
                     value={contactForm.subject}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-lg border border-rectify-border bg-rectify-accent/30 focus:outline-none focus:ring-2 focus:ring-rectify-green focus:border-transparent transition-all duration-300"
                     placeholder="What would you like to discuss?"
+                    autoComplete="off"
                     required
                     whileFocus={{ scale: 1.02 }}
                   />
@@ -1322,14 +1328,16 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   transition={{ duration: 0.6, delay: 0.7 }}
                   viewport={{ once: true }}
                 >
-                  <label className="block text-sm font-medium mb-2">Message</label>
+                  <label htmlFor="contact-message" className="block text-sm font-medium mb-2">Message</label>
                   <motion.textarea
+                    id="contact-message"
                     name="message"
                     value={contactForm.message}
                     onChange={handleInputChange}
                     rows={4}
                     className="w-full px-4 py-3 rounded-lg border border-rectify-border bg-rectify-accent/30 focus:outline-none focus:ring-2 focus:ring-rectify-green focus:border-transparent resize-none transition-all duration-300"
                     placeholder="Tell us about your interest in I-REC trading or any questions you have..."
+                    autoComplete="off"
                     required
                     whileFocus={{ scale: 1.02 }}
                   ></motion.textarea>

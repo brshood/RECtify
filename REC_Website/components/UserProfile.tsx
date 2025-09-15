@@ -186,8 +186,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
           toast.error('Failed to load Stripe.js');
           return;
         }
-        // @ts-ignore
-        const checkout = stripe.initEmbeddedCheckout({ clientSecret });
+        const checkout = await stripe.initEmbeddedCheckout({ clientSecret });
         checkout.mount('#stripe-checkout-embedded');
         setStripeMountError(null);
       } catch (e: any) {
@@ -315,11 +314,13 @@ export function UserProfile({ onClose }: UserProfileProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>First Name</Label>
+                <Label htmlFor="profile-first-name">First Name</Label>
                 {isEditing ? (
                   <Input
+                    id="profile-first-name"
                     value={(editData as any).firstName || ''}
                     onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
+                    autoComplete="given-name"
                   />
                 ) : (
                   <div className="flex items-center space-x-2">
@@ -330,11 +331,13 @@ export function UserProfile({ onClose }: UserProfileProps) {
               </div>
 
               <div className="space-y-2">
-                <Label>Last Name</Label>
+                <Label htmlFor="profile-last-name">Last Name</Label>
                 {isEditing ? (
                   <Input
+                    id="profile-last-name"
                     value={(editData as any).lastName || ''}
                     onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
+                    autoComplete="family-name"
                   />
                 ) : (
                   <div className="flex items-center space-x-2">
@@ -353,11 +356,13 @@ export function UserProfile({ onClose }: UserProfileProps) {
               </div>
 
               <div className="space-y-2">
-                <Label>Company</Label>
+                <Label htmlFor="profile-company">Company</Label>
                 {isEditing ? (
                   <Input
+                    id="profile-company"
                     value={(editData as any).company || ''}
                     onChange={(e) => setEditData({ ...editData, company: e.target.value })}
+                    autoComplete="organization"
                   />
                 ) : (
                   <div className="flex items-center space-x-2">
@@ -411,7 +416,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
             <h4 className="text-lg font-medium">Preferences</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Currency</Label>
+                <Label htmlFor="profile-currency">Currency</Label>
                 <Select
                   value={user.preferences.currency}
                   onValueChange={(value: 'AED' | 'USD') => 
@@ -420,7 +425,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="profile-currency">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -431,7 +436,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
               </div>
 
               <div className="space-y-2">
-                <Label>Dashboard Layout</Label>
+                <Label htmlFor="profile-dashboard-layout">Dashboard Layout</Label>
                 <Select
                   value={user.preferences.dashboardLayout}
                   onValueChange={(value: 'default' | 'compact' | 'detailed') => 
@@ -440,7 +445,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="profile-dashboard-layout">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -475,11 +480,23 @@ export function UserProfile({ onClose }: UserProfileProps) {
                 </div>
                 <Switch
                   checked={user.preferences.darkMode}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked) => {
                     updateProfile({
                       preferences: { ...user.preferences, darkMode: checked }
-                    })
-                  }
+                    });
+                    // Apply dark mode to DOM
+                    if (checked) {
+                      document.documentElement.classList.add('dark');
+                      localStorage.setItem('theme', 'dark');
+                      const meta = document.querySelector('meta[name="theme-color"]');
+                      if (meta) meta.setAttribute('content', '#0b0f14');
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                      localStorage.setItem('theme', 'light');
+                      const meta = document.querySelector('meta[name="theme-color"]');
+                      if (meta) meta.setAttribute('content', '#16a085');
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -534,6 +551,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
                   <div className="text-4xl font-bold">
                     <span className="mr-2 text-black/60">{currency}</span>
                     <input
+                      id="amount-input"
                       aria-label="Amount"
                       type="number"
                       inputMode="decimal"
@@ -542,13 +560,14 @@ export function UserProfile({ onClose }: UserProfileProps) {
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
+                      autoComplete="off"
                       className="inline-block w-[10ch] bg-transparent border-0 outline-none text-4xl font-bold tracking-tight text-black placeholder-black/30 text-center"
                     />
                   </div>
                 </div>
                 <div className="px-6 pb-2">
-                  <Label className="text-black/70 text-xs">Currency</Label>
-                  <select className="mt-2 h-10 w-full px-3 rounded-md bg-black/5 border border-black/20" value={currency} onChange={(e) => setCurrency(e.target.value as 'AED' | 'USD')}>
+                  <Label htmlFor="topup-currency" className="text-black/70 text-xs">Currency</Label>
+                  <select id="topup-currency" className="mt-2 h-10 w-full px-3 rounded-md bg-black/5 border border-black/20" value={currency} onChange={(e) => setCurrency(e.target.value as 'AED' | 'USD')}>
                     <option value="AED">AED</option>
                     <option value="USD">USD</option>
                   </select>

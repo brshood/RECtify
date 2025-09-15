@@ -45,7 +45,14 @@ void main() {
 }
 `;
 
-export default function Iridescence({ color = [1, 1, 1], speed = 1.0, amplitude = 0.1, mouseReact = true, ...rest }: { color?: [number, number, number]; speed?: number; amplitude?: number; mouseReact?: boolean } & React.HTMLAttributes<HTMLDivElement>) {
+interface IridescenceProps extends React.HTMLAttributes<HTMLDivElement> {
+  color?: [number, number, number];
+  speed?: number;
+  amplitude?: number;
+  mouseReact?: boolean;
+}
+
+export default function Iridescence({ color = [1, 1, 1], speed = 1.0, amplitude = 0.1, mouseReact = true, ...rest }: IridescenceProps) {
   const ctnDom = useRef<HTMLDivElement | null>(null);
   const mousePos = useRef({ x: 0.5, y: 0.5 });
 
