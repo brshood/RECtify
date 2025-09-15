@@ -838,57 +838,7 @@ async function executeBlockchainTrade(buyOrder, sellOrder, quantity) {
   }
 }
 
-// Traditional order matching function (fallback when blockchain fails)
-async function executeTraditionalMatch(buyOrder, sellOrder, quantity) {
-  try {
-    console.log(`🔄 Executing traditional match for ${quantity} units`);
-    
-    // Create transaction record
-    const transaction = new Transaction({
-      buyerId: buyOrder.userId,
-      sellerId: sellOrder.userId,
-      buyOrderId: buyOrder._id,
-      sellOrderId: sellOrder._id,
-      facilityName: sellOrder.facilityName,
-      facilityId: sellOrder.facilityId || `${sellOrder.facilityName}-${sellOrder.vintage}`,
-      energyType: sellOrder.energyType,
-      vintage: sellOrder.vintage,
-      emirate: sellOrder.emirate,
-      certificationStandard: sellOrder.certificationStandard,
-      quantity,
-      pricePerUnit: sellOrder.price,
-      totalAmount: quantity * sellOrder.price,
-      buyerPlatformFee: quantity * sellOrder.price * 0.02,
-      sellerPlatformFee: quantity * sellOrder.price * 0.02,
-      blockchainFee: 0, // No blockchain fee for traditional matching
-      status: 'processing',
-      settlementStatus: 'pending'
-    });
-
-    await transaction.save();
-
-    // Complete REC transfer
-    await completeRECTransfer(transaction);
-
-    // Settle cash (always includes AED 5)
-    await RECTradingService.updateUserBalances(transaction);
-
-    // Update order statuses
-    await updateOrderStatuses(transaction);
-
-    // Update user portfolios
-    await updateUserPortfolios(transaction);
-
-    // Mark transaction as completed
-    await transaction.markCompleted();
-
-    console.log(`✅ Traditional match completed: ${transaction._id}`);
-    return { success: true, transactionId: transaction._id };
-  } catch (error) {
-    console.error('❌ Traditional match failed:', error);
-    return { success: false, error: error.message };
-  }
-}
+// Duplicate function removed - see line 663 for the original implementation
 
 // Helper function to complete REC transfer
 async function completeRECTransfer(transaction) {
