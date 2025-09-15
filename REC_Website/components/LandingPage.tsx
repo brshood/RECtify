@@ -253,7 +253,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Arabic Text */}
             <motion.div 
-              className="text-2xl md:text-3xl mb-8 text-green-900 dark:text-green-400 font-bold" 
+              className="text-2xl md:text-3xl mb-8 text-green-900 dark:text-green-900 font-bold" 
               dir="rtl"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -264,7 +264,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Subtitle */}
             <motion.p 
-              className="text-2xl text-foreground/90 dark:text-white mb-12 max-w-2xl mx-auto leading-relaxed font-medium"
+              className="text-2xl text-black dark:text-black mb-12 max-w-2xl mx-auto leading-relaxed font-medium"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
