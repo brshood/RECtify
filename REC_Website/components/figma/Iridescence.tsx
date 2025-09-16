@@ -133,3 +133,5 @@ export default function Iridescence({ color = [1, 1, 1], speed = 1.0, amplitude 
   return <div ref={ctnDom} className="iridescence-container" {...rest} />;
 }
 
+export default Iridescence;
+

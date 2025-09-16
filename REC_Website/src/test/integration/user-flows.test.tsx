@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AuthProvider } from '../../../components/AuthContext'
@@ -6,6 +6,13 @@ import { LandingPage } from '../../../components/LandingPage'
 import { LoginForm } from '../../../components/LoginForm'
 import { Dashboard } from '../../../components/Dashboard'
 import App from '../../../App'
+
+// Test wrapper component that provides AuthProvider
+const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+  <AuthProvider>
+    {children}
+  </AuthProvider>
+)
 
 // Mock all the necessary components and modules
 vi.mock('framer-motion', () => ({
@@ -91,7 +98,7 @@ describe('User Flows Integration Tests', () => {
 
   describe('Landing Page to Login Flow', () => {
     it('should navigate from landing page to login when Enter Platform is clicked', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       // Should start on landing page
       expect(screen.getByText("UAE's First Digital I-REC Trading Platform")).toBeInTheDocument()
@@ -108,7 +115,7 @@ describe('User Flows Integration Tests', () => {
     })
 
     it('should navigate to EI Reports when Access EI Reports is clicked', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -124,7 +131,7 @@ describe('User Flows Integration Tests', () => {
 
   describe('Authentication Flow', () => {
     it('should complete login flow successfully', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -149,7 +156,7 @@ describe('User Flows Integration Tests', () => {
     })
 
     it('should handle login failure', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -181,7 +188,7 @@ describe('User Flows Integration Tests', () => {
     })
 
     it('should navigate between dashboard tabs', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -210,7 +217,7 @@ describe('User Flows Integration Tests', () => {
     })
 
     it('should open and close user profile', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -233,7 +240,7 @@ describe('User Flows Integration Tests', () => {
     })
 
     it('should logout and return to landing page', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -254,7 +261,7 @@ describe('User Flows Integration Tests', () => {
 
   describe('Contact Form Flow', () => {
     it('should submit contact form successfully', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -274,7 +281,7 @@ describe('User Flows Integration Tests', () => {
     })
 
     it('should handle contact form validation', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -292,7 +299,7 @@ describe('User Flows Integration Tests', () => {
 
   describe('Dark Mode Toggle Flow', () => {
     it('should toggle dark mode through user profile', async () => {
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       
@@ -330,7 +337,7 @@ describe('User Flows Integration Tests', () => {
       // Mock network error
       vi.mocked(fetch).mockRejectedValue(new Error('Network error'))
 
-      render(<App />)
+      render(<App />, { wrapper: TestWrapper })
 
       const user = userEvent.setup()
       

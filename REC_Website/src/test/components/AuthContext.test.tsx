@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { AuthProvider, useAuth, User } from '../../../components/AuthContext'
-import { apiService } from '../../../services/api'
 
-// Mock the API service
+// Mock the API service before any imports
 vi.mock('../../../services/api', () => ({
   apiService: {
     login: vi.fn(),
@@ -12,8 +10,18 @@ vi.mock('../../../services/api', () => ({
     logout: vi.fn(),
     updateProfile: vi.fn(),
     getCurrentUser: vi.fn()
+  },
+  default: {
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+    updateProfile: vi.fn(),
+    getCurrentUser: vi.fn()
   }
 }))
+
+import { AuthProvider, useAuth, User } from '../../../components/AuthContext'
+import { apiService } from '../../../services/api'
 
 // Test component that uses the auth context
 const TestComponent = () => {
@@ -296,10 +304,13 @@ describe('AuthContext', () => {
       verificationStatus: 'verified'
     }
 
-    vi.mocked(apiService.getCurrentUser).mockResolvedValue({
+    const mockGetCurrentUser = vi.mocked(apiService.getCurrentUser)
+    mockGetCurrentUser.mockResolvedValue({
       success: true,
       user: mockUser
     })
+    
+    console.log('Mock setup:', mockGetCurrentUser)
 
     render(
       <AuthProvider>
@@ -307,11 +318,18 @@ describe('AuthContext', () => {
       </AuthProvider>
     )
 
+    // Wait for loading to complete first
     await waitFor(() => {
-      expect(screen.getByTestId('user-info')).toHaveTextContent('John Doe')
+      expect(screen.getByTestId('loading')).toHaveTextContent('Not loading')
     })
 
-    expect(apiService.getCurrentUser).toHaveBeenCalled()
+    // Then wait for user to be loaded
+    await waitFor(() => {
+      expect(screen.getByTestId('user-info')).toHaveTextContent('John Doe')
+    }, { timeout: 3000 })
+
+    console.log('Mock calls:', mockGetCurrentUser.mock.calls)
+    expect(mockGetCurrentUser).toHaveBeenCalled()
   })
 
   it('should clear token on invalid authentication', async () => {

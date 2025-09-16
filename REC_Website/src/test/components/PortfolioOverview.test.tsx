@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { PortfolioOverview } from '../../../components/PortfolioOverview'
 
 // Mock the AuthContext
 const mockUser = {
@@ -40,16 +39,20 @@ vi.mock('../../../components/AuthContext', () => ({
 }))
 
 // Mock the API service
-const mockApiService = {
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-}
-
 vi.mock('../../../services/api', () => ({
-  default: mockApiService,
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
 }))
+
+import { PortfolioOverview } from '../../../components/PortfolioOverview'
+import apiService from '../../../services/api'
+
+// Get the mocked API service
+const mockApiService = vi.mocked(apiService)
 
 // Mock UI components
 vi.mock('../../../components/ui/card', () => ({
