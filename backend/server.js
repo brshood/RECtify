@@ -56,6 +56,7 @@ app.use(cors({
       'https://rectifygo.netlify.app',
       'https://rectifygo.com',
       'http://localhost:5173',
+      'http://localhost:5174',
       'http://localhost:3000'
     ].filter(Boolean);
     
@@ -87,14 +88,13 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path === '/api/payments/webhook'
 });
 app.use(limiter);
 
 // Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  max: 50, // limit each IP to 50 auth requests per windowMs (increased for testing)
   message: {
     error: 'Too many authentication attempts',
     retryAfter: 900
@@ -158,72 +158,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB Atlas connection with automatic IP management
-async function connectToMongoDB() {
-  const ipManager = new MongoAtlasIPManager();
-  
-  try {
-    // Update IP whitelist before attempting connection
-    if (ipManager.isConfigured()) {
-      console.log('🔄 Managing MongoDB Atlas IP whitelist...');
-      const ipUpdateSuccess = await ipManager.updateRailwayIP();
-      
-      if (!ipUpdateSuccess) {
-        console.log('⚠️ IP whitelist update failed, but continuing with connection attempt...');
-      } else {
-        // Wait a moment for Atlas to propagate the changes
-        console.log('⏳ Waiting for Atlas to propagate IP changes...');
-        await new Promise(resolve => setTimeout(resolve, 10000));
-      }
-    }
-
-    // Attempt MongoDB connection
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB Atlas');
-    
-    // Log the outbound IP for verification
-    fetch('https://api.ipify.org?format=json')
-      .then(res => res.json())
-      .then(data => console.log('🌐 Railway connecting from IP:', data.ip))
-      .catch(err => console.log('Could not determine outbound IP:', err.message));
-      
-    // Set up periodic IP monitoring (every 30 minutes)
-    if (ipManager.isConfigured()) {
-      setInterval(async () => {
-        try {
-          await ipManager.checkAndUpdateIP();
-        } catch (error) {
-          console.error('❌ Periodic IP check failed:', error.message);
-        }
-      }, 30 * 60 * 1000); // 30 minutes
-      console.log('🕐 Periodic IP monitoring started (every 30 minutes)');
-    }
-      
-  } catch (error) {
-    console.error('❌ MongoDB Atlas connection error:', error);
-    
-    // If connection fails due to IP issues, try updating IP and retry once
-    if (error.message.includes('IP') || error.message.includes('not authorized') || error.message.includes('authentication failed')) {
-      console.log('🔄 Connection failed, attempting IP update and retry...');
-      try {
-        await ipManager.updateRailwayIP();
-        await new Promise(resolve => setTimeout(resolve, 15000)); // Wait longer for propagation
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('✅ Connected to MongoDB Atlas after IP update');
-      } catch (retryError) {
-        console.error('❌ Retry connection failed:', retryError.message);
-        if (process.env.NODE_ENV === 'production') {
-          process.exit(1);
-        }
-      }
-    } else if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
-    }
+// MongoDB Atlas connection
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => {
+  console.log('✅ Connected to MongoDB Atlas');
+  // Log the outbound IP for Railway IP identification
+  fetch('https://api.ipify.org?format=json')
+    .then(res => res.json())
+    .then(data => console.log('🌐 Railway connecting from IP:', data.ip))
+    .catch(err => console.log('Could not determine outbound IP:', err.message));
+})
+.catch((error) => {
+  console.error('❌ MongoDB Atlas connection error:', error);
+  // Exit process in production if DB connection fails
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
   }
-}
-
-// Initialize MongoDB connection
-connectToMongoDB();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -334,64 +285,9 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-const server = app.listen(PORT, async () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 RECtify API server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  
-  // Initialize blockchain service for REC security
-  try {
-    console.log('🔒 Initializing REC Security Service...');
-    const blockchainInit = await RECSecurityService.initialize();
-    if (blockchainInit.success) {
-      console.log(`✅ REC Security Service initialized: ${blockchainInit.message}`);
-      console.log(`🌐 Network: ${blockchainInit.network}`);
-      console.log(`🎯 Purpose: ${blockchainInit.purpose}`);
-    } else {
-      console.log(`⚠️ REC Security Service initialization failed: ${blockchainInit.message}`);
-    }
-  } catch (error) {
-    console.error('❌ Failed to initialize REC Security Service:', error.message);
-  }
-  // Periodic expiry job to expire orders and release reservations/locks
-  async function expireOrdersJob() {
-    try {
-      const now = new Date();
-      const expiring = await Order.find({
-        status: { $in: ['pending', 'partial'] },
-        expiresAt: { $lt: now }
-      });
-
-      if (expiring.length === 0) return;
-
-      for (const order of expiring) {
-        order.status = 'expired';
-        await order.save();
-
-        if (order.orderType === 'buy' && order.buyerReservedFils > 0) {
-          const buyer = await User.findById(order.userId);
-          if (buyer) {
-            const releaseAED = order.buyerReservedFils / 100;
-            buyer.reservedBalance = Math.max(0, (buyer.reservedBalance || 0) - releaseAED);
-            await buyer.save();
-          }
-          order.buyerReservedFils = 0;
-          await order.save();
-        }
-
-        if (order.orderType === 'sell' && order.holdingId) {
-          const holding = await RECHolding.findById(order.holdingId);
-          if (holding) await holding.unlock();
-        }
-      }
-
-      console.log(`🕒 Expired ${expiring.length} orders and released reservations/locks`);
-    } catch (e) {
-      console.error('❌ expireOrdersJob error:', e);
-    }
-  }
-
-  await expireOrdersJob();
-  setInterval(expireOrdersJob, 10 * 60 * 1000);
 });
 
 // Graceful shutdown handling

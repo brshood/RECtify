@@ -1,6 +1,8 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
-// API configuration for production
+// Debug: Log the API URL being used
+console.log('🔍 API_BASE_URL:', API_BASE_URL);
+console.log('🔍 VITE_API_URL env var:', import.meta.env.VITE_API_URL);
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -25,6 +27,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const fullUrl = `${API_BASE_URL}${endpoint}`;
+    console.log('🌐 Making API request to:', fullUrl);
     
     try {
       const response = await fetch(fullUrl, {
@@ -32,7 +35,9 @@ class ApiService {
         ...options
       });
 
+      console.log('📡 Response status:', response.status);
       const data = await response.json();
+      console.log('📡 Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
@@ -82,6 +87,28 @@ class ApiService {
     return this.request('/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(updates)
+    });
+  }
+
+  // Password reset endpoints
+  async forgotPassword(email: string): Promise<ApiResponse> {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+  }
+
+  async verifyResetCode(email: string, code: string): Promise<ApiResponse> {
+    return this.request('/auth/verify-reset-code', {
+      method: 'POST',
+      body: JSON.stringify({ email, code })
+    });
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string): Promise<ApiResponse> {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, newPassword })
     });
   }
 
@@ -171,7 +198,6 @@ class ApiService {
       console.warn('Backend not available for available-for-buy, returning empty data');
       return {
         success: true,
-        message: 'No data available',
         data: {
           facilities: [],
           energyTypes: [],
@@ -235,7 +261,13 @@ class ApiService {
     
     const queryString = params.toString();
     
-    return await this.request(`/transactions${queryString ? `?${queryString}` : ''}`);
+    try {
+      return await this.request(`/transactions${queryString ? `?${queryString}` : ''}`);
+    } catch (error) {
+      // If backend is not available, return mock data for testing
+      console.warn('Backend not available, returning mock transaction data');
+      return this.getMockTransactions(limit, status);
+    }
   }
 
   async getTransactionHistory(limit?: number): Promise<ApiResponse> {
@@ -252,6 +284,127 @@ class ApiService {
     }
   }
 
+  // Mock data for testing when backend is not available
+  private getMockTransactions(limit?: number, status?: string): ApiResponse {
+    const mockTransactions = [
+      {
+        _id: "507f1f77bcf86cd799439011",
+        internalRef: "TXN-2024-001",
+        buyerId: {
+          _id: "507f1f77bcf86cd799439012",
+          firstName: "Ahmed",
+          lastName: "Al Mansouri",
+          company: "Emirates Solar Trading LLC"
+        },
+        sellerId: {
+          _id: "507f1f77bcf86cd799439013",
+          firstName: "Fatima",
+          lastName: "Al Zahra",
+          company: "Green Energy Solutions"
+        },
+        facilityName: "Mohammed bin Rashid Al Maktoum Solar Park Phase IV",
+        facilityId: "maktoum-solar-park-phase4",
+        energyType: "solar",
+        vintage: 2024,
+        emirate: "Dubai",
+        certificationStandard: "I-REC",
+        quantity: 500,
+        pricePerUnit: 12.50,
+        totalAmount: 6250.00,
+        status: "completed",
+        settlementStatus: "completed",
+        settlementDate: "2024-03-15T10:30:00Z",
+        blockchainTxHash: "0x1234567890abcdef",
+        registryTransferRef: "AE-I-REC-001234567",
+        matchedAt: "2024-03-15T09:00:00Z",
+        completedAt: "2024-03-15T10:30:00Z",
+        notes: "Completed successfully",
+        createdAt: "2024-03-15T08:00:00Z",
+        updatedAt: "2024-03-15T10:30:00Z"
+      },
+      {
+        _id: "507f1f77bcf86cd799439014",
+        internalRef: "TXN-2024-002",
+        buyerId: {
+          _id: "507f1f77bcf86cd799439015",
+          firstName: "Mohammed",
+          lastName: "Al Rashid",
+          company: "Sustainable Industries Corp"
+        },
+        sellerId: {
+          _id: "507f1f77bcf86cd799439012",
+          firstName: "Ahmed",
+          lastName: "Al Mansouri",
+          company: "Emirates Solar Trading LLC"
+        },
+        facilityName: "Taweelah Wind Power Plant",
+        facilityId: "taweelah-wind-plant",
+        energyType: "wind",
+        vintage: 2024,
+        emirate: "Abu Dhabi",
+        certificationStandard: "I-REC",
+        quantity: 250,
+        pricePerUnit: 11.80,
+        totalAmount: 2950.00,
+        status: "pending",
+        settlementStatus: "pending",
+        matchedAt: "2024-03-14T14:00:00Z",
+        notes: "Awaiting settlement",
+        createdAt: "2024-03-14T13:00:00Z",
+        updatedAt: "2024-03-14T14:00:00Z"
+      },
+      {
+        _id: "507f1f77bcf86cd799439016",
+        internalRef: "TXN-2024-003",
+        buyerId: {
+          _id: "507f1f77bcf86cd799439012",
+          firstName: "Ahmed",
+          lastName: "Al Mansouri",
+          company: "Emirates Solar Trading LLC"
+        },
+        sellerId: {
+          _id: "507f1f77bcf86cd799439013",
+          firstName: "Fatima",
+          lastName: "Al Zahra",
+          company: "Green Energy Solutions"
+        },
+        facilityName: "Noor Abu Dhabi Solar Plant",
+        facilityId: "noor-abu-dhabi-solar",
+        energyType: "solar",
+        vintage: 2024,
+        emirate: "Abu Dhabi",
+        certificationStandard: "I-REC",
+        quantity: 750,
+        pricePerUnit: 13.20,
+        totalAmount: 9900.00,
+        status: "completed",
+        settlementStatus: "completed",
+        settlementDate: "2024-03-13T16:45:00Z",
+        blockchainTxHash: "0xabcdef1234567890",
+        registryTransferRef: "AE-I-REC-001234569",
+        matchedAt: "2024-03-13T15:00:00Z",
+        completedAt: "2024-03-13T16:45:00Z",
+        notes: "ESG compliance purchase",
+        createdAt: "2024-03-13T14:00:00Z",
+        updatedAt: "2024-03-13T16:45:00Z"
+      }
+    ];
+
+    let filteredTransactions = mockTransactions;
+    
+    if (status) {
+      filteredTransactions = mockTransactions.filter(t => t.status === status);
+    }
+    
+    if (limit) {
+      filteredTransactions = filteredTransactions.slice(0, limit);
+    }
+
+    return {
+      success: true,
+      data: filteredTransactions
+    };
+  }
 
   async getTransaction(id: string): Promise<ApiResponse> {
     return this.request(`/transactions/${id}`);
@@ -271,18 +424,6 @@ class ApiService {
     
     const queryString = params.toString();
     return this.request(`/transactions/market/price-history/${encodeURIComponent(facilityName)}${queryString ? `?${queryString}` : ''}`);
-  }
-
-  // Payments / Wallet
-  async getCashBalance(): Promise<ApiResponse> {
-    return this.request('/payments/balance');
-  }
-
-  async createTopupSession(params: { amount: number; currency: 'AED' | 'USD' }): Promise<ApiResponse> {
-    return this.request('/payments/topup-session', {
-      method: 'POST',
-      body: JSON.stringify(params)
-    });
   }
 }
 

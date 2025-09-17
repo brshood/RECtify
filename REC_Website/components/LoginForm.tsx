@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useAuth, UserRole } from './AuthContext';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { ForgotPassword } from './ForgotPassword';
+import { ResetPassword } from './ResetPassword';
 
 interface LoginFormProps {
   onClose?: () => void;
@@ -29,6 +31,9 @@ export function LoginForm({ onClose }: LoginFormProps) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +74,25 @@ export function LoginForm({ onClose }: LoginFormProps) {
     }
   };
 
+  const handleForgotPasswordSuccess = (email: string) => {
+    setResetEmail(email);
+    setShowForgotPassword(false);
+    setShowResetPassword(true);
+  };
+
+  const handleResetPasswordSuccess = () => {
+    setShowResetPassword(false);
+    setResetEmail('');
+    onClose?.();
+  };
+
+  const handleBackToLogin = () => {
+    setShowForgotPassword(false);
+    setShowResetPassword(false);
+    setResetEmail('');
+    setError('');
+  };
+
 
 
   return (
@@ -97,7 +121,6 @@ export function LoginForm({ onClose }: LoginFormProps) {
                     placeholder="your.email@company.ae"
                     value={loginData.email}
                     onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                    autoComplete="email"
                     required
                   />
                 </div>
@@ -110,7 +133,6 @@ export function LoginForm({ onClose }: LoginFormProps) {
                       placeholder="Enter your password"
                       value={loginData.password}
                       onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                      autoComplete="current-password"
                       required
                     />
                     <Button
@@ -141,6 +163,17 @@ export function LoginForm({ onClose }: LoginFormProps) {
                     'Sign In'
                   )}
                 </Button>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm text-muted-foreground hover:text-rectify-green"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Forgot your password?
+                  </Button>
+                </div>
               </form>
 
 
@@ -156,7 +189,6 @@ export function LoginForm({ onClose }: LoginFormProps) {
                       placeholder="Ahmed"
                       value={signupData.firstName}
                       onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
-                      autoComplete="given-name"
                       required
                     />
                   </div>
@@ -167,7 +199,6 @@ export function LoginForm({ onClose }: LoginFormProps) {
                       placeholder="Al Shamsi"
                       value={signupData.lastName}
                       onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
-                      autoComplete="family-name"
                       required
                     />
                   </div>
@@ -181,7 +212,6 @@ export function LoginForm({ onClose }: LoginFormProps) {
                     placeholder="your.email@company.ae"
                     value={signupData.email}
                     onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                    autoComplete="email"
                     required
                   />
                 </div>
@@ -193,7 +223,6 @@ export function LoginForm({ onClose }: LoginFormProps) {
                     placeholder="ADNOC Clean Energy"
                     value={signupData.company}
                     onChange={(e) => setSignupData({ ...signupData, company: e.target.value })}
-                    autoComplete="organization"
                     required
                   />
                 </div>
@@ -202,7 +231,7 @@ export function LoginForm({ onClose }: LoginFormProps) {
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
                     <Select value={signupData.role} onValueChange={(value: UserRole) => setSignupData({ ...signupData, role: value })}>
-                      <SelectTrigger id="role">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
@@ -215,7 +244,7 @@ export function LoginForm({ onClose }: LoginFormProps) {
                   <div className="space-y-2">
                     <Label htmlFor="emirate">Emirate</Label>
                     <Select value={signupData.emirate} onValueChange={(value) => setSignupData({ ...signupData, emirate: value })}>
-                      <SelectTrigger id="emirate">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select emirate" />
                       </SelectTrigger>
                       <SelectContent>
@@ -240,7 +269,6 @@ export function LoginForm({ onClose }: LoginFormProps) {
                       placeholder="Create a password"
                       value={signupData.password}
                       onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                      autoComplete="new-password"
                       required
                     />
                     <Button
@@ -264,7 +292,6 @@ export function LoginForm({ onClose }: LoginFormProps) {
                       placeholder="Confirm your password"
                       value={signupData.confirmPassword}
                       onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                      autoComplete="new-password"
                       required
                     />
                     <Button
@@ -312,6 +339,23 @@ export function LoginForm({ onClose }: LoginFormProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <ForgotPassword
+          onBack={handleBackToLogin}
+          onSuccess={handleForgotPasswordSuccess}
+        />
+      )}
+
+      {/* Reset Password Modal */}
+      {showResetPassword && (
+        <ResetPassword
+          email={resetEmail}
+          onBack={handleBackToLogin}
+          onSuccess={handleResetPasswordSuccess}
+        />
+      )}
     </div>
   );
 }
