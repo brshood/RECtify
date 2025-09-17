@@ -18,7 +18,7 @@ const transactionsRoutes = require('./routes/transactions');
 const { xssProtection, validateRequestSize, securityHeaders } = require('./middleware/security');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Security middleware - Enhanced
 app.use(helmet({
@@ -44,6 +44,7 @@ app.use(cors({
       process.env.FRONTEND_URL,
       'https://rectifygo.netlify.app',
       'http://localhost:5173',
+      'http://localhost:5174',
       'http://localhost:3000'
     ].filter(Boolean);
     
@@ -81,7 +82,7 @@ app.use(limiter);
 // Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  max: 50, // limit each IP to 50 auth requests per windowMs (increased for testing)
   message: {
     error: 'Too many authentication attempts',
     retryAfter: 900

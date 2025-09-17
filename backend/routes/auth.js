@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { sanitizeInput, validateEmail, validatePassword } = require('../middleware/security');
+const emailService = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -272,6 +273,180 @@ router.put('/profile', auth, [
     res.status(500).json({
       success: false,
       message: 'Server error during profile update'
+    });
+  }
+});
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send password reset email
+// @access  Public
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
+], async (req, res) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { email } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email, isActive: true });
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset code has been sent.'
+      });
+    }
+
+    // Generate password reset token
+    const resetToken = user.createPasswordResetToken();
+    await user.save();
+
+    try {
+      // Send password reset email
+      await emailService.sendPasswordResetEmail(email, resetToken, user.firstName);
+      
+      res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset code has been sent.',
+        code: resetToken // Return the code for frontend to use
+      });
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError);
+      // Clear the token if email fails
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save();
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send password reset email. Please try again later.'
+      });
+    }
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during password reset request'
+    });
+  }
+});
+
+// @route   POST /api/auth/verify-reset-code
+// @desc    Verify password reset code
+// @access  Public
+router.post('/verify-reset-code', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
+  body('code').isLength({ min: 6, max: 6 }).withMessage('Verification code must be 6 characters')
+], async (req, res) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { email, code } = req.body;
+
+    // Find user
+    const user = await User.findOne({ email, isActive: true });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email or verification code'
+      });
+    }
+
+    // Verify the code
+    const isValid = user.isPasswordResetTokenValid(code);
+    if (!isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Verification code is valid',
+      token: user.passwordResetToken // Return the hashed token for the next step
+    });
+
+  } catch (error) {
+    console.error('Verify reset code error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during code verification'
+    });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
+  body('code').isLength({ min: 6, max: 6 }).withMessage('Verification code must be 6 characters'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { email, code, newPassword } = req.body;
+
+    // Find user
+    const user = await User.findOne({ email, isActive: true });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email or verification code'
+      });
+    }
+
+    // Verify the code
+    const isValid = user.isPasswordResetTokenValid(code);
+    if (!isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code'
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.clearPasswordResetToken(); // This also saves the user
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during password reset'
     });
   }
 });

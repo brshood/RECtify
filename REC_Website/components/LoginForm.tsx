@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useAuth, UserRole } from './AuthContext';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { ForgotPassword } from './ForgotPassword';
+import { ResetPassword } from './ResetPassword';
 
 interface LoginFormProps {
   onClose?: () => void;
@@ -29,6 +31,9 @@ export function LoginForm({ onClose }: LoginFormProps) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +72,25 @@ export function LoginForm({ onClose }: LoginFormProps) {
     } else {
       onClose?.();
     }
+  };
+
+  const handleForgotPasswordSuccess = (email: string) => {
+    setResetEmail(email);
+    setShowForgotPassword(false);
+    setShowResetPassword(true);
+  };
+
+  const handleResetPasswordSuccess = () => {
+    setShowResetPassword(false);
+    setResetEmail('');
+    onClose?.();
+  };
+
+  const handleBackToLogin = () => {
+    setShowForgotPassword(false);
+    setShowResetPassword(false);
+    setResetEmail('');
+    setError('');
   };
 
 
@@ -139,6 +163,17 @@ export function LoginForm({ onClose }: LoginFormProps) {
                     'Sign In'
                   )}
                 </Button>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm text-muted-foreground hover:text-rectify-green"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Forgot your password?
+                  </Button>
+                </div>
               </form>
 
 
@@ -304,6 +339,23 @@ export function LoginForm({ onClose }: LoginFormProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <ForgotPassword
+          onBack={handleBackToLogin}
+          onSuccess={handleForgotPasswordSuccess}
+        />
+      )}
+
+      {/* Reset Password Modal */}
+      {showResetPassword && (
+        <ResetPassword
+          email={resetEmail}
+          onBack={handleBackToLogin}
+          onSuccess={handleResetPasswordSuccess}
+        />
+      )}
     </div>
   );
 }
