@@ -9,6 +9,33 @@
     <meta name="author" content="RECtify">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#16a085">
+    <meta name="color-scheme" content="light dark">
+
+    <script>
+      // Apply OS-preferred or saved theme before paint to avoid flash
+      (function() {
+        try {
+          const saved = localStorage.getItem('theme');
+          const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const useDark = saved ? saved === 'dark' : prefersDark;
+          if (useDark) document.documentElement.classList.add('dark');
+
+          // Keep meta theme-color in sync
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', useDark ? '#0b0f14' : '#16a085');
+
+          // React to OS changes
+          if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+              const shouldDark = (localStorage.getItem('theme') || '') ? localStorage.getItem('theme') === 'dark' : e.matches;
+              document.documentElement.classList.toggle('dark', !!shouldDark);
+              const meta2 = document.querySelector('meta[name="theme-color"]');
+              if (meta2) meta2.setAttribute('content', shouldDark ? '#0b0f14' : '#16a085');
+            });
+          }
+        } catch (_) {}
+      })();
+    </script>
     
     <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="RECtify (ريكتيفاي) - UAE's First Digital I-REC Trading Platform">
@@ -43,11 +70,11 @@
       }
     }
     </script>
-  <script type="module" crossorigin src="./assets/index-0WTUkvYx.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-C8pwkAZT.css">
+  <script type="module" crossorigin src="./assets/index-RSz7QjeH.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-HbMR6PwD.css">
 </head>
 <body>
     <!-- React App Mount Point -->
-    <div id="root"></div>
+    <div id="root"></div>
 </body>
 </html>

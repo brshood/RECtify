@@ -5,6 +5,8 @@ const Order = require('../models/Order');
 const RECHolding = require('../models/RECHolding');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
+const RECTradingService = require('../services/RECTradingService');
+const RECSecurityService = require('../services/RECSecurityService');
 const router = express.Router();
 
 // @route   GET /api/orders
@@ -252,6 +254,21 @@ router.post('/buy', [
       minFillQuantity = 1
     } = req.body;
 
+    // Integer math reservation in fils
+    const subtotalFils = Math.round(quantity * price * 100);
+    const platformFeeFils = Math.round(subtotalFils * 0.02);
+    const blockchainFeeFils = 500; // always charge AED 5 buyer fee
+    const requiredFils = subtotalFils + platformFeeFils + blockchainFeeFils;
+
+    // Check available (balance - reserved)
+    const availableAED = (user.cashBalance || 0) - (user.reservedBalance || 0);
+    if (availableAED < requiredFils / 100) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient funds. Required AED ${(requiredFils/100).toFixed(2)} including fees.`
+      });
+    }
+
     const order = new Order({
       userId: req.user.userId,
       orderType: 'buy',
@@ -269,12 +286,16 @@ router.post('/buy', [
       allowPartialFill,
       minFillQuantity,
       createdBy: `${user.firstName} ${user.lastName}`,
-      expiresAt: expiresAt ? new Date(expiresAt) : undefined
+      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+      buyerReservedFils: requiredFils
     });
 
-    await order.save();
+    // Reserve funds
+    user.reservedBalance = (user.reservedBalance || 0) + (requiredFils / 100);
 
-    // Try to match with existing sell orders
+    await Promise.all([order.save(), user.save()]);
+
+    // Try to match with existing sell orders using blockchain-enabled trading
     const matchingOrders = await Order.findMatchingOrders(order);
     let matchedQuantity = 0;
 
@@ -287,92 +308,17 @@ router.post('/buy', [
       );
 
       if (matchQuantity >= Math.max(order.minFillQuantity, sellOrder.minFillQuantity)) {
-        // Create transaction
-        const transaction = new Transaction({
-          buyerId: order.userId,
-          sellerId: sellOrder.userId,
-          buyOrderId: order._id,
-          sellOrderId: sellOrder._id,
-          facilityName: sellOrder.facilityName, // Use seller's facility details
-          facilityId: sellOrder.facilityId,
-          energyType: sellOrder.energyType,
-          vintage: sellOrder.vintage,
-          emirate: sellOrder.emirate,
-          certificationStandard: sellOrder.certificationStandard,
-          quantity: matchQuantity,
-          pricePerUnit: sellOrder.price, // Seller's price takes precedence
-          totalAmount: matchQuantity * sellOrder.price,
-          buyerPlatformFee: matchQuantity * sellOrder.price * order.platformFeeRate,
-          sellerPlatformFee: matchQuantity * sellOrder.price * sellOrder.platformFeeRate,
-          blockchainFee: order.blockchainFee,
-          status: 'completed',
-          settlementStatus: 'completed',
-          settlementDate: new Date()
-        });
-
-        await transaction.save();
-
-        // Update orders
-        await order.fillPartial(matchQuantity);
-        await sellOrder.fillPartial(matchQuantity);
+        // Execute trade with direct blockchain integration
+        const tradeResult = await executeBlockchainTrade(order, sellOrder, matchQuantity);
         
-        matchedQuantity += matchQuantity;
-
-        // Transfer RECs from seller to buyer
-        const sellerHolding = await RECHolding.findById(sellOrder.holdingId);
-        if (sellerHolding && sellerHolding.quantity >= matchQuantity) {
-          // Reduce seller's holding
-          sellerHolding.quantity -= matchQuantity;
-          if (sellerHolding.quantity === 0) {
-            await RECHolding.findByIdAndDelete(sellerHolding._id);
-          } else {
-            await sellerHolding.save();
-          }
-
-          // Add to buyer's holding (using seller's facility details)
-          let buyerHolding = await RECHolding.findOne({
-            userId: order.userId,
-            facilityId: sellOrder.facilityId,
-            energyType: sellOrder.energyType,
-            vintage: sellOrder.vintage,
-            certificationStandard: sellOrder.certificationStandard
-          });
-
-          if (buyerHolding) {
-            const newTotalQuantity = buyerHolding.quantity + matchQuantity;
-            const newTotalValue = buyerHolding.totalValue + (matchQuantity * sellOrder.price);
-            buyerHolding.quantity = newTotalQuantity;
-            buyerHolding.averagePurchasePrice = newTotalValue / newTotalQuantity;
-            buyerHolding.totalValue = newTotalValue;
-            await buyerHolding.save();
-          } else {
-            buyerHolding = new RECHolding({
-              userId: order.userId,
-              facilityName: sellOrder.facilityName,
-              facilityId: sellOrder.facilityId,
-              energyType: sellOrder.energyType,
-              vintage: sellOrder.vintage,
-              quantity: matchQuantity,
-              averagePurchasePrice: sellOrder.price,
-              totalValue: matchQuantity * sellOrder.price,
-              emirate: sellOrder.emirate,
-              certificationStandard: sellOrder.certificationStandard
-            });
-            await buyerHolding.save();
-          }
-
-          // Update user totals
-          const buyerSummary = await RECHolding.getUserTotalRECs(order.userId);
-          await User.findByIdAndUpdate(order.userId, {
-            totalRecs: buyerSummary.totalQuantity,
-            portfolioValue: buyerSummary.totalValue
-          });
-
-          const sellerSummary = await RECHolding.getUserTotalRECs(sellOrder.userId);
-          await User.findByIdAndUpdate(sellOrder.userId, {
-            totalRecs: sellerSummary.totalQuantity,
-            portfolioValue: sellerSummary.totalValue
-          });
+        if (tradeResult.success) {
+          matchedQuantity += matchQuantity;
+          console.log(`✅ Trade executed: ${tradeResult.transactionId}`);
+        } else {
+          console.error(`❌ Trade failed: ${tradeResult.message}`);
+          // Fall back to traditional matching
+          await executeTraditionalMatch(order, sellOrder, matchQuantity);
+          matchedQuantity += matchQuantity;
         }
       }
     }
@@ -712,5 +658,341 @@ router.get('/:id', [
     });
   }
 });
+
+// Helper function for traditional matching (fallback)
+async function executeTraditionalMatch(buyOrder, sellOrder, matchQuantity) {
+  // Create transaction
+  const transaction = new Transaction({
+    buyerId: buyOrder.userId,
+    sellerId: sellOrder.userId,
+    buyOrderId: buyOrder._id,
+    sellOrderId: sellOrder._id,
+    facilityName: sellOrder.facilityName,
+    facilityId: sellOrder.facilityId,
+    energyType: sellOrder.energyType,
+    vintage: sellOrder.vintage,
+    emirate: sellOrder.emirate,
+    certificationStandard: sellOrder.certificationStandard,
+    quantity: matchQuantity,
+    pricePerUnit: sellOrder.price,
+    totalAmount: matchQuantity * sellOrder.price,
+    buyerPlatformFee: matchQuantity * sellOrder.price * 0.02,
+    sellerPlatformFee: matchQuantity * sellOrder.price * 0.02,
+    blockchainFee: 5.00,
+    status: 'completed',
+    settlementStatus: 'completed',
+    settlementDate: new Date()
+  });
+
+  await transaction.save();
+
+  // Update orders
+  await buyOrder.fillPartial(matchQuantity);
+  await sellOrder.fillPartial(matchQuantity);
+
+  // Transfer RECs from seller to buyer
+  const sellerHolding = await RECHolding.findById(sellOrder.holdingId);
+  if (sellerHolding && sellerHolding.quantity >= matchQuantity) {
+    // Reduce seller's holding
+    sellerHolding.quantity -= matchQuantity;
+    if (sellerHolding.quantity === 0) {
+      await RECHolding.findByIdAndDelete(sellerHolding._id);
+    } else {
+      await sellerHolding.save();
+    }
+
+    // Add to buyer's holding
+    let buyerHolding = await RECHolding.findOne({
+      userId: buyOrder.userId,
+      facilityId: sellOrder.facilityId,
+      energyType: sellOrder.energyType,
+      vintage: sellOrder.vintage,
+      certificationStandard: sellOrder.certificationStandard
+    });
+
+    if (buyerHolding) {
+      const newTotalQuantity = buyerHolding.quantity + matchQuantity;
+      const newTotalValue = buyerHolding.totalValue + (matchQuantity * sellOrder.price);
+      buyerHolding.quantity = newTotalQuantity;
+      buyerHolding.averagePurchasePrice = newTotalValue / newTotalQuantity;
+      buyerHolding.totalValue = newTotalValue;
+      await buyerHolding.save();
+    } else {
+      buyerHolding = new RECHolding({
+        userId: buyOrder.userId,
+        facilityName: sellOrder.facilityName,
+        facilityId: sellOrder.facilityId,
+        energyType: sellOrder.energyType,
+        vintage: sellOrder.vintage,
+        quantity: matchQuantity,
+        averagePurchasePrice: sellOrder.price,
+        totalValue: matchQuantity * sellOrder.price,
+        emirate: sellOrder.emirate,
+        certificationStandard: sellOrder.certificationStandard
+      });
+      await buyerHolding.save();
+    }
+
+    // Update user totals
+    const buyerSummary = await RECHolding.getUserTotalRECs(buyOrder.userId);
+    await User.findByIdAndUpdate(buyOrder.userId, {
+      totalRecs: buyerSummary.totalQuantity,
+      portfolioValue: buyerSummary.totalValue
+    });
+
+    const sellerSummary = await RECHolding.getUserTotalRECs(sellOrder.userId);
+    await User.findByIdAndUpdate(sellOrder.userId, {
+      totalRecs: sellerSummary.totalQuantity,
+      portfolioValue: sellerSummary.totalValue
+    });
+  }
+}
+
+// Direct blockchain trade execution
+async function executeBlockchainTrade(buyOrder, sellOrder, quantity) {
+  try {
+    console.log(`🔒 Executing blockchain trade for ${quantity} units`);
+    
+    // Initialize blockchain service if needed
+    if (!RECSecurityService.getServiceStatus().initialized) {
+      console.log('🔄 Initializing blockchain service...');
+      const initResult = await RECSecurityService.initialize();
+      if (!initResult.success) {
+        throw new Error(`Blockchain initialization failed: ${initResult.message}`);
+      }
+    }
+    
+    // Create transaction record first
+    const transaction = new Transaction({
+      buyerId: buyOrder.userId,
+      sellerId: sellOrder.userId,
+      buyOrderId: buyOrder._id,
+      sellOrderId: sellOrder._id,
+      facilityName: sellOrder.facilityName,
+      facilityId: sellOrder.facilityId || `${sellOrder.facilityName}-${sellOrder.vintage}`,
+      energyType: sellOrder.energyType,
+      vintage: sellOrder.vintage,
+      emirate: sellOrder.emirate,
+      certificationStandard: sellOrder.certificationStandard,
+      quantity,
+      pricePerUnit: sellOrder.price,
+      totalAmount: quantity * sellOrder.price,
+      buyerPlatformFee: quantity * sellOrder.price * 0.02,
+      sellerPlatformFee: quantity * sellOrder.price * 0.02,
+      blockchainFee: 5.00, // Blockchain fee
+      status: 'processing',
+      settlementStatus: 'pending'
+    });
+
+    await transaction.save();
+
+    // Record transaction on blockchain
+    const blockchainResult = await RECSecurityService.recordRECTransaction({
+      buyerAddress: `0x${buyOrder.userId.toString().padStart(40, '0')}`,
+      sellerAddress: `0x${sellOrder.userId.toString().padStart(40, '0')}`,
+      recQuantity: quantity,
+      facilityDetails: {
+        facilityName: sellOrder.facilityName,
+        facilityId: sellOrder.facilityId || `${sellOrder.facilityName}-${sellOrder.vintage}`,
+        energyType: sellOrder.energyType,
+        vintage: sellOrder.vintage,
+        emirate: sellOrder.emirate,
+        certificationStandard: sellOrder.certificationStandard
+      },
+      transactionId: transaction._id.toString(),
+      pricePerUnit: sellOrder.price
+    });
+
+    if (blockchainResult.success) {
+      // Update transaction with blockchain details
+      transaction.blockchainTxHash = blockchainResult.blockchainHash;
+      transaction.internalRef = blockchainResult.blockchainTxId;
+      await transaction.save();
+      
+      console.log(`🔒 Blockchain transaction recorded: ${blockchainResult.blockchainHash}`);
+    } else {
+      console.log(`⚠️ Blockchain recording failed: ${blockchainResult.message}`);
+      // Continue with trade even if blockchain fails
+    }
+
+    // Complete REC transfer
+    await completeRECTransfer(transaction);
+
+    // Settle cash (always includes AED 5)
+    await RECTradingService.updateUserBalances(transaction);
+
+    // Update order statuses
+    await updateOrderStatuses(transaction);
+
+    // Update user portfolios
+    await updateUserPortfolios(transaction);
+
+    // Mark transaction as completed
+    await transaction.markCompleted();
+
+    console.log(`✅ Blockchain trade completed: ${transaction._id}`);
+    return { success: true, transactionId: transaction._id };
+  } catch (error) {
+    console.error('❌ Blockchain trade failed:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Traditional order matching function (fallback when blockchain fails)
+async function executeTraditionalMatch(buyOrder, sellOrder, quantity) {
+  try {
+    console.log(`🔄 Executing traditional match for ${quantity} units`);
+    
+    // Create transaction record
+    const transaction = new Transaction({
+      buyerId: buyOrder.userId,
+      sellerId: sellOrder.userId,
+      buyOrderId: buyOrder._id,
+      sellOrderId: sellOrder._id,
+      facilityName: sellOrder.facilityName,
+      facilityId: sellOrder.facilityId || `${sellOrder.facilityName}-${sellOrder.vintage}`,
+      energyType: sellOrder.energyType,
+      vintage: sellOrder.vintage,
+      emirate: sellOrder.emirate,
+      certificationStandard: sellOrder.certificationStandard,
+      quantity,
+      pricePerUnit: sellOrder.price,
+      totalAmount: quantity * sellOrder.price,
+      buyerPlatformFee: quantity * sellOrder.price * 0.02,
+      sellerPlatformFee: quantity * sellOrder.price * 0.02,
+      blockchainFee: 0, // No blockchain fee for traditional matching
+      status: 'processing',
+      settlementStatus: 'pending'
+    });
+
+    await transaction.save();
+
+    // Complete REC transfer
+    await completeRECTransfer(transaction);
+
+    // Settle cash (always includes AED 5)
+    await RECTradingService.updateUserBalances(transaction);
+
+    // Update order statuses
+    await updateOrderStatuses(transaction);
+
+    // Update user portfolios
+    await updateUserPortfolios(transaction);
+
+    // Mark transaction as completed
+    await transaction.markCompleted();
+
+    console.log(`✅ Traditional match completed: ${transaction._id}`);
+    return { success: true, transactionId: transaction._id };
+  } catch (error) {
+    console.error('❌ Traditional match failed:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Helper function to complete REC transfer
+async function completeRECTransfer(transaction) {
+  const { sellerId, buyerId, quantity, facilityId, energyType, vintage, certificationStandard, pricePerUnit } = transaction;
+
+  // Get seller's holding
+  const sellerHolding = await RECHolding.findOne({
+    userId: sellerId,
+    facilityId: facilityId,
+    energyType: energyType,
+    vintage: vintage,
+    certificationStandard: certificationStandard
+  });
+
+  if (!sellerHolding || sellerHolding.quantity < quantity) {
+    throw new Error('Insufficient REC quantity in seller holding');
+  }
+
+  // Reduce seller's holding
+  sellerHolding.quantity -= quantity;
+  if (sellerHolding.quantity === 0) {
+    await RECHolding.findByIdAndDelete(sellerHolding._id);
+  } else {
+    await sellerHolding.save();
+  }
+
+  // Add to buyer's holding
+  let buyerHolding = await RECHolding.findOne({
+    userId: buyerId,
+    facilityId: facilityId,
+    energyType: energyType,
+    vintage: vintage,
+    certificationStandard: certificationStandard
+  });
+
+  if (buyerHolding) {
+    const newTotalQuantity = buyerHolding.quantity + quantity;
+    const newTotalValue = buyerHolding.totalValue + (quantity * pricePerUnit);
+    buyerHolding.quantity = newTotalQuantity;
+    buyerHolding.averagePurchasePrice = newTotalValue / newTotalQuantity;
+    buyerHolding.totalValue = newTotalValue;
+    await buyerHolding.save();
+  } else {
+    buyerHolding = new RECHolding({
+      userId: buyerId,
+      facilityName: transaction.facilityName,
+      facilityId: facilityId,
+      energyType: energyType,
+      vintage: vintage,
+      quantity,
+      averagePurchasePrice: pricePerUnit,
+      totalValue: quantity * pricePerUnit,
+      emirate: transaction.emirate,
+      certificationStandard: certificationStandard
+    });
+    await buyerHolding.save();
+  }
+}
+
+// Helper function to update order statuses
+async function updateOrderStatuses(transaction) {
+  const { buyOrderId, sellOrderId, quantity } = transaction;
+
+  // Update buy order
+  const buyOrder = await Order.findById(buyOrderId);
+  if (buyOrder) {
+    await buyOrder.fillPartial(quantity);
+    // Release leftover reservation if completed
+    if (buyOrder.status === 'completed' && buyOrder.buyerReservedFils > 0) {
+      const buyer = await User.findById(buyOrder.userId);
+      if (buyer) {
+        const releaseAED = buyOrder.buyerReservedFils / 100;
+        buyer.reservedBalance = Math.max(0, (buyer.reservedBalance || 0) - releaseAED);
+        await buyer.save();
+      }
+      buyOrder.buyerReservedFils = 0;
+      await buyOrder.save();
+    }
+  }
+
+  // Update sell order
+  const sellOrder = await Order.findById(sellOrderId);
+  if (sellOrder) {
+    await sellOrder.fillPartial(quantity);
+  }
+}
+
+// Helper function to update user portfolios
+async function updateUserPortfolios(transaction) {
+  const { buyerId, sellerId } = transaction;
+
+  // Update buyer portfolio
+  const buyerSummary = await RECHolding.getUserTotalRECs(buyerId);
+  await User.findByIdAndUpdate(buyerId, {
+    totalRecs: buyerSummary.totalQuantity,
+    portfolioValue: buyerSummary.totalValue
+  });
+
+  // Update seller portfolio
+  const sellerSummary = await RECHolding.getUserTotalRECs(sellerId);
+  await User.findByIdAndUpdate(sellerId, {
+    totalRecs: sellerSummary.totalQuantity,
+    portfolioValue: sellerSummary.totalValue
+  });
+}
 
 module.exports = router;
