@@ -1396,21 +1396,12 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Phone className="h-5 w-5 text-rectify-green flex-shrink-0" />
-                    <a 
-                      href="tel:+971506835444" 
-                      className="text-sm text-muted-foreground hover:text-rectify-green transition-colors"
-                    >
-                      +971 50 683 5444
-                    </a>
-                  </div>
-                  <div className="flex items-center space-x-3">
                     <Mail className="h-5 w-5 text-rectify-green flex-shrink-0" />
                     <a 
-                      href="mailto:alsamrikhaled@gmail.com" 
+                      href="mailto:rectifygo@gmail.com" 
                       className="text-sm text-muted-foreground hover:text-rectify-green transition-colors"
                     >
-                      alsamrikhaled@gmail.com
+                      rectifygo@gmail.com
                     </a>
                   </div>
                 </div>
@@ -1493,19 +1484,10 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   <div className="flex items-center justify-center space-x-2">
                     <Mail className="h-4 w-4 text-rectify-green" />
                     <a 
-                      href="mailto:alsamrikhaled@gmail.com" 
+                      href="mailto:rectifygo@gmail.com" 
                       className="text-rectify-blue hover:text-rectify-green transition-colors"
                     >
-                      alsamrikhaled@gmail.com
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Phone className="h-4 w-4 text-rectify-green" />
-                    <a 
-                      href="tel:+971506835444" 
-                      className="text-rectify-blue hover:text-rectify-green transition-colors"
-                    >
-                      +971 50 683 5444
+                      rectifygo@gmail.com
                     </a>
                   </div>
                 </div>
