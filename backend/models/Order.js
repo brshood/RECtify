@@ -95,6 +95,11 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 5.00 // AED 5.00
   },
+  // Buyer reservation (in fils)
+  buyerReservedFils: {
+    type: Number,
+    default: 0
+  },
   // Order visibility
   isPublic: {
     type: Boolean,

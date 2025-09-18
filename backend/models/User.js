@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -262,6 +263,50 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return isMatch;
 };
 
+// Generate password reset token
+userSchema.methods.createPasswordResetToken = function() {
+  // Generate a 6-character alphanumeric code
+  const resetToken = Math.random().toString(36).substring(2, 8).toUpperCase();
+  
+  // Hash the token and save to database
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  
+  // Set expiration time (10 minutes)
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  
+  return resetToken;
+};
+
+// Check if password reset token is valid
+userSchema.methods.isPasswordResetTokenValid = function(token) {
+  if (!this.passwordResetToken || !this.passwordResetExpires) {
+    return false;
+  }
+  
+  // Check if token has expired
+  if (Date.now() > this.passwordResetExpires) {
+    return false;
+  }
+  
+  // Hash the provided token and compare
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+  
+  return this.passwordResetToken === hashedToken;
+};
+
+// Clear password reset token
+userSchema.methods.clearPasswordResetToken = function() {
+  this.passwordResetToken = undefined;
+  this.passwordResetExpires = undefined;
+  return this.save();
+};
+
 // Transform output to match frontend interface
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
@@ -269,6 +314,8 @@ userSchema.methods.toJSON = function() {
   // Remove sensitive fields
   delete user.password;
   delete user.__v;
+  delete user.passwordResetToken;
+  delete user.passwordResetExpires;
   
   // Transform _id to id and format dates
   return {

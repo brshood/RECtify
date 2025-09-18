@@ -9,15 +9,24 @@ const xss = require('xss');
 const hpp = require('hpp');
 const morgan = require('morgan');
 require('dotenv').config();
+const payments = require('./routes/payments');
+const Order = require('./models/Order');
+const User = require('./models/User');
+const RECHolding = require('./models/RECHolding');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const holdingsRoutes = require('./routes/holdings');
 const ordersRoutes = require('./routes/orders');
 const transactionsRoutes = require('./routes/transactions');
+const recSecurityRoutes = require('./routes/recSecurity');
 const { xssProtection, validateRequestSize, securityHeaders } = require('./middleware/security');
+const RECSecurityService = require('./services/RECSecurityService');
+const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
 
 const app = express();
+// Mount Stripe webhook BEFORE any body parsers or limiters
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), payments.webhookHandler);
 const PORT = process.env.PORT || 5000;
 
 // Security middleware - Enhanced
@@ -25,14 +34,16 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://rectifygo.com", "https://rectifygo.netlify.app", "https://rectify-production.up.railway.app", "https://api.stripe.com", "https://checkout.stripe.com", "https://fonts.gstatic.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com", "data:"],
       objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      mediaSrc: ["'self'", "blob:"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://checkout.stripe.com"],
+      workerSrc: ["'self'", "blob:"],
+      childSrc: ["'self'", "blob:"],
     },
   },
   crossOriginEmbedderPolicy: false
@@ -43,7 +54,9 @@ app.use(cors({
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       'https://rectifygo.netlify.app',
+      'https://rectifygo.com',
       'http://localhost:5173',
+      'http://localhost:5174',
       'http://localhost:3000'
     ].filter(Boolean);
     
@@ -81,7 +94,7 @@ app.use(limiter);
 // Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  max: 50, // limit each IP to 50 auth requests per windowMs (increased for testing)
   message: {
     error: 'Too many authentication attempts',
     retryAfter: 900
@@ -169,6 +182,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/holdings', holdingsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/transactions', transactionsRoutes);
+app.use('/api/rec-security', recSecurityRoutes);
+app.use('/api/payments', payments.router);
 
 // Health check endpoint - Enhanced for production monitoring
 app.get('/api/health', async (req, res) => {

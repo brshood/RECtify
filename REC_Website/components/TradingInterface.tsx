@@ -8,9 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { Shield, FileCheck, Calculator, Loader2, AlertCircle, TrendingUp, TrendingDown, Wifi, Users, Activity } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog";
 import { useAuth } from "./AuthContext";
 import apiService from "../services/api";
 import { toast } from "sonner";
+import BlockchainMonitor from "./BlockchainMonitor";
 
 interface Order {
   _id: string;
@@ -112,6 +114,10 @@ export function TradingInterface() {
   const [holdingsError, setHoldingsError] = useState<string | null>(null);
   const [availableForBuyError, setAvailableForBuyError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [confirmBuyOpen, setConfirmBuyOpen] = useState(false);
+  const [confirmSellOpen, setConfirmSellOpen] = useState(false);
+  const [wallet, setWallet] = useState<{ cashBalance: number; cashCurrency: 'AED' | 'USD' } | null>(null);
+  const [buyInsufficient, setBuyInsufficient] = useState(false);
 
   // Constants
   const PLATFORM_FEE_RATE = 0.02; // 2%
@@ -214,7 +220,7 @@ export function TradingInterface() {
         // If no tradeable holdings and we had a selected holding, clear it
         if (tradeableHoldings.length === 0 && sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings') {
           setSellHolding("");
-        } else if (sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings' && !tradeableHoldings.find(h => h._id === sellHolding)) {
+        } else if (sellHolding && sellHolding !== 'loading' && sellHolding !== 'error' && sellHolding !== 'no-holdings' && !tradeableHoldings.find((h: Holding) => h._id === sellHolding)) {
           // If the selected holding is no longer available, clear it
           setSellHolding("");
         }
@@ -237,6 +243,17 @@ export function TradingInterface() {
       }
     }
   }, [sellHolding]);
+
+  const refreshWallet = useCallback(async () => {
+    try {
+      const res = await apiService.getCashBalance();
+      if (res.success) setWallet(res.data);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (user) refreshWallet();
+  }, [user]);
 
   // Refresh available options when buy form selections change
   useEffect(() => {
@@ -447,7 +464,9 @@ export function TradingInterface() {
   const formatUSD = (amount: number) => `$${amount.toFixed(2)}`;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-6">
+      {/* Main Trading Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
           <CardTitle>
@@ -466,7 +485,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-energy-type">Energy Source</Label>
                 <Select value={buyEnergyType} onValueChange={setBuyEnergyType}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-energy-type">
                     <SelectValue placeholder={
                       availableForBuyLoading 
                         ? "Loading energy types..." 
@@ -538,7 +557,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-facility">UAE Facility</Label>
                 <Select value={buyFacility} onValueChange={setBuyFacility}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-facility">
                     <SelectValue placeholder={
                       availableForBuyLoading 
                         ? "Loading facilities..." 
@@ -604,6 +623,7 @@ export function TradingInterface() {
                     type="number" 
                     value={buyQuantity}
                     onChange={(e) => setBuyQuantity(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <div className="space-y-2">
@@ -615,6 +635,7 @@ export function TradingInterface() {
                     step="0.01"
                     value={buyPrice}
                     onChange={(e) => setBuyPrice(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -622,7 +643,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-vintage">Vintage Year</Label>
                 <Select value={buyVintage} onValueChange={setBuyVintage}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-vintage">
                     <SelectValue placeholder={
                       availableForBuyLoading 
                         ? "Loading vintages..." 
@@ -675,7 +696,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-purpose">Purpose</Label>
                 <Select value={buyPurpose} onValueChange={setBuyPurpose}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-purpose">
                     <SelectValue placeholder="Select purpose" />
                   </SelectTrigger>
                   <SelectContent>
@@ -690,7 +711,7 @@ export function TradingInterface() {
               <div className="space-y-2">
                 <Label htmlFor="buy-emirate">Emirate</Label>
                 <Select value={buyEmirate} onValueChange={setBuyEmirate}>
-                  <SelectTrigger>
+                  <SelectTrigger id="buy-emirate">
                     <SelectValue placeholder={
                       availableForBuyLoading 
                         ? "Loading emirates..." 
@@ -766,7 +787,18 @@ export function TradingInterface() {
               </div>
               
               <Button 
-                onClick={handleBuyOrder}
+                onClick={async () => {
+                  await refreshWallet();
+                  const balance = (wallet?.cashCurrency === 'AED') ? (wallet?.cashBalance || 0) : 0;
+                  const required = buyCalculations.totalAED;
+                  const insufficient = balance < required;
+                  setBuyInsufficient(insufficient);
+                  if (insufficient) {
+                    const shortfall = required - balance;
+                    toast.error(`Insufficient funds. Required AED ${required.toFixed(2)} • Available AED ${balance.toFixed(2)} • Shortfall AED ${shortfall.toFixed(2)}.`);
+                  }
+                  setConfirmBuyOpen(true);
+                }}
                 disabled={!buyQuantity || !buyPrice || !buyEnergyType || !buyFacility || !buyVintage || !buyPurpose || !buyEmirate || placingOrder}
                 className="w-full bg-rectify-green hover:bg-rectify-green-dark text-white disabled:opacity-50"
               >
@@ -807,7 +839,7 @@ export function TradingInterface() {
                   onValueChange={setSellHolding}
                   disabled={holdingsLoading || placingOrder}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="sell-holdings">
                     <SelectValue 
                       placeholder={
                         holdingsLoading 
@@ -908,6 +940,7 @@ export function TradingInterface() {
                     type="number"
                     value={sellQuantity}
                     onChange={(e) => setSellQuantity(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <div className="space-y-2">
@@ -919,6 +952,7 @@ export function TradingInterface() {
                     step="0.01"
                     value={sellPrice}
                     onChange={(e) => setSellPrice(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -952,8 +986,8 @@ export function TradingInterface() {
               </div>
               
               <Button 
-                onClick={handleSellOrder}
-                disabled={!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings' || placingOrder || holdingsLoading || holdingsError}
+                onClick={() => setConfirmSellOpen(true)}
+                disabled={!sellQuantity || !sellPrice || !sellHolding || sellHolding === 'loading' || sellHolding === 'error' || sellHolding === 'no-holdings' || placingOrder || holdingsLoading || !!holdingsError}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
               >
                 {placingOrder ? (
@@ -1191,6 +1225,77 @@ export function TradingInterface() {
           </Tabs>
         </CardContent>
       </Card>
+      </div>
+
+      {/* Blockchain Monitor */}
+      <BlockchainMonitor />
+      {/* Confirmations */}
+      <AlertDialog open={confirmBuyOpen} onOpenChange={setConfirmBuyOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Buy Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to place a buy order for {buyQuantity || 0} MWh at AED {parseFloat(buyPrice || '0').toFixed(2)}/MWh.
+              Total including 2% fee and AED 5: AED {formatAED(buyCalculations.totalAED)}.
+              {buyInsufficient && (
+                <div className="mt-3 text-red-600 font-medium">Insufficient funds. Please add funds before proceeding.</div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={buyInsufficient} onClick={async () => {
+              if (!wallet) await refreshWallet();
+              const balance = (wallet?.cashCurrency === 'AED') ? (wallet?.cashBalance || 0) : 0;
+              if (balance < buyCalculations.totalAED) {
+                setConfirmBuyOpen(false);
+                const shortfall = buyCalculations.totalAED - balance;
+                toast.error(`Insufficient funds. Required AED ${buyCalculations.totalAED.toFixed(2)} • Available AED ${balance.toFixed(2)} • Shortfall AED ${shortfall.toFixed(2)}.`);
+                return;
+              }
+              setConfirmBuyOpen(false);
+              await handleBuyOrder();
+              await refreshWallet();
+            }}>Yes, Proceed</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmSellOpen} onOpenChange={setConfirmSellOpen}>
+        <AlertDialogContent className="max-w-[900px] w-[95vw]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl">Confirm Sell Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Quantity</div>
+                  <div className="text-4xl font-semibold">{sellQuantity || 0} MWh</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Price</div>
+                  <div className="text-4xl font-semibold">AED {parseFloat(sellPrice || '0').toFixed(2)}/MWh</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Gross</div>
+                  <div className="text-3xl font-medium">AED {formatAED(sellCalculations.subtotal)}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Platform Fee (2%)</div>
+                  <div className="text-3xl font-medium text-orange-600">- AED {formatAED(sellCalculations.platformFee)}</div>
+                </div>
+                <div className="md:col-span-2 border-t pt-4 flex items-center justify-between">
+                  <div className="text-lg">Net to receive</div>
+                  <div className="text-4xl font-bold text-rectify-green">AED {formatAED(sellCalculations.totalAED)}</div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { setConfirmSellOpen(false); await handleSellOrder(); }}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
