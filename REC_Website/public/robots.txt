@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap location (you can add this when you have a sitemap)
+# Sitemap: https://yourdomain.com/sitemap.xml
+
+# Favicon location
+# Favicon: /favicon.ico
