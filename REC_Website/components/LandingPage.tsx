@@ -957,7 +957,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                       >
                         <img 
                           src={khaledImage} 
-                          alt="Khaled Alsamri" 
+                          alt="Dr. Khaled Alsamri" 
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
@@ -970,7 +970,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         </div>
                       </motion.div>
                     </div>
-                    <CardTitle className="text-2xl">Khaled Alsamri</CardTitle>
+                    <CardTitle className="text-2xl">Dr. Khaled Alsamri</CardTitle>
                     <motion.div
                       initial={{ opacity: 0, scale: 0.8 }}
                       whileInView={{ opacity: 1, scale: 1 }}
@@ -1060,7 +1060,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                       transition={{ duration: 0.5, delay: 0.4 }}
                       viewport={{ once: true }}
                     >
-                      <Badge className="bg-rectify-blue text-white mt-2">Founding Team - Strategy & Analytics Lead</Badge>
+                      <Badge className="bg-rectify-blue text-white mt-2">Co-Founder - Strategy & Analytics Lead</Badge>
                     </motion.div>
                   </CardHeader>
                   <CardContent className="space-y-4">

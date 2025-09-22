@@ -141,8 +141,8 @@ VITE_EMAILJS_PUBLIC_KEY=...
 ## Team & Contributors
 
 ### Core Team
-- **Khaled Al Samri** - Lead Developer & Project Architect
-- **Rashed Al Neyadi** - Co-Developer & System Design
+- **Dr. Khaled Al Samri** - Lead Developer & Project Architect
+- **Rashed Al Neyadi** - Co-Founder & System Design
 - Additional contributors involved in backend, frontend, and security hardening
 
 ### Development Tags
