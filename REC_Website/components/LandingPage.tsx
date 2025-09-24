@@ -11,6 +11,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Iridescence from './figma/Iridescence';
 import emailjs from '@emailjs/browser';
+import { AnnouncementBanner } from './AnnouncementBanner';
 
 interface LandingPageProps {
   onEnterPlatform: () => void;
@@ -346,6 +347,9 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
           </div>
         </div>
       </section>
+
+      {/* Announcement Banner */}
+      <AnnouncementBanner />
 
       {/* Mission Section */}
       <motion.section 
