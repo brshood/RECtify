@@ -129,7 +129,7 @@ export default function RECRegistration() {
       description: "Connect your existing RECs from official registries to start trading immediately",
       icon: <Link className="h-6 w-6" />,
       estimatedTime: "5 minutes",
-      status: 'available',
+      status: 'coming-soon',
       requirements: [
         "Existing RECs in I-REC Registry",
         "Registry account credentials",
@@ -391,7 +391,13 @@ export default function RECRegistration() {
                   className={`cursor-pointer transition-all hover:shadow-md ${
                     selectedOption === option.id ? 'ring-2 ring-rectify-green bg-green-50' : ''
                   } ${option.status === 'coming-soon' ? 'opacity-60' : ''}`}
-                  onClick={() => option.status === 'available' && setSelectedOption(option.id)}
+                  onClick={() => {
+                    if (option.status === 'available') {
+                      setSelectedOption(option.id);
+                    } else if (option.status === 'coming-soon') {
+                      toast.info('I-REC and other APIs coming soon!');
+                    }
+                  }}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
