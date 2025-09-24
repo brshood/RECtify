@@ -10,7 +10,6 @@ import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { useAuth, UserRole, UserTier } from './AuthContext';
 import apiService from '../services/api';
-import { loadStripe } from '@stripe/stripe-js';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { toast } from 'sonner';
 import { 
@@ -43,10 +42,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
   const [topupOpen, setTopupOpen] = useState(false);
   const [amount, setAmount] = useState<string>('');
   const [currency, setCurrency] = useState<'AED' | 'USD'>('AED');
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [stripeMountError, setStripeMountError] = useState<string | null>(null);
-  const [step, setStep] = useState<'enter' | 'confirm' | 'success'>('enter');
 
   if (!user) return null;
 
@@ -169,47 +165,23 @@ export function UserProfile({ onClose }: UserProfileProps) {
     } catch {}
   }, [user?.preferences?.darkMode]);
 
-  // Mount Stripe Embedded Checkout when client_secret is present
-  useEffect(() => {
-    const mount = async () => {
-      if (!clientSecret) return;
-      const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
-      if (!publishableKey) {
-        setStripeMountError('Missing VITE_STRIPE_PUBLISHABLE_KEY in REC_Website/.env');
-        toast.error('Stripe publishable key missing');
-        return;
-      }
-      try {
-        const stripe = await loadStripe(publishableKey);
-        if (!stripe) {
-          setStripeMountError('Failed to load Stripe.js');
-          toast.error('Failed to load Stripe.js');
-          return;
-        }
-        const checkout = await stripe.initEmbeddedCheckout({ clientSecret });
-        checkout.mount('#stripe-checkout-embedded');
-        setStripeMountError(null);
-      } catch (e: any) {
-        setStripeMountError(e?.message || 'Failed to mount Stripe checkout');
-        toast.error('Could not mount Stripe checkout');
-      }
-    };
-    mount();
-  }, [clientSecret]);
 
-  const startEmbeddedTopup = async () => {
+  const addFundsDirectly = async () => {
     try {
       setLoading(true);
       const a = parseFloat(amount);
-      const res = await apiService.createTopupSession({ amount: a, currency });
-      if (res.success && res.data?.client_secret) {
-        setClientSecret(res.data.client_secret);
-        setStep('confirm');
+      const res = await apiService.addFunds(a, currency);
+      if (res.success) {
+        toast.success(res.message || 'Funds added successfully!');
+        setBalance(res.data);
+        setTopupOpen(false);
+        setAmount('');
+        setStep('amount');
       } else {
-        toast.error(res.message || 'Failed to start checkout');
+        toast.error(res.message || 'Failed to add funds');
       }
     } catch (e: any) {
-      toast.error(e.message || 'Failed to start checkout');
+      toast.error(e.message || 'Failed to add funds');
     } finally {
       setLoading(false);
     }
@@ -542,60 +514,49 @@ export function UserProfile({ onClose }: UserProfileProps) {
         </CardContent>
       </Card>
 
-      <Dialog open={topupOpen} onOpenChange={(v) => { setTopupOpen(v); if (!v) setClientSecret(null); }}>
+      <Dialog open={topupOpen} onOpenChange={(v) => { setTopupOpen(v); if (!v) { setAmount(''); setCurrency('AED'); } }}>
         <DialogContent className="max-w-[420px] w-[92vw] p-0 overflow-hidden rounded-2xl">
           <div className="bg-white text-black">
-            {step === 'enter' && (
-              <div>
-                <div className="px-6 pt-8 pb-4 text-center">
-                  <div className="text-4xl font-bold">
-                    <span className="mr-2 text-black/60">{currency}</span>
-                    <input
-                      id="amount-input"
-                      aria-label="Amount"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.00"
-                      autoComplete="off"
-                      className="inline-block w-[10ch] bg-transparent border-0 outline-none text-4xl font-bold tracking-tight text-black placeholder-black/30 text-center"
-                    />
-                  </div>
-                </div>
-                <div className="px-6 pb-2">
-                  <Label htmlFor="topup-currency" className="text-black/70 text-xs">Currency</Label>
-                  <select id="topup-currency" className="mt-2 h-10 w-full px-3 rounded-md bg-black/5 border border-black/20" value={currency} onChange={(e) => setCurrency(e.target.value as 'AED' | 'USD')}>
-                    <option value="AED">AED</option>
-                    <option value="USD">USD</option>
-                  </select>
-                </div>
-                {/* Keypad removed per request; direct typing in the amount field above */}
-                <div className="px-6 pb-6">
-                  <Button className="w-full bg-black text-white hover:bg-black/80" disabled={!canSubmit} onClick={() => setStep('confirm')}>Preview</Button>
+            <div>
+              <div className="px-6 pt-8 pb-4 text-center">
+                <div className="text-4xl font-bold">
+                  <span className="mr-2 text-black/60">{currency}</span>
+                  <input
+                    id="amount-input"
+                    aria-label="Amount"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    autoComplete="off"
+                    className="inline-block w-[10ch] bg-transparent border-0 outline-none text-4xl font-bold tracking-tight text-black placeholder-black/30 text-center"
+                  />
                 </div>
               </div>
-            )}
-            {step === 'confirm' && (
-              <div className="p-6 space-y-4">
-                <DialogHeader>
-                  <DialogTitle>Complete Payment</DialogTitle>
-                </DialogHeader>
-                {stripeMountError && (
-                  <div className="rounded-md border border-red-300 bg-red-50 text-red-700 text-sm p-3">
-                    {stripeMountError}. Set VITE_STRIPE_PUBLISHABLE_KEY (frontend) and STRIPE_SECRET_KEY (backend), then restart both servers.
-                  </div>
-                )}
-                <div id="stripe-checkout-embedded" data-secret={clientSecret || ''} className="min-h-[520px] rounded-md border border-black/10" />
-                <div className="text-xs text-black/60">If the checkout does not appear, verify your Stripe test keys are set and reload.</div>
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1 bg-black/10 text-black border-black/20 hover:bg-black/15" onClick={() => setStep('enter')}>Back</Button>
-                  <Button className="flex-1 bg-black text-white hover:bg-black/80" onClick={() => { /* submit occurs inside stripe embed */ }} disabled>Confirming in Stripe…</Button>
+              <div className="px-6 pb-2">
+                <Label htmlFor="topup-currency" className="text-black/70 text-xs">Currency</Label>
+                <select id="topup-currency" className="mt-2 h-10 w-full px-3 rounded-md bg-black/5 border border-black/20" value={currency} onChange={(e) => setCurrency(e.target.value as 'AED' | 'USD')}>
+                  <option value="AED">AED</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+              <div className="px-6 pb-4">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    <strong>Development Mode:</strong> Funds are added directly without payment processing. 
+                    This bypasses Stripe since business license is not yet available.
+                  </p>
                 </div>
               </div>
-            )}
+              <div className="px-6 pb-6">
+                <Button className="w-full bg-black text-white hover:bg-black/80" disabled={!canSubmit} onClick={addFundsDirectly}>
+                  Add {formatCurrency(parseFloat(amount || '0'))}
+                </Button>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

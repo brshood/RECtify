@@ -138,6 +138,22 @@ const userSchema = new mongoose.Schema({
   twoFactorEnabled: {
     type: Boolean,
     default: false
+  },
+  // Cash balance fields for trading
+  cashBalance: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  reservedBalance: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  cashCurrency: {
+    type: String,
+    enum: ['AED', 'USD'],
+    default: 'AED'
   }
 }, {
   timestamps: true

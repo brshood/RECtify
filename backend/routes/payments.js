@@ -27,6 +27,61 @@ router.get('/balance', auth, async (req, res) => {
   }
 });
 
+// POST /api/payments/add-funds - Add funds directly (bypass Stripe for development)
+router.post('/add-funds', auth, async (req, res) => {
+  try {
+    const { amount, currency = 'AED' } = req.body;
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid amount. Amount must be greater than 0.' 
+      });
+    }
+
+    if (!['AED', 'USD'].includes(currency)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid currency. Only AED and USD are supported.' 
+      });
+    }
+
+    const User = require('../models/User');
+    const user = await User.findById(req.user.userId);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Add funds to user's cash balance
+    user.cashBalance = (user.cashBalance || 0) + amount;
+    user.cashCurrency = currency;
+    await user.save();
+
+    console.log(`💰 Added ${amount} ${currency} to user ${user.email} (ID: ${user._id})`);
+
+    return res.json({
+      success: true,
+      message: `Successfully added ${amount} ${currency} to your account`,
+      data: {
+        cashBalance: user.cashBalance,
+        cashCurrency: user.cashCurrency,
+        reservedBalance: user.reservedBalance || 0,
+        addedAmount: amount
+      }
+    });
+  } catch (error) {
+    console.error('Error adding funds:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to add funds' 
+    });
+  }
+});
+
 // POST /api/payments/topup-session - create Embedded Checkout Session
 router.post('/topup-session', auth, async (req, res) => {
   try {
