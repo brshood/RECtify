@@ -66,7 +66,7 @@ export function EmissionsReportView({ reportData, onBackToWizard }: EmissionsRep
               color: #000;
               background: #fff;
               -webkit-print-color-adjust: exact;
-              color-adjust: exact;
+              print-color-adjust: exact;
             }
             .page {
               min-height: 100vh;
@@ -965,7 +965,7 @@ export function EmissionsReportView({ reportData, onBackToWizard }: EmissionsRep
           .bg-orange-50 {
             background-color: #f9f9f9 !important;
             -webkit-print-color-adjust: exact;
-            color-adjust: exact;
+            print-color-adjust: exact;
           }
         }
         

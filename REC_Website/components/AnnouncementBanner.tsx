@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import RotatingText from './RotatingText';
 
 interface AnnouncementBannerProps {
   onClose?: () => void;
@@ -9,16 +10,7 @@ export function AnnouncementBanner({ onClose }: AnnouncementBannerProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
 
-  useEffect(() => {
-    // Auto-hide after 12 seconds
-    const hideTimer = setTimeout(() => {
-      handleClose();
-    }, 12000);
-
-    return () => {
-      clearTimeout(hideTimer);
-    };
-  }, []);
+  // Removed auto-hide functionality - section stays visible
 
   const handleClose = () => {
     setIsClosing(true);
@@ -45,7 +37,7 @@ export function AnnouncementBanner({ onClose }: AnnouncementBannerProps) {
             damping: 25,
             duration: isClosing ? 1.0 : 1.2 
           }}
-          className="relative w-full py-8"
+          className="relative w-full min-h-screen flex items-center justify-center py-16"
         >
           {/* Top transition blend - creates seamless connection with hero section */}
           <motion.div
@@ -105,71 +97,46 @@ export function AnnouncementBanner({ onClose }: AnnouncementBannerProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="space-y-4"
+              className="flex justify-center"
             >
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.8 }}
-                className="text-2xl md:text-3xl lg:text-4xl font-light text-gray-700 leading-relaxed"
-              >
-                Streamlining the entire{' '}
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1, duration: 0.6 }}
-                  className="font-semibold text-emerald-600"
-                >
-                  carbon journey
-                </motion.span>
-                {' '}— from{' '}
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.2, duration: 0.6 }}
-                  className="font-semibold text-teal-600"
-                >
-                  reporting
-                </motion.span>
-                {' '}to{' '}
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.4, duration: 0.6 }}
-                  className="font-semibold text-cyan-600"
-                >
-                  Net Zero
-                </motion.span>
-                .
-              </motion.p>
-              
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.6, duration: 0.8 }}
-                className="text-xl md:text-2xl lg:text-3xl font-light text-gray-600 leading-relaxed"
-                dir="rtl"
-              >
-                نُسهّل رحلتك الكربونية — من{' '}
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.8, duration: 0.6 }}
-                  className="font-semibold text-emerald-600"
-                >
-                  التقرير
-                </motion.span>
-                {' '}إلى{' '}
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 2, duration: 0.6 }}
-                  className="font-semibold text-cyan-600"
-                >
-                  التخفيض
-                </motion.span>
-                .
-              </motion.p>
+              <div className="w-full flex items-center justify-center">
+                <div className="relative bg-gradient-to-br from-emerald-50/90 via-cyan-50/80 to-blue-50/90 backdrop-blur-sm rounded-3xl border border-emerald-200/50 shadow-2xl shadow-emerald-500/20 p-8 md:p-16 max-w-7xl mx-6 min-h-[300px] md:min-h-[400px] lg:min-h-[500px] flex items-center">
+                  {/* Subtle accent border */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 via-cyan-400/20 to-blue-400/20 rounded-3xl blur-xl"></div>
+                  
+                  <div className="relative text-4xl md:text-6xl lg:text-8xl font-bold leading-tight text-center text-gray-800 w-full">
+                    <RotatingText
+                      texts={[
+                        { 
+                          text: 'نُسهّل رحلتك الكربونية — من التقرير إلى التخفيض',
+                          highlights: {
+                            'الكربونية': 'text-blue-600 font-extrabold',
+                            'التخفيض': 'text-emerald-600 font-extrabold'
+                          }
+                        },
+                        { 
+                          text: 'Streamlining the entire carbon journey — from reporting to Net Zero',
+                          highlights: {
+                            'carbon journey': 'text-blue-600 font-extrabold',
+                            'Net': 'text-emerald-600 font-extrabold',
+                            'Zero': 'text-emerald-600 font-extrabold'
+                          }
+                        }
+                      ]}
+                      mainClassName="overflow-hidden justify-center items-center flex text-center"
+                      splitBy="words"
+                      staggerFrom={"last"}
+                      initial={{ y: "100%" }}
+                      animate={{ y: 0 }}
+                      exit={{ y: "-120%" }}
+                      staggerDuration={0.05}
+                      splitLevelClassName="overflow-hidden pb-1 md:pb-2"
+                      transition={{ type: "spring", damping: 40, stiffness: 600 }}
+                      rotationInterval={6000}
+                    />
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         </motion.div>

@@ -327,7 +327,7 @@ html {
     color: #000;
     background: #fff;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   /* Page styling */
@@ -399,38 +399,38 @@ html {
     background-color: #f5f5f5 !important;
     font-weight: bold;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   /* Background colors for print */
   .bg-gray-50 {
     background-color: #f9f9f9 !important;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   .bg-blue-50 {
     background-color: #eff6ff !important;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   .bg-green-50 {
     background-color: #f0fdf4 !important;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   .bg-orange-50 {
     background-color: #fff7ed !important;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   .bg-yellow-50 {
     background-color: #fefce8 !important;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   /* Card styling for print */
@@ -450,7 +450,7 @@ html {
     font-size: 9px;
     background-color: #f5f5f5 !important;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   /* Icon replacement for print */
