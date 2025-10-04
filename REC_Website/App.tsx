@@ -79,7 +79,6 @@ export default function App() {
         {!user && showLogin && (
           <LoginForm onClose={() => {
             setShowLogin(false);
-            setCurrentView('dashboard');
           }} />
         )}
 
