@@ -419,7 +419,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
       {/* Service Definition Section */}
       <motion.section 
-        className="py-20 bg-white"
+        className="py-20 bg-background"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
