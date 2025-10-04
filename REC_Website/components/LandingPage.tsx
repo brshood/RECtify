@@ -217,13 +217,6 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <Iridescence color={[1,1,1]} mouseReact={false} amplitude={0.08} speed={0.7} />
-        <motion.div 
-          className="absolute inset-0 bg-[#00FFAF78]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2 }}
-        ></motion.div>
         <div className="relative container mx-auto px-6 py-24">
           <div className="text-center max-w-4xl mx-auto">
             {/* Logo */}
@@ -248,11 +241,14 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               UAE's First Digital{" "}
-              <span className="text-rectify-gradient">I-REC</span>{" "}
+              <br />
+              <span className="text-rectify-gradient">Renewable Energy Certificates and Carbon Credits</span>{" "}
+              <br />
               Trading Platform
             </motion.h1>
             
-            {/* Arabic Text */}
+            {/* Arabic Text - Commented out as requested */}
+            {/* 
             <motion.div 
               className="text-2xl md:text-3xl mb-8 text-green-900 dark:text-green-900 font-bold" 
               dir="rtl"
@@ -262,6 +258,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             >
               ريكتيفاي - منصة تداول شهادات الطاقة المتجددة الرقمية الأولى في دولة الإمارات
             </motion.div>
+            */}
             
             {/* Subtitle */}
             <motion.p 
@@ -348,8 +345,6 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
         </div>
       </section>
 
-      {/* Announcement Banner */}
-      <AnnouncementBanner />
 
       {/* Mission Section */}
       <motion.section 
@@ -379,46 +374,192 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               Advancing UAE's <span className="text-rectify-gradient">Net Zero 2050</span> Vision
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              RECtify bridges the gap between renewable energy generation and corporate sustainability goals, 
-              creating a transparent marketplace that accelerates the UAE's transition to clean energy.
+              Helping UAE companies meet their carbon offset requirements simply and cost-effectively. We provide end-to-end carbon management solutions from automated emissions tracking and IEF report generation to seamless REC and Carbon Credit trading, ensuring full compliance with UAE's new carbon offset mandate while reducing operational costs by up to 60%.
             </p>
           </motion.div>
           
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true, amount: 0.3 }}
-          >
-            {features.map((feature, index) => (
-              <motion.div key={index} variants={fadeInUp}>
-                <Card className="border-rectify-border hover:shadow-lg transition-all duration-300 bg-rectify-surface group">
-                  <motion.div
-                    whileHover={{ y: -8 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <CardHeader className="text-center pb-4">
-                      <motion.div 
-                        className="mx-auto mb-4 p-3 rounded-full bg-rectify-gradient-light group-hover:bg-rectify-gradient transition-colors duration-300"
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                      >
-                        <feature.icon className="h-6 w-6 text-rectify-green group-hover:text-white transition-colors duration-300" />
-                      </motion.div>
-                      <CardTitle className="text-lg">{feature.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground text-center text-sm">{feature.description}</p>
-                    </CardContent>
-                  </motion.div>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
+          {/* New Solutions Block */}
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-rectify-surface p-8 rounded-2xl border border-rectify-border shadow-lg">
+              <h3 className="text-2xl md:text-3xl mb-6 text-center">
+                <span className="text-rectify-gradient">Streamlining the entire carbon journey from reporting to<br />Net Zero</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Problem & Solution for Buyers */}
+                <div className="space-y-4">
+                  <h4 className="text-xl font-semibold text-rectify-green">For Companies (Buyers)</h4>
+                  <div className="space-y-3">
+                    <p className="text-muted-foreground">
+                      <strong>The Problem:</strong> UAE's new carbon offset mandate requires companies to report and offset their emissions, but the process is complex and costly.
+                    </p>
+                    <p className="text-muted-foreground">
+                      <strong>Our Solution:</strong> We provide end-to-end carbon management from analyzing your emissions, to reporting them, and offsetting them by purchasing RECs and Carbon Credits.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Solution for Sellers */}
+                <div className="space-y-4">
+                  <h4 className="text-xl font-semibold text-rectify-blue">For Energy Generators (Sellers)</h4>
+                  <div className="space-y-3">
+                    <p className="text-muted-foreground">
+                      <strong>Your Opportunity:</strong> Turn your renewable energy generation into additional revenue streams.
+                    </p>
+                    <p className="text-muted-foreground">
+                      <strong>Our Solution:</strong> We handle your REC and Carbon Credits selling process, making it simple and easy to monetize your clean energy production.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </motion.section>
 
-      {/* Generators Section */}
+      {/* Service Definition Section */}
+      <motion.section 
+        className="py-20 bg-white"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true, amount: 0.3 }}
+      >
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <motion.div 
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <Badge className="bg-rectify-blue-light text-rectify-blue-dark mb-4">Our Services</Badge>
+              </motion.div>
+              <h2 className="text-3xl md:text-4xl mb-6">
+                What We Provide vs What You Do
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Clear distinction between our platform services and your actions
+              </p>
+            </motion.div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* What We Provide */}
+              <motion.div
+                initial={{ opacity: 0, x: -60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
+              >
+                <Card className="border-2 border-rectify-green/20 bg-rectify-surface hover:shadow-xl transition-all duration-300 h-full">
+                  <CardHeader className="text-center pb-4">
+                    <div className="flex justify-center mb-4">
+                      <motion.div 
+                        className="p-4 rounded-2xl bg-rectify-gradient shadow-lg"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                      >
+                        <CheckCircle className="h-8 w-8 text-white" />
+                      </motion.div>
+                    </div>
+                    <CardTitle className="text-2xl text-rectify-green">What We Provide (Our Services)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <motion.ul 
+                      className="space-y-4"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      viewport={{ once: true }}
+                    >
+                      {[
+                        "Carbon footprint calculation software",
+                        "Automated report generation (IEF reports)",
+                        "Trading platform for RECs and Carbon Credits",
+                        "Compliance consulting and support"
+                      ].map((service, idx) => (
+                        <motion.li 
+                          key={idx} 
+                          className="flex items-start space-x-3"
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.4, delay: 0.3 + idx * 0.1 }}
+                          viewport={{ once: true }}
+                          whileHover={{ x: 5 }}
+                        >
+                          <CheckCircle className="h-5 w-5 text-rectify-green mt-0.5 flex-shrink-0" />
+                          <span className="text-sm">{service}</span>
+                        </motion.li>
+                      ))}
+                    </motion.ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* What You Do */}
+              <motion.div
+                initial={{ opacity: 0, x: 60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
+              >
+                <Card className="border-2 border-rectify-blue/20 bg-rectify-surface hover:shadow-xl transition-all duration-300 h-full">
+                  <CardHeader className="text-center pb-4">
+                    <div className="flex justify-center mb-4">
+                      <motion.div 
+                        className="p-4 rounded-2xl bg-rectify-gradient shadow-lg"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                      >
+                        <ArrowRight className="h-8 w-8 text-white" />
+                      </motion.div>
+                    </div>
+                    <CardTitle className="text-2xl text-rectify-blue">What You Do (Customer Actions)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <motion.ul 
+                      className="space-y-4"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      viewport={{ once: true }}
+                    >
+                      {[
+                        "Upload your energy data and bills",
+                        "Review generated reports",
+                        "Buy/sell carbon credits on our platform",
+                        "Submit reports to regulators"
+                      ].map((action, idx) => (
+                        <motion.li 
+                          key={idx} 
+                          className="flex items-start space-x-3"
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.4, delay: 0.5 + idx * 0.1 }}
+                          viewport={{ once: true }}
+                          whileHover={{ x: 5 }}
+                        >
+                          <ArrowRight className="h-5 w-5 text-rectify-blue mt-0.5 flex-shrink-0" />
+                          <span className="text-sm">{action}</span>
+                        </motion.li>
+                      ))}
+                    </motion.ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* How It Works Section */}
       <motion.section 
         className="py-20 bg-gradient-to-br from-rectify-green-light/20 via-background to-rectify-blue-light/20 relative"
         initial={{ opacity: 0 }}
@@ -440,189 +581,211 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <Badge className="bg-rectify-gradient text-white mb-4 shadow-lg">For Generators</Badge>
+              <Badge className="bg-rectify-gradient text-white mb-4 shadow-lg">How It Works</Badge>
             </motion.div>
             <h2 className="text-3xl md:text-4xl mb-6">
-              Monetize Your <span className="text-rectify-gradient">Renewable Energy</span>
+              How Our <span className="text-rectify-gradient">Platform</span> Works
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Whether you operate utility-scale facilities or own rooftop solar, RECtify provides the digital 
-              infrastructure to efficiently monetize your renewable energy certificates.
+              Our webapp simplifies the entire carbon compliance process into three easy steps
             </p>
           </motion.div>
           
+          {/* Three Step Process */}
           <motion.div 
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.8, staggerChildren: 0.3 }}
             viewport={{ once: true, amount: 0.3 }}
           >
-            {generatorTypes.map((generator, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 60, scale: 0.9 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -10, scale: 1.02 }}
-              >
-                <Card className="border-2 border-rectify-green/20 bg-rectify-surface hover:shadow-2xl hover:border-rectify-green/40 transition-all duration-500 group relative overflow-hidden">
-                  {/* Card accent border */}
-                  <motion.div 
-                    className="absolute top-0 left-0 right-0 h-1 bg-rectify-gradient"
-                    initial={{ scaleX: 0 }}
-                    whileInView={{ scaleX: 1 }}
-                    transition={{ duration: 0.8, delay: index * 0.3 }}
-                    viewport={{ once: true }}
-                  ></motion.div>
-                  
-                  <CardHeader className="text-center pb-6">
-                    <div className="flex justify-center mb-4">
-                      <motion.div 
-                        className="p-4 rounded-2xl bg-rectify-gradient shadow-lg group-hover:shadow-xl transition-all duration-300"
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                      >
-                        <generator.icon className="h-8 w-8 text-white transition-colors duration-300" />
-                      </motion.div>
-                    </div>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.2 + 0.3 }}
-                      viewport={{ once: true }}
-                    >
-                      <Badge 
-                        className="mb-3 bg-rectify-green text-white shadow-md"
-                      >
-                        {generator.highlight}
-                      </Badge>
-                    </motion.div>
-                    <CardTitle className="text-2xl mb-2">{generator.title}</CardTitle>
-                    <p className="text-sm text-rectify-blue font-medium">{generator.subtitle}</p>
-                    <p className="text-muted-foreground mt-4">{generator.description}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <motion.ul 
-                      className="space-y-3"
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      transition={{ duration: 0.6, delay: index * 0.3 + 0.4 }}
-                      viewport={{ once: true }}
-                    >
-                      {generator.features.map((feature, idx) => (
-                        <motion.li 
-                          key={idx} 
-                          className="flex items-start space-x-3"
-                          initial={{ opacity: 0, x: -20 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.4, delay: index * 0.3 + idx * 0.1 + 0.5 }}
-                          viewport={{ once: true }}
-                          whileHover={{ x: 5 }}
-                        >
-                          <CheckCircle className="h-5 w-5 text-rectify-green mt-0.5 flex-shrink-0" />
-                          <span className="text-sm">{feature}</span>
-                        </motion.li>
-                      ))}
-                    </motion.ul>
-                    <div className="mt-6 pt-6 border-t border-rectify-border">
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button 
-                          className="w-full bg-rectify-gradient hover:opacity-90 text-white transition-all duration-300"
-                        >
-                          Get Started
-                          <Zap className="ml-2 h-4 w-4" />
-                        </Button>
-                      </motion.div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-          
-          {/* Generator Benefits */}
-          <motion.div 
-            className="mt-16"
-            initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            <motion.div 
-              className="bg-rectify-surface p-8 rounded-2xl border-2 border-rectify-green/30 shadow-xl max-w-4xl mx-auto relative overflow-hidden"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.3 }}
+            {/* Step 1 */}
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10, scale: 1.02 }}
             >
-              {/* Background pattern */}
-              <motion.div 
-                className="absolute top-0 left-0 right-0 h-2 bg-rectify-gradient"
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                viewport={{ once: true }}
-              ></motion.div>
-              
-              <div className="text-center relative">
+              <Card className="border-2 border-rectify-green/20 bg-rectify-surface hover:shadow-2xl hover:border-rectify-green/40 transition-all duration-500 group relative overflow-hidden h-full">
                 <motion.div 
-                  className="flex justify-center mb-4"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6 }}
+                  className="absolute top-0 left-0 right-0 h-1 bg-rectify-gradient"
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
                   viewport={{ once: true }}
-                >
-                  <motion.div 
-                    className="p-3 rounded-full bg-rectify-gradient shadow-lg"
-                    whileHover={{ scale: 1.1, rotate: 10 }}
-                  >
-                    <Zap className="h-8 w-8 text-white" />
-                  </motion.div>
-                </motion.div>
-                <motion.h3 
-                  className="text-2xl mb-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                  viewport={{ once: true }}
-                >
-                  Why Choose RECtify for Energy Generation?
-                </motion.h3>
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left"
-                  variants={staggerContainer}
-                  initial="initial"
-                  whileInView="animate"
-                  viewport={{ once: true, amount: 0.3 }}
-                >
-                  {[
-                    {
-                      title: "Direct Market Access",
-                      description: "Skip intermediaries and connect directly with buyers for better margins"
-                    },
-                    {
-                      title: "Transparent Pricing", 
-                      description: "Real-time market pricing with full transparency and no hidden fees"
-                    },
-                    {
-                      title: "Instant Settlement",
-                      description: "Fast, automated transactions with blockchain-verified certificates"
-                    }
-                  ].map((benefit, index) => (
+                ></motion.div>
+                
+                <CardHeader className="text-center pb-6">
+                  <div className="flex justify-center mb-4">
                     <motion.div 
-                      key={index}
-                      className="p-4 rounded-lg bg-rectify-accent border border-rectify-border"
-                      variants={fadeInUp}
-                      whileHover={{ scale: 1.05, y: -5 }}
+                      className="w-16 h-16 bg-rectify-gradient rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+                      whileHover={{ scale: 1.1, rotate: 5 }}
                     >
-                      <h4 className="font-medium text-rectify-green mb-2">{benefit.title}</h4>
-                      <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                      1
                     </motion.div>
-                  ))}
-                </motion.div>
-              </div>
+                  </div>
+                  <CardTitle className="text-2xl mb-2">Register & Calculate</CardTitle>
+                  <p className="text-muted-foreground">
+                    Sign up your company and upload your energy consumption data. Our webapp automatically calculates your carbon footprint.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <motion.ul 
+                    className="space-y-3"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                    viewport={{ once: true }}
+                  >
+                    {[
+                      "Company registration and verification",
+                      "Upload energy bills and consumption data", 
+                      "Automatic carbon footprint calculation",
+                      "Real-time emissions tracking dashboard"
+                    ].map((feature, idx) => (
+                      <motion.li 
+                        key={idx} 
+                        className="flex items-start space-x-3"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.5 + idx * 0.1 }}
+                        viewport={{ once: true }}
+                        whileHover={{ x: 5 }}
+                      >
+                        <CheckCircle className="h-5 w-5 text-rectify-green mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Step 2 */}
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10, scale: 1.02 }}
+            >
+              <Card className="border-2 border-rectify-green/20 bg-rectify-surface hover:shadow-2xl hover:border-rectify-green/40 transition-all duration-500 group relative overflow-hidden h-full">
+                <motion.div 
+                  className="absolute top-0 left-0 right-0 h-1 bg-rectify-gradient"
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  transition={{ duration: 0.8, delay: 0.5 }}
+                  viewport={{ once: true }}
+                ></motion.div>
+                
+                <CardHeader className="text-center pb-6">
+                  <div className="flex justify-center mb-4">
+                    <motion.div 
+                      className="w-16 h-16 bg-rectify-gradient rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                    >
+                      2
+                    </motion.div>
+                  </div>
+                  <CardTitle className="text-2xl mb-2">Generate Reports</CardTitle>
+                  <p className="text-muted-foreground">
+                    Our webapp automatically generates compliance reports and IEF (International Emissions Factor) reports for regulatory submission.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <motion.ul 
+                    className="space-y-3"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                    viewport={{ once: true }}
+                  >
+                    {[
+                      "Automated IEF report generation",
+                      "UAE regulatory compliance reports",
+                      "Customizable reporting templates",
+                      "Export reports in multiple formats"
+                    ].map((feature, idx) => (
+                      <motion.li 
+                        key={idx} 
+                        className="flex items-start space-x-3"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.7 + idx * 0.1 }}
+                        viewport={{ once: true }}
+                        whileHover={{ x: 5 }}
+                      >
+                        <CheckCircle className="h-5 w-5 text-rectify-green mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Step 3 */}
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10, scale: 1.02 }}
+            >
+              <Card className="border-2 border-rectify-green/20 bg-rectify-surface hover:shadow-2xl hover:border-rectify-green/40 transition-all duration-500 group relative overflow-hidden h-full">
+                <motion.div 
+                  className="absolute top-0 left-0 right-0 h-1 bg-rectify-gradient"
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  transition={{ duration: 0.8, delay: 0.7 }}
+                  viewport={{ once: true }}
+                ></motion.div>
+                
+                <CardHeader className="text-center pb-6">
+                  <div className="flex justify-center mb-4">
+                    <motion.div 
+                      className="w-16 h-16 bg-rectify-gradient rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                    >
+                      3
+                    </motion.div>
+                  </div>
+                  <CardTitle className="text-2xl mb-2">Trade & Offset</CardTitle>
+                  <p className="text-muted-foreground">
+                    Buy RECs and Carbon Credits to offset your emissions, or sell your renewable energy certificates on our trading platform.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <motion.ul 
+                    className="space-y-3"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.8 }}
+                    viewport={{ once: true }}
+                  >
+                    {[
+                      "Real-time trading dashboard",
+                      "Buy RECs and Carbon Credits",
+                      "Sell your renewable energy certificates",
+                      "Instant settlement and verification"
+                    ].map((feature, idx) => (
+                      <motion.li 
+                        key={idx} 
+                        className="flex items-start space-x-3"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.9 + idx * 0.1 }}
+                        viewport={{ once: true }}
+                        whileHover={{ x: 5 }}
+                      >
+                        <CheckCircle className="h-5 w-5 text-rectify-green mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                </CardContent>
+              </Card>
             </motion.div>
           </motion.div>
         </div>
@@ -923,10 +1086,10 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <Badge className="bg-rectify-green-light text-rectify-green-dark mb-4">Our Team</Badge>
+              <Badge className="bg-rectify-green-light text-rectify-green-dark mb-4">Who We Are</Badge>
             </motion.div>
             <h2 className="text-3xl md:text-4xl mb-6">
-              Meet the <span className="text-rectify-gradient">RECtify</span> Founders
+              Who We Are
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Led by experts in renewable energy, sustainability policy, and quantitative finance, 
@@ -981,7 +1144,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                       transition={{ duration: 0.5, delay: 0.2 }}
                       viewport={{ once: true }}
                     >
-                      <Badge className="bg-rectify-green text-white mt-2">Founder</Badge>
+                      <Badge className="bg-rectify-green text-white mt-2">Co-Founder</Badge>
                     </motion.div>
                   </CardHeader>
                   <CardContent className="space-y-4">
