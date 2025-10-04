@@ -733,7 +733,7 @@ export function EmissionsReport() {
                       className="absolute top-3 right-3 p-1 hover:bg-white/20 rounded-full transition-colors duration-200"
                       aria-label="Close marketing message"
                     >
-                      <X className="h-4 w-4 text-gray-600 hover:text-gray-800" />
+                      <X className="h-4 w-4 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200" />
                     </button>
                     <div className="text-center mb-4">
                       <h4 className="text-lg font-semibold text-rectify-green mb-2">📋 What is an Emissions Report?</h4>

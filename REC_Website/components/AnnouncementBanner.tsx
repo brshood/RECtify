@@ -104,7 +104,7 @@ export function AnnouncementBanner({ onClose }: AnnouncementBannerProps) {
                   {/* Subtle accent border */}
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 via-cyan-400/20 to-blue-400/20 rounded-3xl blur-xl"></div>
                   
-                  <div className="relative text-4xl md:text-6xl lg:text-8xl font-bold leading-tight text-center text-gray-800 w-full">
+                  <div className="relative text-4xl md:text-6xl lg:text-8xl font-bold leading-tight text-center text-gray-800 dark:text-gray-100 w-full">
                     <RotatingText
                       texts={[
                         { 
