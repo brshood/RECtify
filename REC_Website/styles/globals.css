@@ -330,6 +330,12 @@ html {
     print-color-adjust: exact;
   }
   
+  /* Dark mode report styling */
+  .dark .report-container {
+    color: #fff;
+    background: #1f2937;
+  }
+  
   /* Page styling */
   .report-page {
     min-height: 100vh;

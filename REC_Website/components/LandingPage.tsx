@@ -262,7 +262,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Subtitle */}
             <motion.p 
-              className="text-2xl text-black dark:text-black mb-12 max-w-2xl mx-auto leading-relaxed font-medium"
+              className="text-2xl text-black dark:text-white mb-12 max-w-2xl mx-auto leading-relaxed font-medium"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}

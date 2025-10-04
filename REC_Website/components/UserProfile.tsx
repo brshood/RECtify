@@ -54,28 +54,28 @@ export function UserProfile({ onClose }: UserProfileProps) {
   const getRoleColor = (role: UserRole) => {
     switch (role) {
       case 'facility-owner':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
       case 'trader':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
       case 'compliance-officer':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200';
       case 'admin':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200';
     }
   };
 
   const getTierColor = (tier: UserTier) => {
     switch (tier) {
       case 'enterprise':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200';
       case 'premium':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
       case 'basic':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200';
     }
   };
 
@@ -516,11 +516,11 @@ export function UserProfile({ onClose }: UserProfileProps) {
 
       <Dialog open={topupOpen} onOpenChange={(v) => { setTopupOpen(v); if (!v) { setAmount(''); setCurrency('AED'); } }}>
         <DialogContent className="max-w-[420px] w-[92vw] p-0 overflow-hidden rounded-2xl">
-          <div className="bg-white text-black">
+          <div className="bg-white dark:bg-gray-800 text-black dark:text-white">
             <div>
               <div className="px-6 pt-8 pb-4 text-center">
                 <div className="text-4xl font-bold">
-                  <span className="mr-2 text-black/60">{currency}</span>
+                  <span className="mr-2 text-black/60 dark:text-white/60">{currency}</span>
                   <input
                     id="amount-input"
                     aria-label="Amount"
@@ -532,12 +532,12 @@ export function UserProfile({ onClose }: UserProfileProps) {
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
                     autoComplete="off"
-                    className="inline-block w-[10ch] bg-transparent border-0 outline-none text-4xl font-bold tracking-tight text-black placeholder-black/30 text-center"
+                    className="inline-block w-[10ch] bg-transparent border-0 outline-none text-4xl font-bold tracking-tight text-black dark:text-white placeholder-black/30 dark:placeholder-white/30 text-center"
                   />
                 </div>
               </div>
               <div className="px-6 pb-2">
-                <Label htmlFor="topup-currency" className="text-black/70 text-xs">Currency</Label>
+                <Label htmlFor="topup-currency" className="text-black/70 dark:text-white/70 text-xs">Currency</Label>
                 <select id="topup-currency" className="mt-2 h-10 w-full px-3 rounded-md bg-black/5 border border-black/20" value={currency} onChange={(e) => setCurrency(e.target.value as 'AED' | 'USD')}>
                   <option value="AED">AED</option>
                   <option value="USD">USD</option>

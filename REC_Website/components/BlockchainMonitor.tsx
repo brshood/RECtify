@@ -376,7 +376,7 @@ const BlockchainMonitor: React.FC<BlockchainMonitorProps> = ({ className }) => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Purpose</span>
-                      <span className="text-xs text-gray-600">{blockchainStatus.purpose}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{blockchainStatus.purpose}</span>
                     </div>
                   </>
                 ) : (
@@ -413,7 +413,7 @@ const BlockchainMonitor: React.FC<BlockchainMonitorProps> = ({ className }) => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Purpose</span>
-                      <span className="text-xs text-gray-600">{networkInfo.purpose}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{networkInfo.purpose}</span>
                     </div>
                   </>
                 ) : (
