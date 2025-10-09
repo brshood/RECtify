@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, ArrowLeft, Mail, CheckCircle } from 'lucide-react';
 import { apiService } from '../services/api';
-import { FrontendEmailService } from '../services/emailService';
+// Removed FrontendEmailService - now using secure backend API
 
 interface ForgotPasswordProps {
   onBack: () => void;
@@ -33,31 +33,11 @@ export function ForgotPassword({ onBack, onSuccess }: ForgotPasswordProps) {
 
     setIsLoading(true);
     try {
-      // Get the reset token and code from backend
+      // Backend now handles email sending securely
       const response = await apiService.forgotPassword(email);
       if (response.success) {
-        // Use the code returned by the backend
-        const verificationCode = response.code;
-        
-        // Try to send email via EmailJS
-        try {
-          const emailSent = await FrontendEmailService.sendPasswordResetEmail({
-            to_email: email,
-            user_name: email.split('@')[0],
-            verification_code: verificationCode,
-            reset_url: `${window.location.origin}/reset-password?token=mock-token`
-          });
-
-          if (emailSent) {
-            setSuccess('Verification code sent to your email');
-            setStep('code');
-          } else {
-            setError('Failed to send email. Please check your EmailJS configuration.');
-          }
-        } catch (emailError) {
-          console.error('EmailJS error:', emailError);
-          setError('Failed to send email. Please try again later.');
-        }
+        setSuccess('Verification code sent to your email');
+        setStep('code');
       } else {
         setError(response.message || 'Failed to send verification code');
       }

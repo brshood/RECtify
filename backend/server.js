@@ -20,6 +20,7 @@ const holdingsRoutes = require('./routes/holdings');
 const ordersRoutes = require('./routes/orders');
 const transactionsRoutes = require('./routes/transactions');
 const recSecurityRoutes = require('./routes/recSecurity');
+const contactRoutes = require('./routes/contact');
 const { xssProtection, validateRequestSize, securityHeaders } = require('./middleware/security');
 const RECSecurityService = require('./services/RECSecurityService');
 const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
@@ -100,7 +101,21 @@ const authLimiter = rateLimit({
     retryAfter: 900
   }
 });
+
+// Very strict rate limiting for password reset
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // limit each IP to 3 password reset requests per hour
+  message: {
+    error: 'Too many password reset attempts. Please try again in 1 hour.',
+    retryAfter: 3600
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 app.use('/api/auth', authLimiter);
+app.use('/api/auth/forgot-password', passwordResetLimiter);
 
 // Slow down repeated requests
 const speedLimiter = slowDown({
@@ -159,22 +174,26 @@ app.use((req, res, next) => {
 });
 
 // MongoDB Atlas connection
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => {
-  console.log('✅ Connected to MongoDB Atlas');
-  // Log the outbound IP for Railway IP identification
-  fetch('https://api.ipify.org?format=json')
-    .then(res => res.json())
-    .then(data => console.log('🌐 Railway connecting from IP:', data.ip))
-    .catch(err => console.log('Could not determine outbound IP:', err.message));
-})
-.catch((error) => {
-  console.error('❌ MongoDB Atlas connection error:', error);
-  // Exit process in production if DB connection fails
-  if (process.env.NODE_ENV === 'production') {
-    process.exit(1);
-  }
-});
+if (process.env.MONGODB_URI && process.env.MONGODB_URI.trim() !== '') {
+  mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB Atlas');
+    // Log the outbound IP for Railway IP identification
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => console.log('🌐 Railway connecting from IP:', data.ip))
+      .catch(err => console.log('Could not determine outbound IP:', err.message));
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB Atlas connection error:', error);
+    // Exit process in production if DB connection fails
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+  });
+} else {
+  console.log('⚠️ MongoDB URI not configured - running in development mode without database');
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -183,6 +202,7 @@ app.use('/api/holdings', holdingsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/rec-security', recSecurityRoutes);
+app.use('/api/contact', contactRoutes);
 app.use('/api/payments', payments.router);
 
 // Health check endpoint - Enhanced for production monitoring
