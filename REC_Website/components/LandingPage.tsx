@@ -217,6 +217,64 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute top-20 left-10 w-20 h-20 bg-rectify-green/10 rounded-full blur-xl"
+            animate={{
+              x: [0, 100, 0],
+              y: [0, -50, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="absolute top-40 right-20 w-32 h-32 bg-rectify-blue/10 rounded-full blur-xl"
+            animate={{
+              x: [0, -80, 0],
+              y: [0, 60, 0],
+              scale: [1, 0.8, 1],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 2
+            }}
+          />
+          <motion.div
+            className="absolute bottom-40 left-1/4 w-16 h-16 bg-rectify-green/15 rounded-full blur-lg"
+            animate={{
+              x: [0, 60, 0],
+              y: [0, -30, 0],
+              scale: [1, 1.3, 1],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1
+            }}
+          />
+          <motion.div
+            className="absolute top-60 right-1/3 w-24 h-24 bg-rectify-blue/15 rounded-full blur-lg"
+            animate={{
+              x: [0, -40, 0],
+              y: [0, 40, 0],
+              scale: [1, 0.9, 1],
+            }}
+            transition={{
+              duration: 7,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 3
+            }}
+          />
+        </div>
         <div className="relative container mx-auto px-6 py-24">
           <div className="text-center max-w-4xl mx-auto">
             {/* Logo */}
@@ -226,25 +284,62 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <img 
+              <motion.img 
                 src={rectifyLogo} 
                 alt="RECtify Logo" 
                 className="h-24 w-auto"
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 2, -2, 0]
+                }}
+                transition={{ 
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                whileHover={{ 
+                  scale: 1.1, 
+                  rotate: 5
+                }}
               />
             </motion.div>
             
             {/* Main Heading */}
             <motion.h1 
-              className="text-4xl md:text-6xl mb-6 text-foreground leading-tight"
+              className="text-4xl md:text-6xl mb-6 leading-tight"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              UAE's First Digital{" "}
+              <motion.span 
+                className="text-rectify-green font-bold"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                whileHover={{ scale: 1.05, x: 10 }}
+              >
+                UAE's First Digital
+              </motion.span>{" "}
               <br />
-              <span className="text-rectify-gradient">Renewable Energy Certificates and Carbon Credits</span>{" "}
+              <motion.span 
+                className="text-rectify-gradient font-extrabold"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                whileHover={{ scale: 1.05, rotateY: 5 }}
+              >
+                Renewable Energy Certificates and Carbon Credits
+              </motion.span>{" "}
               <br />
-              Trading Platform
+              <motion.span 
+                className="text-rectify-blue font-bold"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                whileHover={{ scale: 1.05, x: -10 }}
+              >
+                Trading Platform
+              </motion.span>
             </motion.h1>
             
             {/* Arabic Text - Commented out as requested */}
@@ -267,8 +362,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              Empowering the UAE's renewable energy future through transparent, efficient, 
-              and compliant International Renewable Energy Certificate trading.
+              Streamlining your entire decarbonizing experience from reducing to reporting.
             </motion.p>
             
             {/* CTA Buttons */}
@@ -283,24 +377,91 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                 whileTap={{ scale: 0.95 }}
               >
                 <div className="flex flex-col space-y-4">
-                  <Button 
-                    size="lg" 
-                    className="bg-rectify-gradient hover:bg-rectify-gradient/80 hover:shadow-lg hover:shadow-rectify-green/25 hover:scale-105 hover:-translate-y-1 text-white px-8 py-6 text-lg transition-all duration-300 ease-in-out border-2 border-transparent hover:border-rectify-green/30"
-                    onClick={onEnterPlatform}
+                  <motion.div
+                    whileHover={{ 
+                      scale: 1.05, 
+                      y: -5,
+                      boxShadow: "0 20px 40px rgba(34, 197, 94, 0.3)"
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    animate={{ 
+                      boxShadow: [
+                        "0 4px 20px rgba(34, 197, 94, 0.1)",
+                        "0 8px 30px rgba(34, 197, 94, 0.2)",
+                        "0 4px 20px rgba(34, 197, 94, 0.1)"
+                      ]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
                   >
-                    Enter Trading Platform
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Button>
+                    <Button 
+                      size="lg" 
+                      className="bg-rectify-gradient hover:bg-rectify-gradient/80 hover:shadow-lg hover:shadow-rectify-green/25 text-white px-8 py-6 text-lg transition-all duration-300 ease-in-out border-2 border-transparent hover:border-rectify-green/30"
+                      onClick={onEnterPlatform}
+                    >
+                      <motion.span
+                        animate={{ x: [0, 5, 0] }}
+                        transition={{ 
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        Enter Trading Platform
+                      </motion.span>
+                      <motion.div
+                        animate={{ x: [0, 5, 0] }}
+                        transition={{ 
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: 0.2
+                        }}
+                      >
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </motion.div>
+                    </Button>
+                  </motion.div>
                   
-                  <Button 
-                    size="lg" 
-                    variant="outline"
-                    className="border-2 border-rectify-green text-rectify-green hover:bg-rectify-green hover:text-white px-8 py-6 text-lg bg-background/80 backdrop-blur-sm dark:bg-background/90"
-                    onClick={onNavigateToEIReports}
+                  <motion.div
+                    whileHover={{ 
+                      scale: 1.05, 
+                      y: -5
+                    }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    Access EI Reports
-                    <FileText className="ml-2 h-5 w-5" />
-                  </Button>
+                    <Button 
+                      size="lg" 
+                      variant="outline"
+                      className="border-2 border-rectify-green text-rectify-green hover:bg-rectify-green hover:text-white px-8 py-6 text-lg"
+                      onClick={onNavigateToEIReports}
+                    >
+                      <motion.span
+                        animate={{ x: [0, 3, 0] }}
+                        transition={{ 
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        Access EI Reports
+                      </motion.span>
+                      <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ 
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: 0.3
+                        }}
+                      >
+                        <FileText className="ml-2 h-5 w-5" />
+                      </motion.div>
+                    </Button>
+                  </motion.div>
                 </div>
               </motion.div>
               <motion.div
@@ -336,8 +497,39 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   variants={fadeInUp}
                   whileHover={{ scale: 1.05 }}
                 >
-                  <div className={`text-3xl font-bold ${stat.color} mb-2`}>{stat.value}</div>
-                  <div className="text-muted-foreground">{stat.label}</div>
+                  <motion.div 
+                    className={`text-3xl font-bold ${stat.color} mb-2`}
+                    animate={{ 
+                      scale: [1, 1.05, 1],
+                      textShadow: [
+                        "0 0 0px rgba(34, 197, 94, 0)",
+                        "0 0 20px rgba(34, 197, 94, 0.3)",
+                        "0 0 0px rgba(34, 197, 94, 0)"
+                      ]
+                    }}
+                    transition={{ 
+                      duration: 2 + index * 0.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: index * 0.3
+                    }}
+                  >
+                    {stat.value}
+                  </motion.div>
+                  <motion.div 
+                    className="text-muted-foreground"
+                    animate={{ 
+                      opacity: [0.7, 1, 0.7]
+                    }}
+                    transition={{ 
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: index * 0.2
+                    }}
+                  >
+                    {stat.label}
+                  </motion.div>
                 </motion.div>
               ))}
             </motion.div>
@@ -1556,9 +1748,6 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   UAE's first digital platform for trading International Renewable Energy Certificates (I-RECs). 
                   Supporting Vision 2050 and Net Zero goals through transparent, efficient renewable energy trading.
                 </p>
-                <div className="text-sm text-muted-foreground" dir="rtl">
-                  ريكتيفاي - منصة تداول شهادات الطاقة المتجددة الرقمية الأولى في دولة الإمارات
-                </div>
               </div>
               
               {/* Contact Information */}
@@ -1575,10 +1764,10 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   <div className="flex items-center space-x-3">
                     <Mail className="h-5 w-5 text-rectify-green flex-shrink-0" />
                     <a 
-                      href="mailto:rectifygo@gmail.com" 
+                      href="mailto:team@rectifygo.com" 
                       className="text-sm text-muted-foreground hover:text-rectify-green transition-colors"
                     >
-                      rectifygo@gmail.com
+                      team@rectifygo.com
                     </a>
                   </div>
                 </div>
@@ -1606,6 +1795,17 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               </div>
             </div>
             
+            {/* Company Legal Information */}
+            <div className="border-t border-rectify-border pt-4 mb-4">
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div className="font-medium text-foreground">RECtify Commercial Brokers L.L.C</div>
+                  <div>Commercial License: CN-6136617 | Unified License: 501-2025-200045809</div>
+                  <div>Registered in Abu Dhabi, UAE | L.L.C. | Commercial Broker – Code 4610010</div>
+                </div>
+              </div>
+            </div>
+
             {/* Bottom Footer */}
             <div className="border-t border-rectify-border pt-8">
               <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
