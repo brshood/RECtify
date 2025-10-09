@@ -10,7 +10,7 @@ import { InfoModal } from "./InfoModal";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Iridescence from './figma/Iridescence';
-import emailjs from '@emailjs/browser';
+// Removed client-side EmailJS - now using secure backend API
 import { AnnouncementBanner } from './AnnouncementBanner';
 
 interface LandingPageProps {
@@ -103,44 +103,40 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
     setIsSubmitting(true);
     
     try {
-      // EmailJS configuration - these will be set as environment variables
-      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_rectify';
-      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_contact';
-      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY';
-      
-      // Prepare template parameters
-      const templateParams = {
-        from_name: contactForm.name,
-        from_email: contactForm.email,
-        subject: contactForm.subject,
-        message: contactForm.message,
-        to_email: 'alsamrikhaled@gmail.com',
-        reply_to: contactForm.email
-      };
-      
-      // Send email using EmailJS
-      await emailjs.send(serviceId, templateId, templateParams, publicKey);
-      
-      // Show success popup
-      setShowSuccessPopup(true);
-      
-      // Reset form
-      setContactForm({
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
+      // Send contact form via secure backend API
+      const response = await fetch('/api/contact/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactForm)
       });
-      
-      // Auto-hide the popup after 5 seconds
-      setTimeout(() => {
-        setShowSuccessPopup(false);
-      }, 5000);
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Show success popup
+        setShowSuccessPopup(true);
+        
+        // Reset form
+        setContactForm({
+          name: '',
+          email: '',
+          subject: '',
+          message: ''
+        });
+        
+        // Auto-hide the popup after 5 seconds
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+        }, 5000);
+      } else {
+        throw new Error(result.message || 'Failed to send message');
+      }
       
     } catch (error) {
       console.error('Failed to send email:', error);
-      // You could show an error message here
-      alert('Failed to send message. Please try again or contact us directly at alsamrikhaled@gmail.com');
+      alert('Failed to send message. Please try again or contact us directly at team@rectifygo.com');
     } finally {
       setIsSubmitting(false);
     }

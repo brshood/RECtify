@@ -5,6 +5,7 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { sanitizeInput, validateEmail, validatePassword } = require('../middleware/security');
 const emailService = require('../utils/emailService');
+const emailJSService = require('../services/EmailJSService');
 
 const router = express.Router();
 
@@ -296,7 +297,34 @@ router.post('/forgot-password', [
 
     const { email } = req.body;
 
-    // Check if user exists
+    // Check if database is available
+    if (!process.env.MONGODB_URI || process.env.MONGODB_URI.trim() === '') {
+      // Development mode without database - return mock response
+      console.log('📧 Development mode: Mock password reset for', email);
+      
+      // Generate a mock reset token
+      const mockToken = 'DEV' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      
+      try {
+        // Send mock email (will be logged to console)
+        await emailService.sendPasswordResetEmail(email, mockToken, 'Test User');
+        
+        res.json({
+          success: true,
+          message: 'If an account with that email exists, a password reset code has been sent.',
+          code: mockToken // Return the mock code for frontend to use
+        });
+      } catch (emailError) {
+        console.error('Mock email sending failed:', emailError);
+        res.status(500).json({
+          success: false,
+          message: 'Failed to send password reset email. Please try again later.'
+        });
+      }
+      return;
+    }
+
+    // Production mode with database
     const user = await User.findOne({ email, isActive: true });
     if (!user) {
       // Don't reveal if user exists or not for security
@@ -311,7 +339,7 @@ router.post('/forgot-password', [
     await user.save();
 
     try {
-      // Send password reset email
+      // Send password reset email using Gmail SMTP (EmailJS doesn't support server-side)
       await emailService.sendPasswordResetEmail(email, resetToken, user.firstName);
       
       res.json({

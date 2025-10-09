@@ -8,7 +8,7 @@ class EmailService {
 
   initializeTransporter() {
     // Check if real email credentials are provided
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_PASS !== 'your-gmail-app-password') {
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_PASS !== 'your-gmail-app-password' && process.env.EMAIL_USER !== 'your-email@gmail.com') {
       // Real email configuration (using Gmail SMTP)
       console.log('📧 Using real Gmail SMTP for email delivery');
       this.transporter = nodemailer.createTransport({
@@ -44,8 +44,15 @@ class EmailService {
           console.log('\n📧 EMAIL SENT (Development Mode):');
           console.log('To:', mailOptions.to);
           console.log('Subject:', mailOptions.subject);
-          console.log('Verification Code:', this.extractCodeFromEmail(mailOptions.html));
-          console.log('Reset URL:', this.extractUrlFromEmail(mailOptions.html));
+          console.log('From:', mailOptions.from);
+          if (mailOptions.replyTo) {
+            console.log('Reply-To:', mailOptions.replyTo);
+          }
+          console.log('HTML Content:', mailOptions.html ? 'Present' : 'Not present');
+          if (mailOptions.html && mailOptions.html.includes('verification-code')) {
+            console.log('Verification Code:', this.extractCodeFromEmail(mailOptions.html));
+            console.log('Reset URL:', this.extractUrlFromEmail(mailOptions.html));
+          }
           console.log('📧 End of Email\n');
           
           return {
@@ -216,6 +223,76 @@ class EmailService {
           <div class="footer">
             <p>This email was sent from RECtify. If you have any questions, please contact our support team.</p>
             <p>&copy; 2024 RECtify. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  async sendContactFormEmail(formData) {
+    try {
+      const { name, email, subject, message } = formData;
+      
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || 'noreply@rectify.ae',
+        to: 'team@rectifygo.com',
+        subject: `Contact Form: ${subject}`,
+        html: this.getContactFormEmailTemplate(name, email, subject, message),
+        replyTo: email
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      return { success: true, messageId: info.messageId };
+    } catch (error) {
+      console.error('Error sending contact form email:', error);
+      throw new Error('Failed to send contact form email');
+    }
+  }
+
+  getContactFormEmailTemplate(name, email, subject, message) {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>New Contact Form Submission - RECtify</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #22c55e, #3b82f6); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+          .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
+          .field { margin: 15px 0; }
+          .label { font-weight: bold; color: #22c55e; }
+          .value { background: white; padding: 10px; border-radius: 4px; border-left: 4px solid #22c55e; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>New Contact Form Submission</h1>
+            <p>RECtify Website Contact Form</p>
+          </div>
+          <div class="content">
+            <div class="field">
+              <div class="label">Name:</div>
+              <div class="value">${name}</div>
+            </div>
+            <div class="field">
+              <div class="label">Email:</div>
+              <div class="value">${email}</div>
+            </div>
+            <div class="field">
+              <div class="label">Subject:</div>
+              <div class="value">${subject}</div>
+            </div>
+            <div class="field">
+              <div class="label">Message:</div>
+              <div class="value">${message.replace(/\n/g, '<br>')}</div>
+            </div>
+            <p style="margin-top: 20px; font-size: 14px; color: #666;">
+              Reply directly to this email to respond to ${name}.
+            </p>
           </div>
         </div>
       </body>
