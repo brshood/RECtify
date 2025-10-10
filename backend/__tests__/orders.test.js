@@ -8,19 +8,20 @@ const app = express();
 app.use(express.json());
 
 // Mock auth middleware for tests
+const jwt = require('jsonwebtoken');
 app.use((req, res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     try {
-      const jwt = require('jsonwebtoken');
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = { userId: decoded.userId };
+      return next();
     } catch (err) {
-      // Invalid token
+      return res.status(401).json({ success: false, message: 'Invalid token' });
     }
   }
-  next();
+  return res.status(401).json({ success: false, message: 'No token provided' });
 });
 
 const ordersRoutes = require('../routes/orders');
