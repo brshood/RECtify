@@ -6,8 +6,24 @@ const User = require('../models/User');
 // Create minimal app for testing
 const app = express();
 app.use(express.json());
-// Note: Don't use xssProtection here - it sanitizes passwords and breaks login
-// The actual auth routes handle sanitization appropriately
+
+// Selective XSS protection that skips password fields
+const xss = require('xss');
+app.use((req, res, next) => {
+  if (req.body) {
+    for (const key in req.body) {
+      // Skip password fields to avoid breaking bcrypt comparison
+      if (key === 'password' || key.toLowerCase().includes('password')) {
+        continue;
+      }
+      if (typeof req.body[key] === 'string') {
+        req.body[key] = xss(req.body[key]);
+      }
+    }
+  }
+  next();
+});
+
 const authRoutes = require('../routes/auth');
 app.use('/api/auth', authRoutes);
 
