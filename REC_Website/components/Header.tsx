@@ -32,7 +32,7 @@ export function Header({ onNavigateHome, showNavigation = true, onOpenLogin, onO
 							<img 
 								src={rectifyIconLogo} 
 								alt="RECtify" 
-								className="h-10 w-15"
+								className="h-10 w-auto"
 							/>
 						</div>
 						

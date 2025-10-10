@@ -12,10 +12,6 @@ NODE_VERSION = "20"
 NPM_VERSION = "9"
 # API Configuration
 VITE_API_URL = "https://rectify-production.up.railway.app/api"
-# EmailJS Configuration
-VITE_EMAILJS_SERVICE_ID = "service_v0u3c8q"
-VITE_EMAILJS_TEMPLATE_ID = "template_4ha9gpn"
-VITE_EMAILJS_PUBLIC_KEY = "5ysm3GlzYJrVnKdL4"
 [[redirects]]
 # SPA fallback so client-side routes work
 from = "/*"
