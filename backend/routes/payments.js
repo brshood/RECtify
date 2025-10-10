@@ -1,5 +1,8 @@
 const express = require('express');
+const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const auth = require('../middleware/auth');
+const { auditLog, setEntityId, setAuditMetadata } = require('../middleware/auditLog');
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY;
 let stripe = null;
@@ -8,6 +11,19 @@ if (stripeSecret) {
 }
 
 const router = express.Router();
+
+// Rate limiting for payment operations - prevents abuse
+const paymentLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // Max 5 payment operations per minute
+  message: {
+    success: false,
+    message: 'Too many payment requests. Please wait a moment.',
+    retryAfter: 60
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // GET /api/payments/balance - return current user cash balance (AED)
 router.get('/balance', auth, async (req, res) => {
@@ -28,23 +44,30 @@ router.get('/balance', auth, async (req, res) => {
 });
 
 // POST /api/payments/add-funds - Add funds directly (bypass Stripe for development)
-router.post('/add-funds', auth, async (req, res) => {
+router.post('/add-funds', [
+  paymentLimiter,
+  auth,
+  auditLog('PAYMENT_DEPOSIT', 'Payment', { includeBody: true }),
+  body('amount')
+    .isFloat({ min: 0.01, max: 1000000 })
+    .withMessage('Amount must be between 0.01 and 1,000,000')
+    .customSanitizer(value => Math.round(value * 100) / 100), // 2 decimal max
+  body('currency')
+    .optional()
+    .isIn(['AED', 'USD'])
+    .withMessage('Currency must be AED or USD')
+], async (req, res) => {
   try {
-    const { amount, currency = 'AED' } = req.body;
-    
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid amount. Amount must be greater than 0.' 
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
       });
     }
 
-    if (!['AED', 'USD'].includes(currency)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid currency. Only AED and USD are supported.' 
-      });
-    }
+    const { amount, currency = 'AED' } = req.body;
 
     const User = require('../models/User');
     const user = await User.findById(req.user.userId);
@@ -62,6 +85,14 @@ router.post('/add-funds', auth, async (req, res) => {
     await user.save();
 
     console.log(`💰 Added ${amount} ${currency} to user ${user.email} (ID: ${user._id})`);
+
+    // Set audit metadata
+    setAuditMetadata(res, { 
+      amount, 
+      currency, 
+      newBalance: user.cashBalance,
+      method: 'direct_add' 
+    });
 
     return res.json({
       success: true,
@@ -83,15 +114,34 @@ router.post('/add-funds', auth, async (req, res) => {
 });
 
 // POST /api/payments/topup-session - create Embedded Checkout Session
-router.post('/topup-session', auth, async (req, res) => {
+router.post('/topup-session', [
+  paymentLimiter,
+  auth,
+  auditLog('PAYMENT_DEPOSIT', 'Payment', { includeBody: true }),
+  body('amount')
+    .isFloat({ min: 0.01, max: 1000000 })
+    .withMessage('Amount must be between 0.01 and 1,000,000')
+    .customSanitizer(value => Math.round(value * 100) / 100),
+  body('currency')
+    .optional()
+    .isIn(['AED', 'USD', 'aed', 'usd'])
+    .withMessage('Currency must be AED or USD')
+], async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
     if (!stripe) {
       return res.status(400).json({ success: false, message: 'Stripe not configured' });
     }
+    
     const { amount, currency } = req.body || {};
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ success: false, message: 'Invalid amount' });
-    }
     const normalizedCurrency = (currency || 'AED').toLowerCase();
 
     // Load user to provide customer email for receipts/invoices
