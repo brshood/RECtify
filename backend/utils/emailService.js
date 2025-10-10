@@ -18,24 +18,6 @@ class EmailService {
           pass: process.env.EMAIL_PASS // Use App Password for Gmail
         }
       });
-    } else if (process.env.EMAILJS_SERVICE_ID && process.env.EMAILJS_TEMPLATE_ID && process.env.EMAILJS_PUBLIC_KEY) {
-      // EmailJS configuration (for production without SMTP)
-      console.log('📧 Using EmailJS for email delivery (frontend integration)');
-      this.transporter = {
-        sendMail: async (mailOptions) => {
-          // EmailJS is frontend-only, so we'll return success and let frontend handle it
-          console.log('📧 EmailJS integration - email will be sent from frontend');
-          console.log('To:', mailOptions.to);
-          console.log('Subject:', mailOptions.subject);
-          console.log('Verification Code:', this.extractCodeFromEmail(mailOptions.html));
-          console.log('Reset URL:', this.extractUrlFromEmail(mailOptions.html));
-          
-          return { 
-            messageId: 'emailjs-' + Date.now(),
-            response: 'EmailJS integration - frontend will send email'
-          };
-        }
-      };
     } else {
       // Development email configuration (console logging for testing)
       console.log('📧 Using development mode - emails will be logged to console');

@@ -5,7 +5,6 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { sanitizeInput, validateEmail, validatePassword } = require('../middleware/security');
 const emailService = require('../utils/emailService');
-const emailJSService = require('../services/EmailJSService');
 
 const router = express.Router();
 

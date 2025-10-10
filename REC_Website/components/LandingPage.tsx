@@ -104,7 +104,8 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
     
     try {
       // Send contact form via secure backend API
-      const response = await fetch('/api/contact/send', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/contact/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
