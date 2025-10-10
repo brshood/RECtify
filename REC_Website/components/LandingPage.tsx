@@ -1,7 +1,7 @@
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, MapPin, Send, X, FileText, Phone } from "lucide-react";
+import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, MapPin, Send, FileText } from "lucide-react";
 // Use public URL for static assets
 const rectifyLogo = "/logo.png";
 const khaledImage = "/khaled-alsamri.png.JPG";
@@ -20,14 +20,6 @@ interface LandingPageProps {
 
 export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingPageProps) {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [contactForm, setContactForm] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
 
   const features = [
     {
@@ -98,63 +90,6 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
     }
   ];
 
-  const handleContactSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      // Send contact form via secure backend API
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      console.log('Contact form API URL:', apiUrl);
-      console.log('Contact form data:', contactForm);
-      
-      const response = await fetch(`${apiUrl}/contact/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(contactForm)
-      });
-
-      console.log('Contact form response status:', response.status);
-      const result = await response.json();
-      console.log('Contact form response:', result);
-
-      if (result.success) {
-        // Show success popup
-        setShowSuccessPopup(true);
-        
-        // Reset form
-        setContactForm({
-          name: '',
-          email: '',
-          subject: '',
-          message: ''
-        });
-        
-        // Auto-hide the popup after 5 seconds
-        setTimeout(() => {
-          setShowSuccessPopup(false);
-        }, 5000);
-      } else {
-        throw new Error(result.message || 'Failed to send message');
-      }
-      
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      alert('Failed to send message. Please try again or contact us directly at team@rectifygo.com');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setContactForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
 
   // Animation variants
   const fadeInUp = {
@@ -1528,181 +1463,96 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
         </div>
       </motion.section>
 
-      {/* Contact Us Section */}
-      <motion.section 
-        className="py-20 bg-rectify-gradient-light"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        viewport={{ once: true, amount: 0.3 }}
-      >
-        <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto">
-            <motion.div 
-              className="text-center mb-12"
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-              >
-                <Badge className="bg-rectify-green text-white mb-4">Contact Us</Badge>
-              </motion.div>
-              <h2 className="text-3xl md:text-4xl mb-6">
-                Get in Touch with <span className="text-rectify-gradient">RECtify</span>
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                Have questions about I-REC trading or want to learn more about our platform? 
-                We'd love to hear from you.
-              </p>
-            </motion.div>
-            
-            {/* Horizontal Contact Form */}
-            <motion.div 
-              className="bg-rectify-surface p-8 rounded-2xl border border-rectify-border shadow-xl"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.02 }}
-            >
-              <motion.div 
-                className="flex items-center space-x-4 mb-6"
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                viewport={{ once: true }}
-              >
-                <motion.div 
-                  className="p-3 rounded-full bg-rectify-gradient"
-                  whileHover={{ scale: 1.1, rotate: 10 }}
-                >
-                  <Mail className="h-6 w-6 text-white" />
-                </motion.div>
-                <div>
-                  <h3 className="text-xl font-medium">Send us a message</h3>
-                  <p className="text-sm text-rectify-green">We'll get back to you within 24 hours</p>
-                </div>
-              </motion.div>
-              
-              <motion.form 
-                onSubmit={handleContactSubmit}
-                className="space-y-6"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                viewport={{ once: true }}
-              >
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                  variants={staggerContainer}
-                  initial="initial"
-                  whileInView="animate"
-                  viewport={{ once: true }}
-                >
-                  <motion.div variants={fadeInUp}>
-                    <label htmlFor="contact-name" className="block text-sm font-medium mb-2">Your Name</label>
-                    <motion.input
-                      id="contact-name"
-                      type="text"
-                      name="name"
-                      value={contactForm.name}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-lg border border-rectify-border bg-rectify-accent/30 focus:outline-none focus:ring-2 focus:ring-rectify-green focus:border-transparent transition-all duration-300"
-                      placeholder="Enter your full name"
-                      autoComplete="name"
-                      required
-                      whileFocus={{ scale: 1.02 }}
-                    />
-                  </motion.div>
-                  <motion.div variants={fadeInUp}>
-                    <label htmlFor="contact-email" className="block text-sm font-medium mb-2">Email Address</label>
-                    <motion.input
-                      id="contact-email"
-                      type="email"
-                      name="email"
-                      value={contactForm.email}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-lg border border-rectify-border bg-rectify-accent/30 focus:outline-none focus:ring-2 focus:ring-rectify-green focus:border-transparent transition-all duration-300"
-                      placeholder="your.email@example.com"
-                      autoComplete="email"
-                      required
-                      whileFocus={{ scale: 1.02 }}
-                    />
-                  </motion.div>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                  viewport={{ once: true }}
-                >
-                  <label htmlFor="contact-subject" className="block text-sm font-medium mb-2">Subject</label>
-                  <motion.input
-                    id="contact-subject"
-                    type="text"
-                    name="subject"
-                    value={contactForm.subject}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-lg border border-rectify-border bg-rectify-accent/30 focus:outline-none focus:ring-2 focus:ring-rectify-green focus:border-transparent transition-all duration-300"
-                    placeholder="What would you like to discuss?"
-                    autoComplete="off"
-                    required
-                    whileFocus={{ scale: 1.02 }}
-                  />
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.7 }}
-                  viewport={{ once: true }}
-                >
-                  <label htmlFor="contact-message" className="block text-sm font-medium mb-2">Message</label>
-                  <motion.textarea
-                    id="contact-message"
-                    name="message"
-                    value={contactForm.message}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full px-4 py-3 rounded-lg border border-rectify-border bg-rectify-accent/30 focus:outline-none focus:ring-2 focus:ring-rectify-green focus:border-transparent resize-none transition-all duration-300"
-                    placeholder="Tell us about your interest in I-REC trading or any questions you have..."
-                    autoComplete="off"
-                    required
-                    whileFocus={{ scale: 1.02 }}
-                  ></motion.textarea>
-                </motion.div>
-                <motion.div 
-                  className="text-center"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, delay: 0.8 }}
-                  viewport={{ once: true }}
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button 
-                      type="submit"
-                      size="lg"
-                      disabled={isSubmitting}
-                      className="bg-rectify-gradient hover:opacity-90 text-white px-8 py-3 disabled:opacity-50"
-                    >
-                      {isSubmitting ? 'Sending...' : 'Send Message'}
-                      <Send className="ml-2 h-5 w-5" />
-                    </Button>
-                  </motion.div>
-                </motion.div>
-              </motion.form>
-            </motion.div>
-          </div>
-        </div>
-      </motion.section>
+       {/* Contact Us Section */}
+       <motion.section 
+         className="py-20 bg-rectify-gradient-light"
+         initial={{ opacity: 0 }}
+         whileInView={{ opacity: 1 }}
+         transition={{ duration: 0.8 }}
+         viewport={{ once: true, amount: 0.3 }}
+       >
+         <div className="container mx-auto px-6">
+           <div className="max-w-4xl mx-auto text-center">
+             <motion.div 
+               className="mb-12"
+               initial={{ opacity: 0, y: 60 }}
+               whileInView={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.8 }}
+               viewport={{ once: true }}
+             >
+               <motion.div
+                 initial={{ opacity: 0, scale: 0.8 }}
+                 whileInView={{ opacity: 1, scale: 1 }}
+                 transition={{ duration: 0.6 }}
+                 viewport={{ once: true }}
+               >
+                 <Badge className="bg-rectify-green text-white mb-4">Contact Us</Badge>
+               </motion.div>
+               <h2 className="text-3xl md:text-4xl mb-6">
+                 Get in Touch with <span className="text-rectify-gradient">RECtify</span>
+               </h2>
+               <p className="text-xl text-muted-foreground mb-8">
+                 Have questions about I-REC trading or want to learn more about our platform? 
+                 We'd love to hear from you.
+               </p>
+             </motion.div>
+             
+             {/* Contact Button */}
+             <motion.div 
+               className="bg-rectify-surface p-8 rounded-2xl border border-rectify-border shadow-xl"
+               initial={{ opacity: 0, y: 40 }}
+               whileInView={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.8, delay: 0.2 }}
+               viewport={{ once: true }}
+               whileHover={{ scale: 1.02 }}
+             >
+               <motion.div 
+                 className="flex items-center justify-center space-x-4 mb-6"
+                 initial={{ opacity: 0, x: -30 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 transition={{ duration: 0.6, delay: 0.3 }}
+                 viewport={{ once: true }}
+               >
+                 <motion.div 
+                   className="p-3 rounded-full bg-rectify-gradient"
+                   whileHover={{ scale: 1.1, rotate: 10 }}
+                 >
+                   <Mail className="h-6 w-6 text-white" />
+                 </motion.div>
+                 <div>
+                   <h3 className="text-xl font-medium">Send us an email</h3>
+                   <p className="text-sm text-rectify-green">We'll get back to you within 24 hours</p>
+                 </div>
+               </motion.div>
+               
+               <motion.div 
+                 className="text-center"
+                 initial={{ opacity: 0, scale: 0.8 }}
+                 whileInView={{ opacity: 1, scale: 1 }}
+                 transition={{ duration: 0.6, delay: 0.4 }}
+                 viewport={{ once: true }}
+               >
+                 <motion.div
+                   whileHover={{ scale: 1.05 }}
+                   whileTap={{ scale: 0.95 }}
+                 >
+                   <Button 
+                     size="lg"
+                     className="bg-rectify-gradient hover:opacity-90 text-white px-8 py-3"
+                     onClick={() => window.open('mailto:team@rectifygo.com?subject=Inquiry about RECtify Platform', '_blank')}
+                   >
+                     Contact Us via Email
+                     <Send className="ml-2 h-5 w-5" />
+                   </Button>
+                 </motion.div>
+                 <p className="text-sm text-muted-foreground mt-4">
+                   Click the button above to open your email client
+                 </p>
+               </motion.div>
+             </motion.div>
+           </div>
+         </div>
+       </motion.section>
 
       {/* Footer with Contact Information */}
       <footer className="bg-rectify-surface border-t border-rectify-border">
@@ -1808,72 +1658,6 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
         </div>
       </footer>
 
-      {/* Success Popup */}
-      {showSuccessPopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-rectify-surface rounded-2xl border border-rectify-border shadow-2xl max-w-md w-full mx-auto transform transition-all duration-300 scale-100">
-            <div className="p-8 text-center">
-              {/* Success Icon */}
-              <div className="mx-auto mb-6 p-4 rounded-full bg-rectify-gradient w-16 h-16 flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-white" />
-              </div>
-              
-              {/* Success Message */}
-              <div className="mb-6">
-                <h3 className="text-2xl mb-3 text-rectify-green">Message Sent Successfully!</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Thank you for reaching out to RECtify. We've received your message and will get back to you 
-                  at <span className="font-medium text-rectify-blue">{contactForm.email || 'your email'}</span> within 24 hours.
-                </p>
-              </div>
-              
-              {/* Contact Info Reminder */}
-              <div className="bg-rectify-accent/50 p-4 rounded-lg border border-rectify-border mb-6">
-                <p className="text-sm text-muted-foreground mb-2">
-                  For urgent inquiries, you can also reach us directly:
-                </p>
-                <div className="flex flex-col space-y-1 text-sm">
-                  <div className="flex items-center justify-center space-x-2">
-                    <Mail className="h-4 w-4 text-rectify-green" />
-                    <a 
-                      href="mailto:alsamrikhaled@gmail.com" 
-                      className="text-rectify-blue hover:text-rectify-green transition-colors"
-                    >
-                      alsamrikhaled@gmail.com
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Phone className="h-4 w-4 text-rectify-green" />
-                    <a 
-                      href="tel:+971506835444" 
-                      className="text-rectify-blue hover:text-rectify-green transition-colors"
-                    >
-                      +971 50 683 5444
-                    </a>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Close Button */}
-              <Button 
-                onClick={() => setShowSuccessPopup(false)}
-                className="bg-rectify-gradient hover:opacity-90 text-white px-6 py-3"
-              >
-                Continue Exploring
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              
-              {/* Close X Button */}
-              <button
-                onClick={() => setShowSuccessPopup(false)}
-                className="absolute top-4 right-4 p-2 rounded-full hover:bg-rectify-accent transition-colors"
-              >
-                <X className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Info Modal */}
       <InfoModal 
