@@ -6,7 +6,7 @@ const createTestUser = async (overrides = {}) => {
   
   const defaultUser = {
     email: `test-${Date.now()}@rectify.ae`,
-    password: await bcrypt.hash('TestPassword123!', 10),
+    password: 'TestPassword123!', // Plain password - model will hash it
     firstName: 'Test',
     lastName: 'User',
     company: 'Test Company',

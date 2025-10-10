@@ -36,15 +36,15 @@ describe('Orders API', () => {
       };
 
       const response = await request(app)
-        .post('/api/orders')
+        .post('/api/orders/buy')
         .set('Authorization', `Bearer ${token}`)
         .send(orderData)
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.orderType).toBe('buy');
-      expect(response.body.data.status).toBe('pending');
-      expect(response.body.data.userId.toString()).toBe(user._id.toString());
+      expect(response.body.order.orderType).toBe('buy');
+      expect(response.body.order.status).toBe('pending');
+      expect(response.body.order.userId.toString()).toBe(user._id.toString());
     });
 
     it('should create a sell order when user has holdings', async () => {
@@ -71,13 +71,13 @@ describe('Orders API', () => {
       };
 
       const response = await request(app)
-        .post('/api/orders')
+        .post('/api/orders/sell')
         .set('Authorization', `Bearer ${token}`)
         .send(orderData)
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.orderType).toBe('sell');
+      expect(response.body.order.orderType).toBe('sell');
     });
 
     it('should reject sell order without sufficient holdings', async () => {
@@ -94,13 +94,13 @@ describe('Orders API', () => {
       };
 
       const response = await request(app)
-        .post('/api/orders')
+        .post('/api/orders/sell')
         .set('Authorization', `Bearer ${token}`)
         .send(orderData)
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('holdings');
+      expect(response.body.message).toContain('holding');
     });
 
     it('should reject buy order without sufficient cash balance', async () => {
@@ -123,7 +123,7 @@ describe('Orders API', () => {
       };
 
       const response = await request(app)
-        .post('/api/orders')
+        .post('/api/orders/buy')
         .set('Authorization', `Bearer ${poorToken}`)
         .send(orderData)
         .expect(400);
@@ -146,7 +146,7 @@ describe('Orders API', () => {
       };
 
       const response = await request(app)
-        .post('/api/orders')
+        .post('/api/orders/buy')
         .set('Authorization', `Bearer ${token}`)
         .send(orderData)
         .expect(400);
@@ -174,7 +174,7 @@ describe('Orders API', () => {
       await createTestOrder(user._id, { orderType: 'sell', holdingId: '507f1f77bcf86cd799439011' });
 
       const response = await request(app)
-        .get('/api/orders?orderType=buy')
+        .get('/api/orders?type=buy')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
@@ -196,12 +196,12 @@ describe('Orders API', () => {
     });
   });
 
-  describe('DELETE /api/orders/:id', () => {
+  describe('PUT /api/orders/:id/cancel', () => {
     it('should cancel active order', async () => {
       const order = await createTestOrder(user._id, { status: 'pending' });
 
       const response = await request(app)
-        .delete(`/api/orders/${order._id}`)
+        .put(`/api/orders/${order._id}/cancel`)
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
@@ -217,7 +217,7 @@ describe('Orders API', () => {
       const otherOrder = await createTestOrder(otherUser._id);
 
       const response = await request(app)
-        .delete(`/api/orders/${otherOrder._id}`)
+        .put(`/api/orders/${otherOrder._id}/cancel`)
         .set('Authorization', `Bearer ${token}`)
         .expect(403);
 
@@ -228,7 +228,7 @@ describe('Orders API', () => {
       const order = await createTestOrder(user._id, { status: 'completed' });
 
       const response = await request(app)
-        .delete(`/api/orders/${order._id}`)
+        .put(`/api/orders/${order._id}/cancel`)
         .set('Authorization', `Bearer ${token}`)
         .expect(400);
 

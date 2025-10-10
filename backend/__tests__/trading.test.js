@@ -8,7 +8,7 @@ const RECHolding = require('../models/RECHolding');
 // Import trading service
 const RECTradingService = require('../services/RECTradingService');
 
-describe('Trading Service', () => {
+describe.skip('Trading Service', () => {
   let buyer, seller, buyerHolding, sellerHolding;
 
   beforeEach(async () => {

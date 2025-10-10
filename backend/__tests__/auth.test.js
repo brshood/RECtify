@@ -28,9 +28,9 @@ describe('Authentication API', () => {
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('token');
-      expect(response.body.data.user.email).toBe(userData.email);
-      expect(response.body.data.user).not.toHaveProperty('password');
+      expect(response.body).toHaveProperty('token');
+      expect(response.body.user.email).toBe(userData.email);
+      expect(response.body.user).not.toHaveProperty('password');
     });
 
     it('should reject registration with weak password', async () => {
@@ -91,7 +91,7 @@ describe('Authentication API', () => {
         .send(userData)
         .expect(201);
 
-      expect(response.body.data.user.firstName).not.toContain('<script>');
+      expect(response.body.user.firstName).not.toContain('<script>');
     });
   });
 
@@ -110,8 +110,8 @@ describe('Authentication API', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('token');
-      expect(response.body.data.user.email).toBe('login@rectify.ae');
+      expect(response.body).toHaveProperty('token');
+      expect(response.body.user.email).toBe('login@rectify.ae');
     });
 
     it('should reject invalid credentials', async () => {
@@ -171,7 +171,7 @@ describe('Authentication API', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.email).toBe('me@rectify.ae');
+      expect(response.body.user.email).toBe('me@rectify.ae');
     });
 
     it('should reject request without token', async () => {
