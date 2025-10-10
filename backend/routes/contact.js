@@ -5,6 +5,15 @@ const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
+// Health check endpoint for contact form
+router.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Contact form service is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Rate limiting for contact form
 const contactLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -54,6 +63,15 @@ router.post('/send', contactLimiter, [
 
   } catch (error) {
     console.error('Contact form error:', error);
+    
+    // Log more details for debugging
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      stack: error.stack
+    });
+    
     res.status(500).json({
       success: false,
       message: 'Failed to send message. Please try again later.'

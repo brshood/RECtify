@@ -105,6 +105,9 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
     try {
       // Send contact form via secure backend API
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      console.log('Contact form API URL:', apiUrl);
+      console.log('Contact form data:', contactForm);
+      
       const response = await fetch(`${apiUrl}/contact/send`, {
         method: 'POST',
         headers: {
@@ -113,7 +116,9 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
         body: JSON.stringify(contactForm)
       });
 
+      console.log('Contact form response status:', response.status);
       const result = await response.json();
+      console.log('Contact form response:', result);
 
       if (result.success) {
         // Show success popup
@@ -460,19 +465,6 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                     </Button>
                   </motion.div>
                 </div>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-rectify-border hover:bg-rectify-accent px-8 py-6 text-lg"
-                  onClick={() => setIsInfoModalOpen(true)}
-                >
-                  Learn More
-                </Button>
               </motion.div>
             </motion.div>
             
@@ -1093,20 +1085,6 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         </motion.li>
                       ))}
                     </motion.ul>
-                    <div className="mt-6 pt-6 border-t border-rectify-border">
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button 
-                          variant="outline" 
-                          className="w-full border-rectify-border hover:bg-rectify-accent hover:border-rectify-green transition-all duration-300"
-                        >
-                          Learn More
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </motion.div>
-                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
