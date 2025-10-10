@@ -118,7 +118,28 @@ BLOCKCHAIN_CONFIRMATION_TIMEOUT=300000
 BLOCKCHAIN_PURPOSE=REC_SECURITY_AND_AUDIT
 ```
 
-## Testing and Demo Data
+## Testing
+
+### Automated Tests
+```bash
+# Backend tests
+cd backend
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Watch mode
+npm run test:watch
+```
+
+Test coverage includes:
+- Authentication (registration, login, password reset, JWT validation)
+- Order management (creation, matching, cancellation)
+- Trading engine (order matching, portfolio updates, transactions)
+- Security (XSS protection, rate limiting, NoSQL injection prevention)
+
+### Demo Data
 ```bash
 # Seed sample users/holdings/orders
 cd backend
@@ -147,11 +168,11 @@ VITE_EMAILJS_PUBLIC_KEY=...
 
 ### Development Tags
 - 🔒 **Security Hardened** - Enterprise-grade security implementation
-- 🧪 **Fully Tested** - Comprehensive testing with demo data
+- 🧪 **Test Coverage** - Comprehensive test suite for critical paths
 - 📦 **Production Ready** - Deployment-ready with CI/CD
 - 🌐 **Network Trading** - Real-time order book and matching
 - ⚡ **High Performance** - Optimized for scalability
-- 🔍 **Lint Free** - Clean, maintainable codebase
+- 📋 **Soft Launch Ready** - Pre-launch checklist completed
 
 ## License
 - Proprietary. All rights reserved (update if license changes).
