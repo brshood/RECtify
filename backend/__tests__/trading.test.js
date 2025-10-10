@@ -25,7 +25,8 @@ describe('Trading Service', () => {
     // Create holdings for seller
     sellerHolding = await createTestHolding(seller._id, {
       facilityName: 'Solar Farm A',
-      energyType: 'Solar',
+      facilityId: 'FAC-SOLAR-A',
+      energyType: 'solar',
       quantity: 1000,
       vintage: 2024,
       emirate: 'Abu Dhabi'
@@ -36,26 +37,29 @@ describe('Trading Service', () => {
     it('should match compatible buy and sell orders', async () => {
       // Create sell order
       const sellOrder = await createTestOrder(seller._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
         emirate: 'Abu Dhabi',
-        status: 'active'
+        status: 'pending',
+        holdingId: sellerHolding._id
       });
 
       // Create matching buy order
       const buyOrder = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
         emirate: 'Abu Dhabi',
-        status: 'active'
+        status: 'pending'
       });
 
       // Attempt to match orders
@@ -77,19 +81,22 @@ describe('Trading Service', () => {
 
     it('should not match orders with different facilities', async () => {
       const sellOrder = await createTestOrder(seller._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: sellerHolding._id
       });
 
       const buyOrder = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm B',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-B',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -109,19 +116,22 @@ describe('Trading Service', () => {
 
     it('should not match orders with incompatible prices', async () => {
       const sellOrder = await createTestOrder(seller._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 60,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: sellerHolding._id
       });
 
       const buyOrder = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -142,20 +152,23 @@ describe('Trading Service', () => {
     it('should handle partial order fills', async () => {
       // Create large sell order
       const sellOrder = await createTestOrder(seller._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 500,
         price: 50,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: sellerHolding._id
       });
 
       // Create smaller buy order
       const buyOrder = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -165,9 +178,9 @@ describe('Trading Service', () => {
       const result = await RECTradingService.matchOrders(buyOrder._id);
 
       if (result && result.success) {
-        // Buy order should be filled
+        // Buy order should be completed
         const updatedBuyOrder = await Order.findById(buyOrder._id);
-        expect(updatedBuyOrder.status).toBe('filled');
+        expect(updatedBuyOrder.status).toBe('completed');
 
         // Sell order should be partially filled
         const updatedSellOrder = await Order.findById(sellOrder._id);
@@ -180,19 +193,22 @@ describe('Trading Service', () => {
   describe('Portfolio Updates', () => {
     it('should update buyer holdings after successful trade', async () => {
       const sellOrder = await createTestOrder(seller._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: sellerHolding._id
       });
 
       const buyOrder = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -216,19 +232,22 @@ describe('Trading Service', () => {
       const initialQuantity = sellerHolding.quantity;
 
       const sellOrder = await createTestOrder(seller._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: sellerHolding._id
       });
 
       const buyOrder = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -248,19 +267,22 @@ describe('Trading Service', () => {
   describe('Transaction Fees', () => {
     it('should calculate and apply platform fees', async () => {
       const sellOrder = await createTestOrder(seller._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: sellerHolding._id
       });
 
       const buyOrder = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -284,28 +306,32 @@ describe('Trading Service', () => {
   describe('Edge Cases', () => {
     it('should handle user trading with themselves', async () => {
       // Create holdings for buyer so they can also sell
-      await createTestHolding(buyer._id, {
+      const buyerHolding = await createTestHolding(buyer._id, {
         facilityName: 'Solar Farm B',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-B',
+        energyType: 'solar',
         quantity: 500,
         vintage: 2024,
         emirate: 'Dubai'
       });
 
       const sellOrder = await createTestOrder(buyer._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm B',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-B',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
-        emirate: 'Dubai'
+        emirate: 'Dubai',
+        holdingId: buyerHolding._id
       });
 
       const buyOrder = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm B',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-B',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -323,9 +349,10 @@ describe('Trading Service', () => {
     it('should handle concurrent order matching', async () => {
       // Create multiple buy orders
       const buyOrder1 = await createTestOrder(buyer._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -338,9 +365,10 @@ describe('Trading Service', () => {
       });
 
       const buyOrder2 = await createTestOrder(buyer2._id, {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
@@ -349,13 +377,15 @@ describe('Trading Service', () => {
 
       // Create single sell order
       const sellOrder = await createTestOrder(seller._id, {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: sellerHolding._id
       });
 
       // Attempt to match both (only one should succeed)

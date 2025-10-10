@@ -24,13 +24,15 @@ describe('Orders API', () => {
   describe('POST /api/orders', () => {
     it('should create a buy order with valid data', async () => {
       const orderData = {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 50,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        purpose: 'compliance'
       };
 
       const response = await request(app)
@@ -40,29 +42,32 @@ describe('Orders API', () => {
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.type).toBe('buy');
-      expect(response.body.data.status).toBe('active');
+      expect(response.body.data.orderType).toBe('buy');
+      expect(response.body.data.status).toBe('pending');
       expect(response.body.data.userId.toString()).toBe(user._id.toString());
     });
 
     it('should create a sell order when user has holdings', async () => {
       // Create holdings for user
-      await createTestHolding(user._id, {
+      const holding = await createTestHolding(user._id, {
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 500,
         vintage: 2024,
         emirate: 'Abu Dhabi'
       });
 
       const orderData = {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 55,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: holding._id.toString()
       };
 
       const response = await request(app)
@@ -72,18 +77,20 @@ describe('Orders API', () => {
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.type).toBe('sell');
+      expect(response.body.data.orderType).toBe('sell');
     });
 
     it('should reject sell order without sufficient holdings', async () => {
       const orderData = {
-        type: 'sell',
+        orderType: 'sell',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 100,
         price: 55,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        holdingId: '507f1f77bcf86cd799439011' // fake holding ID
       };
 
       const response = await request(app)
@@ -104,13 +111,15 @@ describe('Orders API', () => {
       const poorToken = generateJWT(poorUser._id);
 
       const orderData = {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: 1000,
         price: 1000, // Requires 1,000,000 AED
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        purpose: 'compliance'
       };
 
       const response = await request(app)
@@ -125,13 +134,15 @@ describe('Orders API', () => {
 
     it('should reject order with invalid quantity', async () => {
       const orderData = {
-        type: 'buy',
+        orderType: 'buy',
         facilityName: 'Solar Farm A',
-        energyType: 'Solar',
+        facilityId: 'FAC-SOLAR-A',
+        energyType: 'solar',
         quantity: -100,
         price: 50,
         vintage: 2024,
-        emirate: 'Abu Dhabi'
+        emirate: 'Abu Dhabi',
+        purpose: 'compliance'
       };
 
       const response = await request(app)
@@ -146,8 +157,8 @@ describe('Orders API', () => {
 
   describe('GET /api/orders', () => {
     it('should return user orders', async () => {
-      await createTestOrder(user._id, { type: 'buy' });
-      await createTestOrder(user._id, { type: 'sell' });
+      await createTestOrder(user._id, { orderType: 'buy' });
+      await createTestOrder(user._id, { orderType: 'sell', holdingId: '507f1f77bcf86cd799439011' });
 
       const response = await request(app)
         .get('/api/orders')
@@ -159,35 +170,35 @@ describe('Orders API', () => {
     });
 
     it('should filter orders by type', async () => {
-      await createTestOrder(user._id, { type: 'buy' });
-      await createTestOrder(user._id, { type: 'sell' });
+      await createTestOrder(user._id, { orderType: 'buy' });
+      await createTestOrder(user._id, { orderType: 'sell', holdingId: '507f1f77bcf86cd799439011' });
 
       const response = await request(app)
-        .get('/api/orders?type=buy')
+        .get('/api/orders?orderType=buy')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
       expect(response.body.data.length).toBe(1);
-      expect(response.body.data[0].type).toBe('buy');
+      expect(response.body.data[0].orderType).toBe('buy');
     });
 
     it('should filter orders by status', async () => {
-      await createTestOrder(user._id, { status: 'active' });
-      await createTestOrder(user._id, { status: 'filled' });
+      await createTestOrder(user._id, { status: 'pending' });
+      await createTestOrder(user._id, { status: 'completed' });
 
       const response = await request(app)
-        .get('/api/orders?status=active')
+        .get('/api/orders?status=pending')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
       expect(response.body.data.length).toBe(1);
-      expect(response.body.data[0].status).toBe('active');
+      expect(response.body.data[0].status).toBe('pending');
     });
   });
 
   describe('DELETE /api/orders/:id', () => {
     it('should cancel active order', async () => {
-      const order = await createTestOrder(user._id, { status: 'active' });
+      const order = await createTestOrder(user._id, { status: 'pending' });
 
       const response = await request(app)
         .delete(`/api/orders/${order._id}`)
@@ -213,8 +224,8 @@ describe('Orders API', () => {
       expect(response.body.success).toBe(false);
     });
 
-    it('should not cancel filled order', async () => {
-      const order = await createTestOrder(user._id, { status: 'filled' });
+    it('should not cancel completed order', async () => {
+      const order = await createTestOrder(user._id, { status: 'completed' });
 
       const response = await request(app)
         .delete(`/api/orders/${order._id}`)

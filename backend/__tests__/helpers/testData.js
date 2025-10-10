@@ -31,14 +31,14 @@ const createTestHolding = async (userId, overrides = {}) => {
     userId,
     facilityName: 'Test Solar Farm',
     facilityId: `FAC-${Date.now()}`,
-    energyType: 'Solar',
+    energyType: 'solar', // lowercase
     quantity: 1000,
     vintage: 2024,
+    averagePurchasePrice: 50, // required
+    totalValue: 50000, // required (quantity * price)
     emirate: 'Abu Dhabi',
+    certificationStandard: 'I-REC',
     acquisitionDate: new Date(),
-    acquisitionPrice: 50,
-    currentPrice: 55,
-    status: 'active',
     ...overrides
   };
   
@@ -47,18 +47,28 @@ const createTestHolding = async (userId, overrides = {}) => {
 
 const createTestOrder = async (userId, overrides = {}) => {
   const Order = require('../../models/Order');
+  const User = require('../../models/User');
+  
+  // Get user's name for createdBy field
+  const user = await User.findById(userId);
+  const userName = user ? `${user.firstName} ${user.lastName}` : 'Test User';
   
   const defaultOrder = {
     userId,
-    type: 'buy',
+    orderType: 'buy', // not 'type'
     facilityName: 'Test Solar Farm',
-    energyType: 'Solar',
+    facilityId: `FAC-${Date.now()}`,
+    energyType: 'solar', // lowercase
     quantity: 100,
+    remainingQuantity: 100, // required
     price: 50,
     totalValue: 5000,
     vintage: 2024,
     emirate: 'Abu Dhabi',
-    status: 'active',
+    certificationStandard: 'I-REC',
+    status: 'pending', // not 'active'
+    createdBy: userName, // required
+    purpose: 'compliance', // required for buy orders
     ...overrides
   };
   
@@ -72,14 +82,19 @@ const createTestTransaction = async (buyerId, sellerId, overrides = {}) => {
     buyerId,
     sellerId,
     facilityName: 'Test Solar Farm',
-    energyType: 'Solar',
+    facilityId: `FAC-${Date.now()}`,
+    energyType: 'solar', // lowercase
     quantity: 100,
-    price: 50,
-    totalValue: 5000,
+    pricePerUnit: 50,
+    totalAmount: 5000,
+    buyerPlatformFee: 100,
+    sellerPlatformFee: 100,
+    blockchainFee: 5,
     vintage: 2024,
     emirate: 'Abu Dhabi',
-    platformFee: 25,
+    certificationStandard: 'I-REC',
     status: 'completed',
+    settlementStatus: 'completed',
     ...overrides
   };
   
