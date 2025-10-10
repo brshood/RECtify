@@ -6,8 +6,8 @@ const User = require('../models/User');
 // Create minimal app for testing
 const app = express();
 app.use(express.json());
-const { sanitizeInput } = require('../middleware/security');
-app.use(sanitizeInput);
+const { xssProtection } = require('../middleware/security');
+app.use(xssProtection);
 const authRoutes = require('../routes/auth');
 app.use('/api/auth', authRoutes);
 

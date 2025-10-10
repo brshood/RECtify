@@ -43,7 +43,10 @@ describe('Orders API', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.order.orderType).toBe('buy');
       expect(response.body.data.order.status).toBe('pending');
-      expect(response.body.data.order.userId.toString()).toBe(user._id.toString());
+      const returnedUserId = typeof response.body.data.order.userId === 'object' 
+        ? response.body.data.order.userId._id 
+        : response.body.data.order.userId;
+      expect(returnedUserId.toString()).toBe(user._id.toString());
     });
 
     it('should create a sell order when user has holdings', async () => {
@@ -98,7 +101,7 @@ describe('Orders API', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('insufficient'); // "Insufficient quantity"
+      expect(response.body.message.toLowerCase()).toContain('insufficient'); // "Insufficient quantity"
     });
 
     it('should reject buy order without sufficient cash balance', async () => {
