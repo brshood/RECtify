@@ -1,18 +1,25 @@
 // Initialize Sentry FIRST - before all other imports
 const Sentry = require('@sentry/node');
-const { ProfilingIntegration } = require('@sentry/profiling-node');
 
 // Load environment variables
 require('dotenv').config();
 
 // Initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
+  // Try to load profiling (optional, may not be available in all environments)
+  let integrations = [];
+  try {
+    const { ProfilingIntegration } = require('@sentry/profiling-node');
+    integrations.push(new ProfilingIntegration());
+    console.log('✅ Sentry profiling enabled');
+  } catch (err) {
+    console.log('⚠️  Sentry profiling not available, skipping');
+  }
+
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
-    integrations: [
-      new ProfilingIntegration(),
-    ],
+    integrations,
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     beforeSend(event) {
