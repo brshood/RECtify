@@ -1,36 +1,22 @@
 // Initialize Sentry FIRST - before all other imports
 let Sentry = null;
-let sentryEnabled = false;
 
 // Load environment variables
 require('dotenv').config();
 
-// Initialize Sentry if DSN is provided
+// Initialize Sentry if DSN is provided (simplified - no handlers)
 if (process.env.SENTRY_DSN) {
   try {
     Sentry = require('@sentry/node');
     
-    // Try to load profiling (optional, may not be available in all environments)
-    let integrations = [];
-    try {
-      const { ProfilingIntegration } = require('@sentry/profiling-node');
-      integrations.push(new ProfilingIntegration());
-      console.log('✅ Sentry profiling enabled');
-    } catch (err) {
-      console.log('⚠️  Sentry profiling not available, skipping');
-    }
-
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV || 'development',
-      integrations,
       tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-      profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
       beforeSend(event) {
         // Strip sensitive data from error reports
         if (event.request) {
           if (event.request.data) {
-            // Remove sensitive fields
             delete event.request.data.password;
             delete event.request.data.token;
             delete event.request.data.resetCode;
@@ -44,13 +30,7 @@ if (process.env.SENTRY_DSN) {
       }
     });
     
-    // Verify Handlers exist
-    if (Sentry && Sentry.Handlers) {
-      sentryEnabled = true;
-      console.log('✅ Sentry monitoring initialized');
-    } else {
-      console.log('⚠️  Sentry initialized but handlers not available');
-    }
+    console.log('✅ Sentry error capture initialized (handlers disabled)');
   } catch (err) {
     console.log('⚠️  Sentry initialization failed:', err.message);
     Sentry = null;
@@ -211,12 +191,6 @@ app.use(securityHeaders);
 app.use(validateRequestSize);
 app.use(xssProtection);
 
-// Sentry request tracking (if enabled)
-if (sentryEnabled && Sentry && Sentry.Handlers) {
-  app.use(Sentry.Handlers.requestHandler());
-  app.use(Sentry.Handlers.tracingHandler());
-}
-
 // Performance monitoring middleware
 app.use((req, res, next) => {
   req.startTime = Date.now();
@@ -317,13 +291,13 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Sentry error handler (must be before other error handlers)
-if (sentryEnabled && Sentry && Sentry.Handlers) {
-  app.use(Sentry.Handlers.errorHandler());
-}
-
 // Error handling middleware - Production optimized
 app.use((error, req, res, next) => {
+  // Capture error with Sentry if available
+  if (Sentry) {
+    Sentry.captureException(error);
+  }
+
   // Log error details (but not to client in production)
   if (process.env.NODE_ENV === 'production') {
     console.error('Production Error:', {
