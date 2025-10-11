@@ -69,7 +69,8 @@ describe('Orders API', () => {
 
     it('should create a sell order when user has holdings', async () => {
       // Create holdings for user
-      const holding = await createTestHolding(user._id, {
+      const holding = await createTestHolding({
+        userId: user._id,
         facilityName: 'Solar Farm A',
         facilityId: 'FAC-SOLAR-A',
         energyType: 'solar',
@@ -102,7 +103,8 @@ describe('Orders API', () => {
 
     it('should reject sell order without sufficient holdings', async () => {
       // Create a holding first, then try to sell more than available
-      const holding = await createTestHolding(user._id, {
+      const holding = await createTestHolding({
+        userId: user._id,
         quantity: 50 // Only 50 available
       });
 

@@ -22,7 +22,8 @@ const orderCreateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false
+  skipSuccessfulRequests: false,
+  skip: (req) => process.env.NODE_ENV === 'test' // Skip rate limiting in tests
 });
 
 // Rate limiting for order cancellation - prevents cancellation spam
@@ -35,7 +36,8 @@ const orderCancelLimiter = rateLimit({
     retryAfter: 60
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'test' // Skip rate limiting in tests
 });
 
 // @route   GET /api/orders

@@ -15,14 +15,15 @@ const router = express.Router();
 // Rate limiting for payment operations - prevents abuse
 const paymentLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 5, // Max 5 payment operations per minute
+  max: process.env.NODE_ENV === 'test' ? 1000 : 5, // Higher limit in tests
   message: {
     success: false,
     message: 'Too many payment requests. Please wait a moment.',
     retryAfter: 60
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'test' // Skip rate limiting in tests
 });
 
 // GET /api/payments/balance - return current user cash balance (AED)

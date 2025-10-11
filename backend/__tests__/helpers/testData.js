@@ -24,11 +24,10 @@ const createTestUser = async (overrides = {}) => {
   return await User.create(defaultUser);
 };
 
-const createTestHolding = async (userId, overrides = {}) => {
+const createTestHolding = async (overrides = {}) => {
   const RECHolding = require('../../models/RECHolding');
   
   const defaultHolding = {
-    userId,
     facilityName: 'Test Solar Farm',
     facilityId: `FAC-${Date.now()}`,
     energyType: 'solar', // lowercase
