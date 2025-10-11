@@ -1,40 +1,46 @@
 // Initialize Sentry FIRST - before all other imports
-let Sentry = null;
+const Sentry = require('@sentry/node');
+const Tracing = require('@sentry/tracing');
 
 // Load environment variables
 require('dotenv').config();
 
-// Initialize Sentry if DSN is provided (simplified - no handlers)
+// Initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
-  try {
-    Sentry = require('@sentry/node');
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
     
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      environment: process.env.NODE_ENV || 'development',
-      tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-      beforeSend(event) {
-        // Strip sensitive data from error reports
-        if (event.request) {
-          if (event.request.data) {
-            delete event.request.data.password;
-            delete event.request.data.token;
-            delete event.request.data.resetCode;
-          }
-          if (event.request.headers) {
-            delete event.request.headers.authorization;
-            delete event.request.headers.cookie;
-          }
+    // Performance Monitoring
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    
+    // Integrations are auto-detected in v7, but we can specify for clarity
+    integrations: [
+      // Automatically instrument Node.js libraries
+      new Sentry.Integrations.Http({ tracing: true }),
+      // Express integration will be added after app creation
+    ],
+    
+    beforeSend(event) {
+      // Strip sensitive data from error reports
+      if (event.request) {
+        if (event.request.data) {
+          delete event.request.data.password;
+          delete event.request.data.token;
+          delete event.request.data.resetCode;
         }
-        return event;
+        if (event.request.headers) {
+          delete event.request.headers.authorization;
+          delete event.request.headers.cookie;
+        }
       }
-    });
-    
-    console.log('✅ Sentry error capture initialized (handlers disabled)');
-  } catch (err) {
-    console.log('⚠️  Sentry initialization failed:', err.message);
-    Sentry = null;
-  }
+      return event;
+    }
+  });
+  
+  console.log('✅ Sentry monitoring initialized (v7)');
+} else {
+  console.log('⚠️  SENTRY_DSN not set - monitoring disabled');
 }
 
 const express = require('express');
@@ -64,6 +70,12 @@ const RECSecurityService = require('./services/RECSecurityService');
 const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
 
 const app = express();
+
+// Add Express integration to Sentry (must be after app creation)
+if (process.env.SENTRY_DSN) {
+  Sentry.Integrations.Express = new Tracing.Integrations.Express({ app });
+}
+
 // Mount Stripe webhook BEFORE any body parsers or limiters
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), payments.webhookHandler);
 const PORT = process.env.PORT || 5000;
@@ -191,6 +203,12 @@ app.use(securityHeaders);
 app.use(validateRequestSize);
 app.use(xssProtection);
 
+// Sentry request tracking - must be early in middleware stack
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
+
 // Performance monitoring middleware
 app.use((req, res, next) => {
   req.startTime = Date.now();
@@ -291,10 +309,15 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Sentry error handler - must be BEFORE other error handlers
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.errorHandler());
+}
+
 // Error handling middleware - Production optimized
 app.use((error, req, res, next) => {
-  // Capture error with Sentry if available
-  if (Sentry) {
+  // Manual capture as backup (Sentry.Handlers.errorHandler already captured it)
+  if (process.env.SENTRY_DSN && Sentry) {
     Sentry.captureException(error);
   }
 
