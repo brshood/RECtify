@@ -1,45 +1,60 @@
 // Initialize Sentry FIRST - before all other imports
-const Sentry = require('@sentry/node');
+let Sentry = null;
+let sentryEnabled = false;
 
 // Load environment variables
 require('dotenv').config();
 
 // Initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
-  // Try to load profiling (optional, may not be available in all environments)
-  let integrations = [];
   try {
-    const { ProfilingIntegration } = require('@sentry/profiling-node');
-    integrations.push(new ProfilingIntegration());
-    console.log('✅ Sentry profiling enabled');
-  } catch (err) {
-    console.log('⚠️  Sentry profiling not available, skipping');
-  }
-
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV || 'development',
-    integrations,
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    beforeSend(event) {
-      // Strip sensitive data from error reports
-      if (event.request) {
-        if (event.request.data) {
-          // Remove sensitive fields
-          delete event.request.data.password;
-          delete event.request.data.token;
-          delete event.request.data.resetCode;
-        }
-        if (event.request.headers) {
-          delete event.request.headers.authorization;
-          delete event.request.headers.cookie;
-        }
-      }
-      return event;
+    Sentry = require('@sentry/node');
+    
+    // Try to load profiling (optional, may not be available in all environments)
+    let integrations = [];
+    try {
+      const { ProfilingIntegration } = require('@sentry/profiling-node');
+      integrations.push(new ProfilingIntegration());
+      console.log('✅ Sentry profiling enabled');
+    } catch (err) {
+      console.log('⚠️  Sentry profiling not available, skipping');
     }
-  });
-  console.log('✅ Sentry monitoring initialized');
+
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || 'development',
+      integrations,
+      tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+      profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+      beforeSend(event) {
+        // Strip sensitive data from error reports
+        if (event.request) {
+          if (event.request.data) {
+            // Remove sensitive fields
+            delete event.request.data.password;
+            delete event.request.data.token;
+            delete event.request.data.resetCode;
+          }
+          if (event.request.headers) {
+            delete event.request.headers.authorization;
+            delete event.request.headers.cookie;
+          }
+        }
+        return event;
+      }
+    });
+    
+    // Verify Handlers exist
+    if (Sentry && Sentry.Handlers) {
+      sentryEnabled = true;
+      console.log('✅ Sentry monitoring initialized');
+    } else {
+      console.log('⚠️  Sentry initialized but handlers not available');
+    }
+  } catch (err) {
+    console.log('⚠️  Sentry initialization failed:', err.message);
+    Sentry = null;
+  }
 }
 
 const express = require('express');
@@ -197,7 +212,7 @@ app.use(validateRequestSize);
 app.use(xssProtection);
 
 // Sentry request tracking (if enabled)
-if (process.env.SENTRY_DSN) {
+if (sentryEnabled && Sentry && Sentry.Handlers) {
   app.use(Sentry.Handlers.requestHandler());
   app.use(Sentry.Handlers.tracingHandler());
 }
@@ -303,7 +318,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Sentry error handler (must be before other error handlers)
-if (process.env.SENTRY_DSN) {
+if (sentryEnabled && Sentry && Sentry.Handlers) {
   app.use(Sentry.Handlers.errorHandler());
 }
 
