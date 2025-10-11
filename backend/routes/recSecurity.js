@@ -5,6 +5,32 @@ const RECSecurityService = require('../services/RECSecurityService');
 const RECTradingService = require('../services/RECTradingService');
 const router = express.Router();
 
+// @route   GET /api/rec-security/config
+// @desc    Get REC security configuration (non-sensitive)
+// @access  Public
+router.get('/config', (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        blockchain_network: process.env.BLOCKCHAIN_NETWORK || 'localhost',
+        infura_configured: !!(process.env.INFURA_API_KEY && process.env.INFURA_API_KEY !== 'your_infura_api_key_here'),
+        infura_secret_configured: !!(process.env.INFURA_API_KEY_SECRET && process.env.INFURA_API_KEY_SECRET !== 'your_infura_project_secret_here'),
+        local_blockchain_url: process.env.LOCAL_BLOCKCHAIN_URL || 'http://localhost:8545',
+        gas_limit: process.env.BLOCKCHAIN_GAS_LIMIT || '100000',
+        confirmation_timeout: process.env.BLOCKCHAIN_CONFIRMATION_TIMEOUT || '300000',
+        environment: process.env.NODE_ENV || 'development'
+      }
+    });
+  } catch (error) {
+    console.error('Error getting REC security config:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while getting REC security config'
+    });
+  }
+});
+
 // @route   GET /api/rec-security/status
 // @desc    Get REC security service status
 // @access  Private
