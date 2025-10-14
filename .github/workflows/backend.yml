@@ -17,6 +17,19 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    
+    # MongoDB service for tests
+    services:
+      mongodb:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
     defaults:
       run:
         working-directory: backend
@@ -39,11 +52,12 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Test (skip if none)
-        shell: bash
-        run: |
-          if git ls-files '**/*.test.*' '**/*.spec.*' | grep -q .; then
-            npm test -- --passWithNoTests
-          else
-            echo "No test files found. Skipping tests."
-          fi
+      - name: Run tests
+        run: npm test
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/coverage

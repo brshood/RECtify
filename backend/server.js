@@ -1,3 +1,48 @@
+// Initialize Sentry FIRST - before all other imports
+const Sentry = require('@sentry/node');
+const Tracing = require('@sentry/tracing');
+
+// Load environment variables
+require('dotenv').config();
+
+// Initialize Sentry if DSN is provided
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    
+    // Performance Monitoring
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    
+    // Integrations are auto-detected in v7, but we can specify for clarity
+    integrations: [
+      // Automatically instrument Node.js libraries
+      new Sentry.Integrations.Http({ tracing: true }),
+      // Express integration will be added after app creation
+    ],
+    
+    beforeSend(event) {
+      // Strip sensitive data from error reports
+      if (event.request) {
+        if (event.request.data) {
+          delete event.request.data.password;
+          delete event.request.data.token;
+          delete event.request.data.resetCode;
+        }
+        if (event.request.headers) {
+          delete event.request.headers.authorization;
+          delete event.request.headers.cookie;
+        }
+      }
+      return event;
+    }
+  });
+  
+  console.log('✅ Sentry monitoring initialized (v7)');
+} else {
+  console.log('⚠️  SENTRY_DSN not set - monitoring disabled');
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -8,7 +53,6 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss');
 const hpp = require('hpp');
 const morgan = require('morgan');
-require('dotenv').config();
 const payments = require('./routes/payments');
 const Order = require('./models/Order');
 const User = require('./models/User');
@@ -156,6 +200,13 @@ app.use(express.urlencoded({
 app.use(securityHeaders);
 app.use(validateRequestSize);
 app.use(xssProtection);
+
+// Sentry request tracking - must be early in middleware stack
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
+
 // Performance monitoring middleware
 app.use((req, res, next) => {
   req.startTime = Date.now();
@@ -261,8 +312,18 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Sentry error handler - must be BEFORE other error handlers
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.errorHandler());
+}
+
 // Error handling middleware - Production optimized
 app.use((error, req, res, next) => {
+  // Manual capture as backup (Sentry.Handlers.errorHandler already captured it)
+  if (process.env.SENTRY_DSN && Sentry) {
+    Sentry.captureException(error);
+  }
+
   // Log error details (but not to client in production)
   if (process.env.NODE_ENV === 'production') {
     console.error('Production Error:', {

@@ -62,16 +62,27 @@ const demoUsers = [
 
 // Demo holdings data
 const demoHoldings = [
-  // Ahmed's holdings
+  // Ahmed Al Mansouri's holdings - Active Trader Portfolio
   {
     userEmail: 'ahmed.trader@example.com',
     facilityName: 'Mohammed bin Rashid Al Maktoum Solar Park',
     facilityId: 'maktoum-solar-park-phase4',
     energyType: 'solar',
     vintage: 2024,
-    quantity: 850,
+    quantity: 1250,
     averagePurchasePrice: 165.50,
     emirate: 'Dubai',
+    certificationStandard: 'I-REC'
+  },
+  {
+    userEmail: 'ahmed.trader@example.com',
+    facilityName: 'Al Dhafra Solar Farm',
+    facilityId: 'al-dhafra-solar-farm',
+    energyType: 'solar',
+    vintage: 2024,
+    quantity: 820,
+    averagePurchasePrice: 167.25,
+    emirate: 'Abu Dhabi',
     certificationStandard: 'I-REC'
   },
   {
@@ -91,20 +102,64 @@ const demoHoldings = [
     facilityId: 'dubai-wind-farm',
     energyType: 'wind',
     vintage: 2024,
-    quantity: 300,
+    quantity: 650,
     averagePurchasePrice: 172.00,
     emirate: 'Dubai',
     certificationStandard: 'I-REC'
   },
-  // Fatima's holdings
+  {
+    userEmail: 'ahmed.trader@example.com',
+    facilityName: 'Sweihan Solar Park',
+    facilityId: 'sweihan-solar-park',
+    energyType: 'solar',
+    vintage: 2024,
+    quantity: 580,
+    averagePurchasePrice: 164.80,
+    emirate: 'Abu Dhabi',
+    certificationStandard: 'I-REC'
+  },
+  {
+    userEmail: 'ahmed.trader@example.com',
+    facilityName: 'Noor Abu Dhabi Solar Plant',
+    facilityId: 'noor-abu-dhabi-solar',
+    energyType: 'solar',
+    vintage: 2024,
+    quantity: 430,
+    averagePurchasePrice: 163.50,
+    emirate: 'Abu Dhabi',
+    certificationStandard: 'I-REC'
+  },
+  // Fatima Al Zahra's holdings - Large Facility Owner Portfolio
   {
     userEmail: 'fatima.energy@example.com',
     facilityName: 'Barakah Nuclear Power Plant',
     facilityId: 'barakah-nuclear-plant',
     energyType: 'nuclear',
     vintage: 2024,
-    quantity: 1200,
+    quantity: 2500,
     averagePurchasePrice: 158.75,
+    emirate: 'Abu Dhabi',
+    certificationStandard: 'I-REC'
+  },
+  {
+    userEmail: 'fatima.energy@example.com',
+    facilityName: 'Barakah Nuclear Power Plant',
+    facilityId: 'barakah-nuclear-plant',
+    energyType: 'nuclear',
+    vintage: 2023,
+    quantity: 1800,
+    averagePurchasePrice: 161.20,
+    emirate: 'Abu Dhabi',
+    certificationStandard: 'I-REC'
+  },
+  {
+    userEmail: 'fatima.energy@example.com',
+    facilityName: 'Noor Abu Dhabi Solar Plant',
+    facilityId: 'noor-abu-dhabi-solar',
+    energyType: 'solar',
+    vintage: 2024,
+    quantity: 1350,
+    averagePurchasePrice: 162.30,
     emirate: 'Abu Dhabi',
     certificationStandard: 'I-REC'
   },
@@ -115,7 +170,18 @@ const demoHoldings = [
     energyType: 'solar',
     vintage: 2023,
     quantity: 680,
-    averagePurchasePrice: 162.30,
+    averagePurchasePrice: 165.80,
+    emirate: 'Abu Dhabi',
+    certificationStandard: 'I-REC'
+  },
+  {
+    userEmail: 'fatima.energy@example.com',
+    facilityName: 'Shams Solar Power Station',
+    facilityId: 'shams-solar-power-station',
+    energyType: 'solar',
+    vintage: 2024,
+    quantity: 920,
+    averagePurchasePrice: 169.40,
     emirate: 'Abu Dhabi',
     certificationStandard: 'I-REC'
   },
@@ -127,6 +193,17 @@ const demoHoldings = [
     vintage: 2022,
     quantity: 350,
     averagePurchasePrice: 175.80,
+    emirate: 'Abu Dhabi',
+    certificationStandard: 'I-REC'
+  },
+  {
+    userEmail: 'fatima.energy@example.com',
+    facilityName: 'Al Dhafra Solar Farm',
+    facilityId: 'al-dhafra-solar-farm',
+    energyType: 'solar',
+    vintage: 2024,
+    quantity: 1100,
+    averagePurchasePrice: 166.90,
     emirate: 'Abu Dhabi',
     certificationStandard: 'I-REC'
   },
@@ -155,9 +232,9 @@ const demoHoldings = [
   }
 ];
 
-// Demo orders data
+// Demo orders data - Live active orders
 const demoOrders = [
-  // Buy orders
+  // Ahmed's Buy Orders - Active Trader
   {
     userEmail: 'ahmed.trader@example.com',
     orderType: 'buy',
@@ -169,8 +246,96 @@ const demoOrders = [
     price: 168.50,
     emirate: 'Abu Dhabi',
     purpose: 'compliance',
-    certificationStandard: 'I-REC'
+    certificationStandard: 'I-REC',
+    status: 'pending'
   },
+  {
+    userEmail: 'ahmed.trader@example.com',
+    orderType: 'buy',
+    facilityName: 'Barakah Nuclear Power Plant',
+    facilityId: 'barakah-nuclear-plant',
+    energyType: 'nuclear',
+    vintage: 2024,
+    quantity: 750,
+    price: 160.00,
+    emirate: 'Abu Dhabi',
+    purpose: 'voluntary',
+    certificationStandard: 'I-REC',
+    status: 'pending'
+  },
+  {
+    userEmail: 'ahmed.trader@example.com',
+    orderType: 'buy',
+    facilityName: 'Mohammed bin Rashid Al Maktoum Solar Park',
+    facilityId: 'maktoum-solar-park-phase4',
+    energyType: 'solar',
+    vintage: 2024,
+    quantity: 300,
+    price: 166.00,
+    emirate: 'Dubai',
+    purpose: 'trading',
+    certificationStandard: 'I-REC',
+    status: 'pending'
+  },
+  {
+    userEmail: 'ahmed.trader@example.com',
+    orderType: 'buy',
+    facilityName: 'Noor Abu Dhabi Solar Plant',
+    facilityId: 'noor-abu-dhabi-solar',
+    energyType: 'solar',
+    vintage: 2024,
+    quantity: 400,
+    price: 163.75,
+    emirate: 'Abu Dhabi',
+    purpose: 'trading',
+    certificationStandard: 'I-REC',
+    status: 'pending'
+  },
+  // Fatima's Sell Orders - Large Facility Owner
+  {
+    userEmail: 'fatima.energy@example.com',
+    orderType: 'sell',
+    quantity: 500,
+    price: 169.50,
+    status: 'pending'
+  },
+  {
+    userEmail: 'fatima.energy@example.com',
+    orderType: 'sell',
+    quantity: 800,
+    price: 168.75,
+    status: 'pending'
+  },
+  {
+    userEmail: 'fatima.energy@example.com',
+    orderType: 'sell',
+    quantity: 350,
+    price: 170.00,
+    status: 'pending'
+  },
+  {
+    userEmail: 'fatima.energy@example.com',
+    orderType: 'sell',
+    quantity: 600,
+    price: 167.50,
+    status: 'pending'
+  },
+  // Fatima's Buy Orders (she also buys sometimes)
+  {
+    userEmail: 'fatima.energy@example.com',
+    orderType: 'buy',
+    facilityName: 'Dubai Wind Farm',
+    facilityId: 'dubai-wind-farm',
+    energyType: 'wind',
+    vintage: 2024,
+    quantity: 400,
+    price: 171.00,
+    emirate: 'Dubai',
+    purpose: 'compliance',
+    certificationStandard: 'I-REC',
+    status: 'pending'
+  },
+  // Mohammed's Orders
   {
     userEmail: 'mohammed.compliance@example.com',
     orderType: 'buy',
@@ -181,15 +346,9 @@ const demoOrders = [
     quantity: 200,
     price: 167.75,
     emirate: 'Abu Dhabi',
-    purpose: 'voluntary',
-    certificationStandard: 'I-REC'
-  },
-  // Sell orders
-  {
-    userEmail: 'fatima.energy@example.com',
-    orderType: 'sell',
-    quantity: 300,
-    price: 169.25
+    purpose: 'compliance',
+    certificationStandard: 'I-REC',
+    status: 'pending'
   }
 ];
 
@@ -267,6 +426,7 @@ async function seedDemoData() {
             emirate: orderData.emirate,
             purpose: orderData.purpose,
             certificationStandard: orderData.certificationStandard,
+            status: orderData.status || 'pending',
             createdBy: `${user.firstName} ${user.lastName}`
           });
           await order.save();
@@ -293,6 +453,7 @@ async function seedDemoData() {
               emirate: holding.emirate,
               certificationStandard: holding.certificationStandard,
               holdingId: holding._id,
+              status: orderData.status || 'pending',
               createdBy: `${user.firstName} ${user.lastName}`
             });
             await order.save();
@@ -302,40 +463,318 @@ async function seedDemoData() {
       }
     }
 
-    // Create some demo transactions
+    // Create comprehensive demo transactions showing monthly trading activity
     console.log('💱 Creating demo transactions...');
     const ahmed = createdUsers['ahmed.trader@example.com'];
     const fatima = createdUsers['fatima.energy@example.com'];
+    const mohammed = createdUsers['mohammed.compliance@example.com'];
     
     if (ahmed && fatima) {
-      const ahmedHolding = await RECHolding.findOne({ userId: ahmed._id });
-      const fatimaHolding = await RECHolding.findOne({ userId: fatima._id });
+      const fatimaHoldings = await RECHolding.find({ userId: fatima._id }).limit(3);
       
-      if (ahmedHolding && fatimaHolding) {
-        // Create a mock transaction
-        const transaction = new Transaction({
+      if (fatimaHoldings.length > 0) {
+        const now = new Date();
+        const transactions = [];
+        
+        // Month 1 (90-120 days ago) - 3 transactions
+        transactions.push({
           buyerId: ahmed._id,
           sellerId: fatima._id,
-          buyOrderId: new mongoose.Types.ObjectId(), // Mock order ID
-          sellOrderId: new mongoose.Types.ObjectId(), // Mock order ID
-          facilityName: fatimaHolding.facilityName,
-          facilityId: fatimaHolding.facilityId,
-          energyType: fatimaHolding.energyType,
-          vintage: fatimaHolding.vintage,
-          emirate: fatimaHolding.emirate,
-          certificationStandard: fatimaHolding.certificationStandard,
-          quantity: 100,
-          pricePerUnit: 166.50,
-          totalAmount: 100 * 166.50,
-          buyerPlatformFee: 100 * 166.50 * 0.02,
-          sellerPlatformFee: 100 * 166.50 * 0.02,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[0].facilityName,
+          facilityId: fatimaHoldings[0].facilityId,
+          energyType: fatimaHoldings[0].energyType,
+          vintage: fatimaHoldings[0].vintage,
+          emirate: fatimaHoldings[0].emirate,
+          certificationStandard: fatimaHoldings[0].certificationStandard,
+          quantity: 250,
+          pricePerUnit: 164.50,
+          totalAmount: 250 * 164.50,
+          buyerPlatformFee: 250 * 164.50 * 0.02,
+          sellerPlatformFee: 250 * 164.50 * 0.02,
           blockchainFee: 5.00,
           status: 'completed',
           settlementStatus: 'completed',
-          completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+          completedAt: new Date(now.getTime() - 105 * 24 * 60 * 60 * 1000)
         });
+        
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[1].facilityName,
+          facilityId: fatimaHoldings[1].facilityId,
+          energyType: fatimaHoldings[1].energyType,
+          vintage: fatimaHoldings[1].vintage,
+          emirate: fatimaHoldings[1].emirate,
+          certificationStandard: fatimaHoldings[1].certificationStandard,
+          quantity: 180,
+          pricePerUnit: 166.25,
+          totalAmount: 180 * 166.25,
+          buyerPlatformFee: 180 * 166.25 * 0.02,
+          sellerPlatformFee: 180 * 166.25 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 95 * 24 * 60 * 60 * 1000)
+        });
+        
+        // Month 2 (60-90 days ago) - 4 transactions
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[0].facilityName,
+          facilityId: fatimaHoldings[0].facilityId,
+          energyType: fatimaHoldings[0].energyType,
+          vintage: fatimaHoldings[0].vintage,
+          emirate: fatimaHoldings[0].emirate,
+          certificationStandard: fatimaHoldings[0].certificationStandard,
+          quantity: 320,
+          pricePerUnit: 165.75,
+          totalAmount: 320 * 165.75,
+          buyerPlatformFee: 320 * 165.75 * 0.02,
+          sellerPlatformFee: 320 * 165.75 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 75 * 24 * 60 * 60 * 1000)
+        });
+        
+        if (mohammed) {
+          transactions.push({
+            buyerId: mohammed._id,
+            sellerId: fatima._id,
+            buyOrderId: new mongoose.Types.ObjectId(),
+            sellOrderId: new mongoose.Types.ObjectId(),
+            facilityName: fatimaHoldings[1].facilityName,
+            facilityId: fatimaHoldings[1].facilityId,
+            energyType: fatimaHoldings[1].energyType,
+            vintage: fatimaHoldings[1].vintage,
+            emirate: fatimaHoldings[1].emirate,
+            certificationStandard: fatimaHoldings[1].certificationStandard,
+            quantity: 150,
+            pricePerUnit: 167.00,
+            totalAmount: 150 * 167.00,
+            buyerPlatformFee: 150 * 167.00 * 0.02,
+            sellerPlatformFee: 150 * 167.00 * 0.02,
+            blockchainFee: 5.00,
+            status: 'completed',
+            settlementStatus: 'completed',
+            completedAt: new Date(now.getTime() - 68 * 24 * 60 * 60 * 1000)
+          });
+        }
+        
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[2].facilityName,
+          facilityId: fatimaHoldings[2].facilityId,
+          energyType: fatimaHoldings[2].energyType,
+          vintage: fatimaHoldings[2].vintage,
+          emirate: fatimaHoldings[2].emirate,
+          certificationStandard: fatimaHoldings[2].certificationStandard,
+          quantity: 200,
+          pricePerUnit: 168.50,
+          totalAmount: 200 * 168.50,
+          buyerPlatformFee: 200 * 168.50 * 0.02,
+          sellerPlatformFee: 200 * 168.50 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 62 * 24 * 60 * 60 * 1000)
+        });
+        
+        // Month 3 (30-60 days ago) - 5 transactions
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[0].facilityName,
+          facilityId: fatimaHoldings[0].facilityId,
+          energyType: fatimaHoldings[0].energyType,
+          vintage: fatimaHoldings[0].vintage,
+          emirate: fatimaHoldings[0].emirate,
+          certificationStandard: fatimaHoldings[0].certificationStandard,
+          quantity: 280,
+          pricePerUnit: 166.00,
+          totalAmount: 280 * 166.00,
+          buyerPlatformFee: 280 * 166.00 * 0.02,
+          sellerPlatformFee: 280 * 166.00 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 50 * 24 * 60 * 60 * 1000)
+        });
+        
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[1].facilityName,
+          facilityId: fatimaHoldings[1].facilityId,
+          energyType: fatimaHoldings[1].energyType,
+          vintage: fatimaHoldings[1].vintage,
+          emirate: fatimaHoldings[1].emirate,
+          certificationStandard: fatimaHoldings[1].certificationStandard,
+          quantity: 350,
+          pricePerUnit: 167.25,
+          totalAmount: 350 * 167.25,
+          buyerPlatformFee: 350 * 167.25 * 0.02,
+          sellerPlatformFee: 350 * 167.25 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000)
+        });
+        
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[2].facilityName,
+          facilityId: fatimaHoldings[2].facilityId,
+          energyType: fatimaHoldings[2].energyType,
+          vintage: fatimaHoldings[2].vintage,
+          emirate: fatimaHoldings[2].emirate,
+          certificationStandard: fatimaHoldings[2].certificationStandard,
+          quantity: 220,
+          pricePerUnit: 165.50,
+          totalAmount: 220 * 165.50,
+          buyerPlatformFee: 220 * 165.50 * 0.02,
+          sellerPlatformFee: 220 * 165.50 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 38 * 24 * 60 * 60 * 1000)
+        });
+        
+        // Current month (0-30 days ago) - 6 transactions
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[0].facilityName,
+          facilityId: fatimaHoldings[0].facilityId,
+          energyType: fatimaHoldings[0].energyType,
+          vintage: fatimaHoldings[0].vintage,
+          emirate: fatimaHoldings[0].emirate,
+          certificationStandard: fatimaHoldings[0].certificationStandard,
+          quantity: 400,
+          pricePerUnit: 168.00,
+          totalAmount: 400 * 168.00,
+          buyerPlatformFee: 400 * 168.00 * 0.02,
+          sellerPlatformFee: 400 * 168.00 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)
+        });
+        
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[1].facilityName,
+          facilityId: fatimaHoldings[1].facilityId,
+          energyType: fatimaHoldings[1].energyType,
+          vintage: fatimaHoldings[1].vintage,
+          emirate: fatimaHoldings[1].emirate,
+          certificationStandard: fatimaHoldings[1].certificationStandard,
+          quantity: 300,
+          pricePerUnit: 169.50,
+          totalAmount: 300 * 169.50,
+          buyerPlatformFee: 300 * 169.50 * 0.02,
+          sellerPlatformFee: 300 * 169.50 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+        });
+        
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[2].facilityName,
+          facilityId: fatimaHoldings[2].facilityId,
+          energyType: fatimaHoldings[2].energyType,
+          vintage: fatimaHoldings[2].vintage,
+          emirate: fatimaHoldings[2].emirate,
+          certificationStandard: fatimaHoldings[2].certificationStandard,
+          quantity: 275,
+          pricePerUnit: 167.75,
+          totalAmount: 275 * 167.75,
+          buyerPlatformFee: 275 * 167.75 * 0.02,
+          sellerPlatformFee: 275 * 167.75 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000)
+        });
+        
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[0].facilityName,
+          facilityId: fatimaHoldings[0].facilityId,
+          energyType: fatimaHoldings[0].energyType,
+          vintage: fatimaHoldings[0].vintage,
+          emirate: fatimaHoldings[0].emirate,
+          certificationStandard: fatimaHoldings[0].certificationStandard,
+          quantity: 180,
+          pricePerUnit: 168.25,
+          totalAmount: 180 * 168.25,
+          buyerPlatformFee: 180 * 168.25 * 0.02,
+          sellerPlatformFee: 180 * 168.25 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+        });
+        
+        transactions.push({
+          buyerId: ahmed._id,
+          sellerId: fatima._id,
+          buyOrderId: new mongoose.Types.ObjectId(),
+          sellOrderId: new mongoose.Types.ObjectId(),
+          facilityName: fatimaHoldings[1].facilityName,
+          facilityId: fatimaHoldings[1].facilityId,
+          energyType: fatimaHoldings[1].energyType,
+          vintage: fatimaHoldings[1].vintage,
+          emirate: fatimaHoldings[1].emirate,
+          certificationStandard: fatimaHoldings[1].certificationStandard,
+          quantity: 230,
+          pricePerUnit: 166.50,
+          totalAmount: 230 * 166.50,
+          buyerPlatformFee: 230 * 166.50 * 0.02,
+          sellerPlatformFee: 230 * 166.50 * 0.02,
+          blockchainFee: 5.00,
+          status: 'completed',
+          settlementStatus: 'completed',
+          completedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
+        });
+        
+        // Save all transactions
+        for (const txData of transactions) {
+          const transaction = new Transaction(txData);
         await transaction.save();
-        console.log('   ✓ Created demo transaction between Ahmed and Fatima');
+        }
+        
+        console.log(`   ✓ Created ${transactions.length} demo transactions with monthly distribution`);
       }
     }
 
@@ -344,7 +783,10 @@ async function seedDemoData() {
     console.log(`   Users created: ${Object.keys(createdUsers).length}`);
     console.log(`   Holdings created: ${demoHoldings.length}`);
     console.log(`   Orders created: ${demoOrders.length}`);
-    console.log('   Transactions created: 1');
+    
+    // Count transactions
+    const txCount = await Transaction.countDocuments();
+    console.log(`   Transactions created: ${txCount}`);
     
     console.log('\n🔑 Demo user credentials:');
     demoUsers.forEach(user => {

@@ -1,6 +1,8 @@
 const express = require('express');
 const { body, validationResult, param, query } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const auth = require('../middleware/auth');
+const { auditLog, setEntityId, setAuditMetadata } = require('../middleware/auditLog');
 const Order = require('../models/Order');
 const RECHolding = require('../models/RECHolding');
 const Transaction = require('../models/Transaction');
@@ -8,6 +10,35 @@ const User = require('../models/User');
 const RECTradingService = require('../services/RECTradingService');
 const RECSecurityService = require('../services/RECSecurityService');
 const router = express.Router();
+
+// Rate limiting for order creation - prevents order spam
+const orderCreateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Max 10 orders per minute per IP
+  message: {
+    success: false,
+    message: 'Too many orders created. Please slow down and try again.',
+    retryAfter: 60
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  skip: (req) => process.env.NODE_ENV === 'test' // Skip rate limiting in tests
+});
+
+// Rate limiting for order cancellation - prevents cancellation spam
+const orderCancelLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20, // Max 20 cancellations per minute per IP
+  message: {
+    success: false,
+    message: 'Too many cancellation requests. Please slow down.',
+    retryAfter: 60
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'test' // Skip rate limiting in tests
+});
 
 // @route   GET /api/orders
 // @desc    Get user's orders
@@ -207,13 +238,21 @@ router.get('/available-for-buy', [
 // @desc    Create buy order
 // @access  Private
 router.post('/buy', [
+  orderCreateLimiter,
   auth,
+  auditLog('ORDER_CREATE', 'Order', { includeBody: true }),
   body('facilityName').notEmpty().trim().withMessage('Facility name is required'),
   body('facilityId').notEmpty().trim().withMessage('Facility ID is required'),
   body('energyType').isIn(['solar', 'wind', 'hydro', 'biomass', 'geothermal', 'nuclear']).withMessage('Invalid energy type'),
   body('vintage').isInt({ min: 2000, max: new Date().getFullYear() }).withMessage('Invalid vintage year'),
-  body('quantity').isFloat({ min: 1 }).withMessage('Quantity must be at least 1'),
-  body('price').isFloat({ min: 0.01 }).withMessage('Price must be greater than 0'),
+  body('quantity')
+    .isFloat({ min: 1, max: 1000000 })
+    .withMessage('Quantity must be between 1 and 1,000,000')
+    .customSanitizer(value => Math.floor(value)), // Ensure integer quantity
+  body('price')
+    .isFloat({ min: 0.01, max: 100000 })
+    .withMessage('Price must be between 0.01 and 100,000 AED')
+    .customSanitizer(value => Math.round(value * 100) / 100), // Round to 2 decimals
   body('emirate').isIn(['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Fujairah', 'Ras Al Khaimah', 'Umm Al Quwain']).withMessage('Invalid emirate'),
   body('purpose').isIn(['compliance', 'voluntary', 'resale', 'offset']).withMessage('Invalid purpose'),
   body('certificationStandard').optional().isIn(['I-REC', 'TIGR', 'Green-e', 'EKOenergy']).withMessage('Invalid certification standard'),
@@ -295,6 +334,17 @@ router.post('/buy', [
 
     await Promise.all([order.save(), user.save()]);
 
+    // Set entity ID for audit logging
+    setEntityId(res, order._id);
+    setAuditMetadata(res, { 
+      orderType: 'buy', 
+      quantity, 
+      price, 
+      totalValue: order.totalValue,
+      facilityId,
+      energyType
+    });
+
     // Try to match with existing sell orders using blockchain-enabled trading
     const matchingOrders = await Order.findMatchingOrders(order);
     let matchedQuantity = 0;
@@ -348,10 +398,18 @@ router.post('/buy', [
 // @desc    Create sell order
 // @access  Private
 router.post('/sell', [
+  orderCreateLimiter,
   auth,
+  auditLog('ORDER_CREATE', 'Order', { includeBody: true }),
   body('holdingId').isMongoId().withMessage('Valid holding ID is required'),
-  body('quantity').isFloat({ min: 1 }).withMessage('Quantity must be at least 1'),
-  body('price').isFloat({ min: 0.01 }).withMessage('Price must be greater than 0'),
+  body('quantity')
+    .isFloat({ min: 1, max: 1000000 })
+    .withMessage('Quantity must be between 1 and 1,000,000')
+    .customSanitizer(value => Math.floor(value)), // Ensure integer quantity
+  body('price')
+    .isFloat({ min: 0.01, max: 100000 })
+    .withMessage('Price must be between 0.01 and 100,000 AED')
+    .customSanitizer(value => Math.round(value * 100) / 100), // Round to 2 decimals
   body('expiresAt').optional().isISO8601().withMessage('Invalid expiration date'),
   body('allowPartialFill').optional().isBoolean().withMessage('Allow partial fill must be boolean'),
   body('minFillQuantity').optional().isFloat({ min: 1 }).withMessage('Minimum fill quantity must be at least 1')
@@ -431,6 +489,18 @@ router.post('/sell', [
     });
 
     await order.save();
+
+    // Set entity ID for audit logging
+    setEntityId(res, order._id);
+    setAuditMetadata(res, { 
+      orderType: 'sell', 
+      quantity, 
+      price, 
+      totalValue: order.totalValue,
+      holdingId,
+      facilityId: holding.facilityId,
+      energyType: holding.energyType
+    });
 
     // Lock the RECs in the holding
     await holding.lock();
@@ -561,7 +631,9 @@ router.post('/sell', [
 // @desc    Cancel order
 // @access  Private
 router.put('/:id/cancel', [
+  orderCancelLimiter,
   auth,
+  auditLog('ORDER_CANCEL', 'Order', { includeParams: true }),
   param('id').isMongoId().withMessage('Invalid order ID')
 ], async (req, res) => {
   try {
@@ -594,6 +666,14 @@ router.put('/:id/cancel', [
     }
 
     await order.cancel();
+
+    // Set entity ID for audit logging
+    setEntityId(res, order._id);
+    setAuditMetadata(res, { 
+      orderType: order.orderType, 
+      previousStatus: order.status,
+      remainingQuantity: order.remainingQuantity
+    });
 
     // Unlock RECs if it's a sell order
     if (order.orderType === 'sell' && order.holdingId) {
@@ -660,94 +740,6 @@ router.get('/:id', [
 });
 
 // Helper function for traditional matching (fallback)
-async function executeTraditionalMatch(buyOrder, sellOrder, matchQuantity) {
-  // Create transaction
-  const transaction = new Transaction({
-    buyerId: buyOrder.userId,
-    sellerId: sellOrder.userId,
-    buyOrderId: buyOrder._id,
-    sellOrderId: sellOrder._id,
-    facilityName: sellOrder.facilityName,
-    facilityId: sellOrder.facilityId,
-    energyType: sellOrder.energyType,
-    vintage: sellOrder.vintage,
-    emirate: sellOrder.emirate,
-    certificationStandard: sellOrder.certificationStandard,
-    quantity: matchQuantity,
-    pricePerUnit: sellOrder.price,
-    totalAmount: matchQuantity * sellOrder.price,
-    buyerPlatformFee: matchQuantity * sellOrder.price * 0.02,
-    sellerPlatformFee: matchQuantity * sellOrder.price * 0.02,
-    blockchainFee: 5.00,
-    status: 'completed',
-    settlementStatus: 'completed',
-    settlementDate: new Date()
-  });
-
-  await transaction.save();
-
-  // Update orders
-  await buyOrder.fillPartial(matchQuantity);
-  await sellOrder.fillPartial(matchQuantity);
-
-  // Transfer RECs from seller to buyer
-  const sellerHolding = await RECHolding.findById(sellOrder.holdingId);
-  if (sellerHolding && sellerHolding.quantity >= matchQuantity) {
-    // Reduce seller's holding
-    sellerHolding.quantity -= matchQuantity;
-    if (sellerHolding.quantity === 0) {
-      await RECHolding.findByIdAndDelete(sellerHolding._id);
-    } else {
-      await sellerHolding.save();
-    }
-
-    // Add to buyer's holding
-    let buyerHolding = await RECHolding.findOne({
-      userId: buyOrder.userId,
-      facilityId: sellOrder.facilityId,
-      energyType: sellOrder.energyType,
-      vintage: sellOrder.vintage,
-      certificationStandard: sellOrder.certificationStandard
-    });
-
-    if (buyerHolding) {
-      const newTotalQuantity = buyerHolding.quantity + matchQuantity;
-      const newTotalValue = buyerHolding.totalValue + (matchQuantity * sellOrder.price);
-      buyerHolding.quantity = newTotalQuantity;
-      buyerHolding.averagePurchasePrice = newTotalValue / newTotalQuantity;
-      buyerHolding.totalValue = newTotalValue;
-      await buyerHolding.save();
-    } else {
-      buyerHolding = new RECHolding({
-        userId: buyOrder.userId,
-        facilityName: sellOrder.facilityName,
-        facilityId: sellOrder.facilityId,
-        energyType: sellOrder.energyType,
-        vintage: sellOrder.vintage,
-        quantity: matchQuantity,
-        averagePurchasePrice: sellOrder.price,
-        totalValue: matchQuantity * sellOrder.price,
-        emirate: sellOrder.emirate,
-        certificationStandard: sellOrder.certificationStandard
-      });
-      await buyerHolding.save();
-    }
-
-    // Update user totals
-    const buyerSummary = await RECHolding.getUserTotalRECs(buyOrder.userId);
-    await User.findByIdAndUpdate(buyOrder.userId, {
-      totalRecs: buyerSummary.totalQuantity,
-      portfolioValue: buyerSummary.totalValue
-    });
-
-    const sellerSummary = await RECHolding.getUserTotalRECs(sellOrder.userId);
-    await User.findByIdAndUpdate(sellOrder.userId, {
-      totalRecs: sellerSummary.totalQuantity,
-      portfolioValue: sellerSummary.totalValue
-    });
-  }
-}
-
 // Direct blockchain trade execution
 async function executeBlockchainTrade(buyOrder, sellOrder, quantity) {
   try {
