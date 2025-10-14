@@ -26,6 +26,10 @@ const RECSecurityService = require('./services/RECSecurityService');
 const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
 
 const app = express();
+
+// Trust proxy for Railway deployment (fixes rate limiting issues)
+app.set('trust proxy', 1);
+
 // Mount Stripe webhook BEFORE any body parsers or limiters
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), payments.webhookHandler);
 const PORT = process.env.PORT || 5000;
