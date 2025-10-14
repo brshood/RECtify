@@ -506,10 +506,12 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
       >
         {/* Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat hero-bg-mobile"
           style={{ 
             backgroundImage: `url('/dimitry-anikin-windmills.jpg')`,
-            backgroundAttachment: 'fixed'
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat'
           }}
         >
           {/* Dark overlay for text readability */}
@@ -982,10 +984,12 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
       >
         {/* Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat hero-bg-mobile"
           style={{ 
             backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
-            backgroundAttachment: 'fixed'
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat'
           }}
         >
           {/* Dark overlay for text readability */}
@@ -1161,10 +1165,12 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
       >
         {/* Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat hero-bg-mobile"
           style={{ 
             backgroundImage: `url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
-            backgroundAttachment: 'fixed'
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat'
           }}
         >
           {/* Dark overlay for text readability */}
@@ -1313,7 +1319,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         <img 
                           src={khaledImage} 
                           alt="Dr. Khaled Alsamri" 
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover hero-text-mobile"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
@@ -1396,7 +1402,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                         <img 
                           src={rashedImage} 
                           alt="Rashed Alneyadi" 
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover hero-text-mobile"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
@@ -1652,7 +1658,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   <img 
                     src={rectifyLogo} 
                     alt="RECtify Logo" 
-                    className="h-8 w-auto"
+                    className="h-8 w-auto hero-text-mobile"
                   />
                 </div>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
