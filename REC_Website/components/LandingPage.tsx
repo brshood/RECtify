@@ -126,10 +126,11 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
   return (
     <motion.div 
-      className="min-h-screen bg-gradient-to-br from-rectify-accent via-background to-rectify-blue-light/30"
+      className="min-h-screen bg-gradient-to-br from-rectify-accent via-background to-rectify-blue-light/30 mobile-no-scroll"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
+      style={{ maxWidth: '100vw', overflowX: 'hidden' }}
     >
       {/* Demo Notice */}
       <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 shadow-sm">

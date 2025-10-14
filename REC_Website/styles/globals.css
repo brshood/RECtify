@@ -739,8 +739,36 @@ html {
   }
 }
 
-/* Mobile hero section optimizations */
+/* Global mobile constraints to prevent horizontal scrolling */
 @media (max-width: 768px) {
+  /* Prevent horizontal scrolling on mobile */
+  html {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+  }
+  
+  body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Ensure root element respects mobile width */
+  #root {
+    max-width: 100vw !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Ensure all containers respect mobile width */
+  * {
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  
   /* Fix mobile background image issues */
   .hero-bg-mobile {
     background-attachment: scroll !important;
@@ -754,6 +782,9 @@ html {
     transform: translateZ(0);
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
+    /* Prevent overflow */
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
   }
   
   /* Improve text rendering on mobile */
@@ -788,10 +819,28 @@ html {
     min-height: 100vh;
     min-height: 100dvh; /* Dynamic viewport height for mobile */
     width: 100vw;
-    overflow-x: hidden;
-    /* Prevent horizontal scroll on mobile */
     max-width: 100vw;
+    overflow-x: hidden !important;
+    /* Prevent horizontal scroll on mobile */
     position: relative;
+    /* Ensure content doesn't exceed viewport */
+    box-sizing: border-box;
+  }
+  
+  /* Fix container width issues on mobile */
+  .container {
+    max-width: 100vw !important;
+    width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Fix any elements that might cause horizontal overflow */
+  .max-w-4xl, .max-w-3xl, .max-w-2xl {
+    max-width: calc(100vw - 2rem) !important;
   }
   
   /* Additional mobile performance optimizations */
