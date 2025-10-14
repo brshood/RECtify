@@ -153,15 +153,33 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
       </div>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-screen flex items-center">
-        {/* Background Image with Parallax Effect */}
+      <section className="relative overflow-hidden min-h-screen flex items-center hero-section-mobile">
+        {/* Background Image with Mobile Optimization */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat hero-bg-mobile"
           style={{ 
+            // Use different image sizes for different screen sizes
             backgroundImage: `url('https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80')`,
-            backgroundAttachment: 'fixed'
+            // Remove backgroundAttachment: fixed for mobile compatibility
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            // Additional mobile optimizations
+            WebkitBackgroundSize: 'cover',
+            MozBackgroundSize: 'cover',
+            OBackgroundSize: 'cover'
           }}
         >
+          {/* Mobile-optimized background image overlay */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat md:hidden"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          />
           {/* Lighter overlay for better text readability */}
           <div className="absolute inset-0 bg-black/30" />
           {/* Gradient overlay */}
@@ -259,7 +277,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Main Heading */}
             <motion.h1 
-              className="text-4xl md:text-6xl mb-6 leading-tight text-gray-100 drop-shadow-2xl"
+              className="text-4xl md:text-6xl mb-6 leading-tight text-gray-100 drop-shadow-2xl hero-text-mobile hero-title-mobile"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -517,10 +535,10 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             >
               <Badge className="bg-rectify-green-light text-rectify-green-dark mb-4">Our Mission</Badge>
             </motion.div>
-            <h2 className="text-3xl md:text-4xl mb-6 text-white drop-shadow-xl">
+            <h2 className="text-3xl md:text-4xl mb-6 text-white drop-shadow-xl hero-text-mobile hero-title-mobile">
               Advancing UAE's <span className="text-rectify-gradient">Net Zero 2050</span> Vision
             </h2>
-            <p className="text-xl text-gray-200 max-w-3xl mx-auto drop-shadow-lg">
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto drop-shadow-lg hero-text-mobile">
               Helping UAE companies meet their carbon offset requirements simply and cost-effectively. We provide end-to-end carbon management solutions from automated emissions tracking and IEF report generation to seamless REC and Carbon Credit trading, ensuring full compliance with UAE's new carbon offset mandate while reducing operational costs by up to 60%.
             </p>
           </motion.div>
