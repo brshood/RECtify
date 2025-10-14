@@ -220,7 +220,12 @@ app.get('/api/health', async (req, res) => {
       environment: process.env.NODE_ENV || 'development',
       version: '1.0.0',
       uptime: process.uptime(),
-      memory: process.memoryUsage()
+      memory: process.memoryUsage(),
+      blockchainConfig: {
+        network: process.env.BLOCKCHAIN_NETWORK || 'not set',
+        hasInfuraKey: !!process.env.INFURA_API_KEY,
+        hasInfuraSecret: !!process.env.INFURA_API_KEY_SECRET
+      }
     };
 
     // Database connectivity check
