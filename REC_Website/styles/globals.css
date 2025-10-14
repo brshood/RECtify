@@ -807,6 +807,25 @@ html {
       min-height: -webkit-fill-available;
     }
   }
+  
+  /* Mobile image optimization */
+  img {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  /* Ensure images load properly on mobile */
+  .hero-text-mobile img {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    will-change: transform;
+  }
 }
 
 /* Touch device improvements */
