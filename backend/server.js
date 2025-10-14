@@ -71,10 +71,8 @@ const MongoAtlasIPManager = require('./utils/mongoAtlasIP');
 
 const app = express();
 
-// Add Express integration to Sentry (must be after app creation)
-if (process.env.SENTRY_DSN) {
-  Sentry.Integrations.Express = new Tracing.Integrations.Express({ app });
-}
+// Trust proxy for Railway deployment (fixes rate limiting issues)
+app.set('trust proxy', 1);
 
 // Mount Stripe webhook BEFORE any body parsers or limiters
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), payments.webhookHandler);
@@ -273,7 +271,12 @@ app.get('/api/health', async (req, res) => {
       environment: process.env.NODE_ENV || 'development',
       version: '1.0.0',
       uptime: process.uptime(),
-      memory: process.memoryUsage()
+      memory: process.memoryUsage(),
+      blockchainConfig: {
+        network: process.env.BLOCKCHAIN_NETWORK || 'not set',
+        hasInfuraKey: !!process.env.INFURA_API_KEY,
+        hasInfuraSecret: !!process.env.INFURA_API_KEY_SECRET
+      }
     };
 
     // Database connectivity check

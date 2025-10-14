@@ -1,7 +1,7 @@
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, MapPin, Send, FileText } from "lucide-react";
+import { ArrowRight, Leaf, Globe, Shield, TrendingUp, Zap, CheckCircle, Award, Users, Building2, GraduationCap, Briefcase, Factory, Store, Heart, Sun, Wind, Mail, MapPin, Send, X, FileText } from "lucide-react";
 // Use public URL for static assets
 const rectifyLogo = "/logo.png";
 const khaledImage = "/khaled-alsamri.png.JPG";
@@ -153,7 +153,23 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
       </div>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden min-h-screen flex items-center">
+        {/* Background Image with Parallax Effect */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: `url('https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80')`,
+            backgroundAttachment: 'fixed'
+          }}
+        >
+          {/* Lighter overlay for better text readability */}
+          <div className="absolute inset-0 bg-black/30" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-rectify-green/20 via-black/10 to-rectify-blue/20" />
+          {/* Additional text readability overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10" />
+        </div>
+        
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
@@ -212,7 +228,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             }}
           />
         </div>
-        <div className="relative container mx-auto px-6 py-24">
+        <div className="relative container mx-auto px-6 py-24 z-10">
           <div className="text-center max-w-4xl mx-auto">
             {/* Logo */}
             <motion.div 
@@ -243,7 +259,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Main Heading */}
             <motion.h1 
-              className="text-4xl md:text-6xl mb-6 leading-tight"
+              className="text-4xl md:text-6xl mb-6 leading-tight text-gray-100 drop-shadow-2xl"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -294,7 +310,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             
             {/* Subtitle */}
             <motion.p 
-              className="text-2xl text-black dark:text-white mb-12 max-w-2xl mx-auto leading-relaxed font-medium"
+              className="text-2xl text-gray-200 mb-12 max-w-2xl mx-auto leading-relaxed font-medium drop-shadow-lg"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
@@ -440,20 +456,20 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
                   >
                     {stat.value}
                   </motion.div>
-                  <motion.div 
-                    className="text-muted-foreground"
-                    animate={{ 
-                      opacity: [0.7, 1, 0.7]
-                    }}
-                    transition={{ 
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: index * 0.2
-                    }}
-                  >
-                    {stat.label}
-                  </motion.div>
+                   <motion.div 
+                     className="text-white"
+                     animate={{ 
+                       opacity: [0.7, 1, 0.7]
+                     }}
+                     transition={{ 
+                       duration: 3,
+                       repeat: Infinity,
+                       ease: "easeInOut",
+                       delay: index * 0.2
+                     }}
+                   >
+                     {stat.label}
+                   </motion.div>
                 </motion.div>
               ))}
             </motion.div>
@@ -464,13 +480,28 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
       {/* Mission Section */}
       <motion.section 
-        className="py-20 bg-rectify-surface"
+        className="py-20 relative overflow-hidden"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true, amount: 0.3 }}
       >
-        <div className="container mx-auto px-6">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: `url('/dimitry-anikin-windmills.jpg')`,
+            backgroundAttachment: 'fixed'
+          }}
+        >
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black/50" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-rectify-green/30 via-black/20 to-rectify-blue/30" />
+          {/* Additional text readability overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+        </div>
+        <div className="container mx-auto px-6 relative z-10">
           <motion.div 
             className="text-center mb-16"
             initial={{ opacity: 0, y: 60 }}
@@ -486,10 +517,10 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             >
               <Badge className="bg-rectify-green-light text-rectify-green-dark mb-4">Our Mission</Badge>
             </motion.div>
-            <h2 className="text-3xl md:text-4xl mb-6">
+            <h2 className="text-3xl md:text-4xl mb-6 text-white drop-shadow-xl">
               Advancing UAE's <span className="text-rectify-gradient">Net Zero 2050</span> Vision
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto drop-shadow-lg">
               Helping UAE companies meet their carbon offset requirements simply and cost-effectively. We provide end-to-end carbon management solutions from automated emissions tracking and IEF report generation to seamless REC and Carbon Credit trading, ensuring full compliance with UAE's new carbon offset mandate while reducing operational costs by up to 60%.
             </p>
           </motion.div>
@@ -535,13 +566,20 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
       {/* Service Definition Section */}
       <motion.section 
-        className="py-20 bg-background"
+        className="py-20 bg-gradient-to-br from-rectify-green-light/30 via-rectify-green/10 to-rectify-green-light/20 relative overflow-hidden"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true, amount: 0.3 }}
       >
-        <div className="container mx-auto px-6">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-10 right-10 w-32 h-32 bg-rectify-green/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 left-10 w-24 h-24 bg-rectify-green/15 rounded-full blur-2xl"></div>
+          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-rectify-green/12 rounded-full blur-xl"></div>
+          <div className="absolute top-1/3 right-1/3 w-20 h-20 bg-rectify-green/8 rounded-full blur-2xl"></div>
+        </div>
+        <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto">
             <motion.div 
               className="text-center mb-16"
@@ -918,13 +956,28 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
       {/* Customer Segments Section */}
       <motion.section 
-        className="py-20"
+        className="py-20 relative overflow-hidden"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true, amount: 0.2 }}
       >
-        <div className="container mx-auto px-6">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
+            backgroundAttachment: 'fixed'
+          }}
+        >
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black/60" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-rectify-blue/30 via-black/20 to-rectify-green/30" />
+          {/* Additional text readability overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+        </div>
+        <div className="container mx-auto px-6 relative z-10">
           <motion.div 
             className="text-center mb-16"
             initial={{ opacity: 0, y: 60 }}
@@ -940,10 +993,10 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
             >
               <Badge className="bg-rectify-blue-light text-rectify-blue-dark mb-4">Who We Serve</Badge>
             </motion.div>
-            <h2 className="text-3xl md:text-4xl mb-6">
+            <h2 className="text-3xl md:text-4xl mb-6 text-white drop-shadow-xl">
               Empowering Every <span className="text-rectify-gradient">Sustainability Journey</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto drop-shadow-lg">
               From large corporations to individual environmental champions, RECtify serves all who are committed 
               to making a positive impact on our planet's future.
             </p>
@@ -1082,13 +1135,28 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
 
       {/* UAE Focus Section */}
       <motion.section 
-        className="py-20 bg-gradient-to-r from-rectify-green-light to-rectify-blue-light"
+        className="py-20 relative overflow-hidden"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true, amount: 0.3 }}
       >
-        <div className="container mx-auto px-6">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: `url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
+            backgroundAttachment: 'fixed'
+          }}
+        >
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black/70" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-rectify-green/50 to-rectify-blue/50" />
+          {/* Additional text readability overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
+        </div>
+        <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div 
               className="flex justify-center mb-6"
@@ -1104,7 +1172,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               </motion.div>
             </motion.div>
             <motion.h2 
-              className="text-3xl md:text-4xl mb-6"
+              className="text-3xl md:text-4xl mb-6 text-white drop-shadow-xl"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -1113,7 +1181,7 @@ export function LandingPage({ onEnterPlatform, onNavigateToEIReports }: LandingP
               Built for the UAE, Aligned with Vision 2050
             </motion.h2>
             <motion.p 
-              className="text-lg text-muted-foreground mb-8 leading-relaxed"
+              className="text-lg text-gray-200 mb-8 leading-relaxed drop-shadow-lg"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
