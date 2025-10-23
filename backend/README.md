@@ -32,7 +32,7 @@ npm install
    ```
 2. Update the `.env` file with your MongoDB Atlas connection string and other settings:
    ```
-   MONGODB_URI=mongodb+srv://yourusername:yourpassword@cluster0.xxxxx.mongodb.net/rectify?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/rectify?retryWrites=true&w=majority
    JWT_SECRET=your_very_long_random_secret_key_here
    PORT=5000
    NODE_ENV=development

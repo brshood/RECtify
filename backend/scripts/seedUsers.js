@@ -5,7 +5,7 @@ require('dotenv').config();
 const demoUsers = [
   {
     email: 'ahmed.alshamsi@adnoc.ae',
-    password: 'demo123',
+    password: 'Demo2024!Secure',
     firstName: 'Ahmed',
     lastName: 'Al Shamsi',
     company: 'ADNOC Clean Energy',
@@ -25,7 +25,7 @@ const demoUsers = [
   },
   {
     email: 'fatima.hassan@masdar.ae',
-    password: 'demo123',
+    password: 'Demo2024!Secure',
     firstName: 'Fatima',
     lastName: 'Hassan',
     company: 'Masdar City',
@@ -45,7 +45,7 @@ const demoUsers = [
   },
   {
     email: 'omar.khalil@dewa.gov.ae',
-    password: 'demo123',
+    password: 'Demo2024!Secure',
     firstName: 'Omar',
     lastName: 'Khalil',
     company: 'Dubai Electricity & Water Authority',
@@ -65,7 +65,7 @@ const demoUsers = [
   },
   {
     email: 'demo@rectify.ae',
-    password: 'demo123',
+    password: 'Demo2024!Secure',
     firstName: 'Guest',
     lastName: 'User',
     company: 'RECtify Demo',

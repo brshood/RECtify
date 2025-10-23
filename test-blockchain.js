@@ -4,11 +4,9 @@ require('dotenv').config({ path: './backend/.env' });
 async function testInfuraConnection() {
   try {
     console.log('🔍 Testing Infura connection...');
-    console.log('API Key:', process.env.INFURA_API_KEY);
     console.log('Network:', process.env.BLOCKCHAIN_NETWORK);
     
     const infuraUrl = `https://${process.env.BLOCKCHAIN_NETWORK}.infura.io/v3/${process.env.INFURA_API_KEY}`;
-    console.log('Infura URL:', infuraUrl);
     
     const provider = new ethers.JsonRpcProvider(infuraUrl);
     

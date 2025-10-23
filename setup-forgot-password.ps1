@@ -11,7 +11,7 @@ Write-Host ""
 Write-Host "Step 1: Creating backend .env file..." -ForegroundColor Yellow
 $backendEnv = @"
 MONGODB_URI=mongodb://localhost:27017/rectify
-JWT_SECRET=rectify-super-secure-jwt-secret-key-for-development-only-change-in-production
+JWT_SECRET=generate-your-own-secure-jwt-secret-using-crypto-randomBytes
 PORT=5001
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173

@@ -37,9 +37,9 @@ node scripts/seedDemoData.js
 
 | Name | Email | Password | Role | Holdings |
 |------|-------|----------|------|----------|
-| Ahmed Al Mansouri | `ahmed.trader@example.com` | `password123` | Trader | 4,150 MWh |
-| Fatima Al Zahra | `fatima.energy@example.com` | `password123` | Facility Owner | 8,700 MWh |
-| Mohammed Al Rashid | `mohammed.compliance@example.com` | `password123` | Compliance Officer | 430 MWh |
+| Ahmed Al Mansouri | `ahmed.trader@example.com` | `Demo2024!Secure` | Trader | 4,150 MWh |
+| Fatima Al Zahra | `fatima.energy@example.com` | `Demo2024!Secure` | Facility Owner | 8,700 MWh |
+| Mohammed Al Rashid | `mohammed.compliance@example.com` | `Demo2024!Secure` | Compliance Officer | 430 MWh |
 
 **📖 For detailed data breakdown, see [DEMO_DATA_SUMMARY.md](./DEMO_DATA_SUMMARY.md)**
 
@@ -64,10 +64,10 @@ node scripts/seedUsers.js
 
 | Name | Email | Password | Role | Company |
 |------|-------|----------|------|---------|
-| Ahmed Al Shamsi | `ahmed.alshamsi@adnoc.ae` | `demo123` | Facility Owner | ADNOC Clean Energy |
-| Fatima Hassan | `fatima.hassan@masdar.ae` | `demo123` | Trader | Masdar City |
-| Omar Khalil | `omar.khalil@dewa.gov.ae` | `demo123` | Compliance Officer | DEWA |
-| Guest User | `demo@rectify.ae` | `demo123` | Trader | RECtify Demo |
+| Ahmed Al Shamsi | `ahmed.alshamsi@adnoc.ae` | `Demo2024!Secure` | Facility Owner | ADNOC Clean Energy |
+| Fatima Hassan | `fatima.hassan@masdar.ae` | `Demo2024!Secure` | Trader | Masdar City |
+| Omar Khalil | `omar.khalil@dewa.gov.ae` | `Demo2024!Secure` | Compliance Officer | DEWA |
+| Guest User | `demo@rectify.ae` | `Demo2024!Secure` | Trader | RECtify Demo |
 
 ---
 

@@ -50,7 +50,7 @@ const demoUsers: Record<string, User & { password: string }> = {
   'ahmed.alshamsi@adnoc.ae': {
     id: '1',
     email: 'ahmed.alshamsi@adnoc.ae',
-    password: 'demo123',
+    password: 'Demo2024!Secure',
     firstName: 'Ahmed',
     lastName: 'Al Shamsi',
     company: 'ADNOC Clean Energy',
@@ -81,7 +81,7 @@ const demoUsers: Record<string, User & { password: string }> = {
   'fatima.hassan@masdar.ae': {
     id: '2',
     email: 'fatima.hassan@masdar.ae',
-    password: 'demo123',
+    password: 'Demo2024!Secure',
     firstName: 'Fatima',
     lastName: 'Hassan',
     company: 'Masdar City',
@@ -111,7 +111,7 @@ const demoUsers: Record<string, User & { password: string }> = {
   'omar.khalil@dewa.gov.ae': {
     id: '3',
     email: 'omar.khalil@dewa.gov.ae',
-    password: 'demo123',
+    password: 'Demo2024!Secure',
     firstName: 'Omar',
     lastName: 'Khalil',
     company: 'Dubai Electricity & Water Authority',
@@ -141,7 +141,7 @@ const demoUsers: Record<string, User & { password: string }> = {
   'demo@rectify.ae': {
     id: '4',
     email: 'demo@rectify.ae',
-    password: 'demo123',
+    password: 'Demo2024!Secure',
     firstName: 'Guest',
     lastName: 'User',
     company: 'RECtify Demo',

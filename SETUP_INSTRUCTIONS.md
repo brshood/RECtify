@@ -21,7 +21,7 @@ Copy-Item .env.development .env
 Or manually create `backend/.env` with these contents:
 ```env
 MONGODB_URI=mongodb://localhost:27017/rectify
-JWT_SECRET=rectify-super-secure-jwt-secret-key-for-development-only
+JWT_SECRET=generate-your-own-secure-jwt-secret-using-crypto-randomBytes
 PORT=5001
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
@@ -189,10 +189,10 @@ node scripts/seedUsers.js
 ```
 
 This creates:
-- `trader@rectify.ae` / password123
-- `facility@rectify.ae` / password123
-- `compliance@rectify.ae` / password123
-- `admin@rectify.ae` / password123
+- `trader@rectify.ae` / Demo2024!Secure
+- `facility@rectify.ae` / Demo2024!Secure
+- `compliance@rectify.ae` / Demo2024!Secure
+- `admin@rectify.ae` / Demo2024!Secure
 
 ### Test Flow
 

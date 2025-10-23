@@ -26,7 +26,7 @@
 ### Railway/Production Environment Variables
 ```bash
 # Database
-MONGODB_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/rectify?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/rectify?retryWrites=true&w=majority
 
 # JWT Security
 JWT_SECRET=your-super-secure-jwt-secret-here
@@ -38,8 +38,8 @@ FRONTEND_URL=https://your-frontend-domain.com
 
 # Blockchain Configuration (CRITICAL)
 BLOCKCHAIN_NETWORK=mainnet
-INFURA_API_KEY=36fea19ded3e41968a102f2c9b8289ab
-INFURA_API_KEY_SECRET=RYvc2c6Z5Uq+tGdTTU68yuADtViXBAPsPnkiNhVufQwIbTH656AEAg
+INFURA_API_KEY=your_infura_api_key_here
+INFURA_API_KEY_SECRET=your_infura_api_secret_here
 
 # Email Configuration
 EMAIL_USER=your-production-email@gmail.com

@@ -7,7 +7,7 @@ This document provides a comprehensive breakdown of the demo data created by the
 
 ### 1. Ahmed Al Mansouri (Active Trader)
 - **Email**: `ahmed.trader@example.com`
-- **Password**: `password123`
+- **Password**: `Demo2024!Secure`
 - **Role**: Trader
 - **Tier**: Premium
 - **Company**: Emirates Solar Trading LLC
@@ -51,7 +51,7 @@ Ahmed has completed **17 transactions** as a buyer over the past 4 months:
 
 ### 2. Fatima Al Zahra (Large Facility Owner)
 - **Email**: `fatima.energy@example.com`
-- **Password**: `password123`
+- **Password**: `Demo2024!Secure`
 - **Role**: Facility Owner
 - **Tier**: Enterprise
 - **Company**: Green Energy Solutions
@@ -103,7 +103,7 @@ Fatima has completed **18 transactions** as a seller over the past 4 months:
 
 ### 3. Mohammed Al Rashid (Compliance Officer)
 - **Email**: `mohammed.compliance@example.com`
-- **Password**: `password123`
+- **Password**: `Demo2024!Secure`
 - **Role**: Compliance Officer
 - **Tier**: Basic
 - **Company**: Sustainable Industries Corp

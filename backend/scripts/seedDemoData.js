@@ -9,7 +9,7 @@ require('dotenv').config();
 const demoUsers = [
   {
     email: 'ahmed.trader@example.com',
-    password: 'password123',
+    password: 'Demo2024!Secure',
     firstName: 'Ahmed',
     lastName: 'Al Mansouri',
     company: 'Emirates Solar Trading LLC',
@@ -26,7 +26,7 @@ const demoUsers = [
   },
   {
     email: 'fatima.energy@example.com',
-    password: 'password123',
+    password: 'Demo2024!Secure',
     firstName: 'Fatima',
     lastName: 'Al Zahra',
     company: 'Green Energy Solutions',
@@ -43,7 +43,7 @@ const demoUsers = [
   },
   {
     email: 'mohammed.compliance@example.com',
-    password: 'password123',
+    password: 'Demo2024!Secure',
     firstName: 'Mohammed',
     lastName: 'Al Rashid',
     company: 'Sustainable Industries Corp',
@@ -790,7 +790,7 @@ async function seedDemoData() {
     
     console.log('\n🔑 Demo user credentials:');
     demoUsers.forEach(user => {
-      console.log(`   ${user.firstName} ${user.lastName}: ${user.email} / password123`);
+      console.log(`   ${user.firstName} ${user.lastName}: ${user.email} / Demo2024!Secure`);
     });
 
   } catch (error) {

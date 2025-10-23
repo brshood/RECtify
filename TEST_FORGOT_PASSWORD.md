@@ -145,7 +145,7 @@ This creates several test users:
 - compliance@rectify.ae
 - admin@rectify.ae
 
-All with password: `password123`
+All with password: `Demo2024!Secure`
 
 ## Expected Backend Logs (Development Mode)
 

@@ -273,9 +273,7 @@ app.get('/api/health', async (req, res) => {
       uptime: process.uptime(),
       memory: process.memoryUsage(),
       blockchainConfig: {
-        network: process.env.BLOCKCHAIN_NETWORK || 'not set',
-        hasInfuraKey: !!process.env.INFURA_API_KEY,
-        hasInfuraSecret: !!process.env.INFURA_API_KEY_SECRET
+        hasBlockchainConfig: !!(process.env.BLOCKCHAIN_NETWORK && process.env.INFURA_API_KEY)
       }
     };
 

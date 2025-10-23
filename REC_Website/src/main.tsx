@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/react'
 
 // Initialize Sentry error monitoring
 Sentry.init({
-  dsn: "https://8e8ca3aa6c066ac69273341eac7062fe@o4510167318659072.ingest.us.sentry.io/4510167811162114",
+  dsn: import.meta.env.VITE_SENTRY_DSN,
   environment: import.meta.env.VITE_NODE_ENV || 'production',
   
   // Performance Monitoring
