@@ -350,6 +350,7 @@ export function AdminFundsManager() {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
 
