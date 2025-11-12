@@ -8,9 +8,10 @@ import { MarketData } from "./MarketData";
 import { RecentTransactions } from "./RecentTransactions";
 import { EmissionsReport } from "./EmissionsReport";
 import RECRegistration from "./RECRegistration";
-import { BarChart3, TrendingUp, DollarSign, Activity, FileText, Leaf, Shield } from "lucide-react";
+import { BarChart3, TrendingUp, DollarSign, Activity, FileText, Leaf, Shield, Users } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import apiService from "../services/api";
+import { AdminFundsManager } from "./AdminFundsManager";
 
 interface DashboardProps {
   initialTab?: string;
@@ -71,23 +72,31 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
     }
   };
 
-  const tabs = [
-    { value: "overview", label: "Overview", icon: BarChart3 },
-    { value: "trading", label: "Trading", icon: TrendingUp },
-    { value: "portfolio", label: "Portfolio", icon: DollarSign },
-    { value: "market", label: "Market Data", icon: Activity },
-    { value: "ei-reports", label: "EI Reports", icon: FileText },
-    { value: "rec-registration", label: "REC Registration", icon: Shield },
-  ];
+  const baseTabs = useMemo(() => {
+    const items = [
+      { value: "overview", label: "Overview", icon: BarChart3 },
+      { value: "trading", label: "Trading", icon: TrendingUp },
+      { value: "portfolio", label: "Portfolio", icon: DollarSign },
+      { value: "market", label: "Market Data", icon: Activity },
+      { value: "ei-reports", label: "EI Reports", icon: FileText },
+      { value: "rec-registration", label: "REC Registration", icon: Shield },
+    ];
+
+    if (user?.role === "admin") {
+      items.push({ value: "admin", label: "Admin", icon: Users });
+    }
+
+    return items;
+  }, [user?.role]);
 
   const filteredTabs = useMemo(() => {
-    if (!user) return tabs;
-    return tabs.filter((t) => {
+    if (!user) return baseTabs;
+    return baseTabs.filter((t) => {
       if (t.value === 'trading') return user.permissions.canTrade;
       // Always show REC Registration tab; we'll gate content below
       return true;
     });
-  }, [user]);
+  }, [user, baseTabs]);
 
   return (
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4">
@@ -244,6 +253,24 @@ export function Dashboard({ initialTab = "overview" }: DashboardProps) {
             </Card>
           ) : (
             <RECRegistration />
+          )}
+        </TabsContent>
+
+        {/* Admin Tab */}
+        <TabsContent value="admin" className="space-y-4">
+          {user?.role === "admin" ? (
+            <AdminFundsManager />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Administrator Access Required</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  You need an administrator account to view this section.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>

@@ -27,6 +27,8 @@ app.use((req, res, next) => {
 
 const paymentsRoutes = require('../routes/payments');
 app.use('/api/payments', paymentsRoutes.router || paymentsRoutes);
+const usersRoutes = require('../routes/users');
+app.use('/api/users', usersRoutes);
 
 describe('Payment Integration', () => {
   
@@ -61,129 +63,139 @@ describe('Payment Integration', () => {
     });
   });
 
-  describe('Add Funds (Direct Deposit)', () => {
-    it('should add funds successfully', async () => {
-      const user = await createTestUser({
-        email: 'deposit-test@rectify.ae',
-        cashBalance: 1000
+  describe('Admin Manual Credit', () => {
+    it('should allow an admin to credit a user balance', async () => {
+      const admin = await createTestUser({
+        email: 'admin-credit@rectify.ae',
+        role: 'admin'
+      });
+      const recipient = await createTestUser({
+        email: 'recipient-credit@rectify.ae',
+        cashBalance: 1000,
+        cashCurrency: 'AED'
       });
 
-      const token = generateJWT(user._id);
+      const token = generateJWT(admin._id);
 
       const response = await request(app)
-        .post('/api/payments/add-funds')
+        .post('/api/payments/admin/manual-credit')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          amount: 5000,
-          currency: 'AED'
+          userId: recipient._id.toString(),
+          amount: 250.567,
+          currency: 'USD'
         })
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.cashBalance).toBe(6000);
-      expect(response.body.data.addedAmount).toBe(5000);
+      expect(response.body.data.userId).toBe(recipient._id.toString());
+      expect(response.body.data.cashCurrency).toBe('USD');
+      const expectedBalance = 1000 + 250.57;
+      expect(Math.abs(response.body.data.cashBalance - expectedBalance)).toBeLessThan(0.01);
 
-      // Verify database was updated
-      const updatedUser = await User.findById(user._id);
-      expect(updatedUser.cashBalance).toBe(6000);
+      const updatedUser = await User.findById(recipient._id);
+      expect(updatedUser.cashBalance).toBeCloseTo(expectedBalance, 2);
+      expect(updatedUser.cashCurrency).toBe('USD');
     });
 
-    it('should reject invalid amount', async () => {
-      const user = await createTestUser({
-        email: 'invalid-amount@rectify.ae',
-        cashBalance: 1000
+    it('should reject manual credit attempts from non-admin users', async () => {
+      const trader = await createTestUser({
+        email: 'trader-credit-attempt@rectify.ae'
+      });
+      const target = await createTestUser({
+        email: 'target-credit@rectify.ae'
       });
 
-      const token = generateJWT(user._id);
-
-      // Negative amount
-      const response1 = await request(app)
-        .post('/api/payments/add-funds')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          amount: -100,
-          currency: 'AED'
-        });
-
-      expect(response1.status).toBe(400);
-      expect(response1.body.success).toBe(false);
-
-      // Zero amount
-      const response2 = await request(app)
-        .post('/api/payments/add-funds')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          amount: 0,
-          currency: 'AED'
-        });
-
-      expect(response2.status).toBe(400);
-      expect(response2.body.success).toBe(false);
-    });
-
-    it('should reject excessive amount', async () => {
-      const user = await createTestUser({
-        email: 'excessive-amount@rectify.ae',
-        cashBalance: 1000
-      });
-
-      const token = generateJWT(user._id);
+      const token = generateJWT(trader._id);
 
       const response = await request(app)
-        .post('/api/payments/add-funds')
+        .post('/api/payments/admin/manual-credit')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          amount: 2000000, // Over 1 million limit
-          currency: 'AED'
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should reject invalid currency', async () => {
-      const user = await createTestUser({
-        email: 'invalid-currency@rectify.ae',
-        cashBalance: 1000
-      });
-
-      const token = generateJWT(user._id);
-
-      const response = await request(app)
-        .post('/api/payments/add-funds')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
+          userId: target._id.toString(),
           amount: 100,
-          currency: 'EUR' // Not supported
-        });
+          currency: 'AED'
+        })
+        .expect(403);
 
-      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
-    it('should round amount to 2 decimal places', async () => {
-      const user = await createTestUser({
-        email: 'decimal-test@rectify.ae',
-        cashBalance: 1000
+    it('should prevent admins from crediting their own balance', async () => {
+      const admin = await createTestUser({
+        email: 'self-credit-admin@rectify.ae',
+        role: 'admin'
       });
 
-      const token = generateJWT(user._id);
+      const token = generateJWT(admin._id);
 
       const response = await request(app)
-        .post('/api/payments/add-funds')
+        .post('/api/payments/admin/manual-credit')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          amount: 100.567, // Should be rounded to 100.57
+          userId: admin._id.toString(),
+          amount: 100,
           currency: 'AED'
         })
-        .expect(200);
+        .expect(403);
 
-      expect(response.body.success).toBe(true);
-      
-      // Verify the amount was rounded (within reasonable floating point margin)
-      const updatedUser = await User.findById(user._id);
-      const expectedBalance = 1000 + 100.57;
-      expect(Math.abs(updatedUser.cashBalance - expectedBalance)).toBeLessThan(0.01);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toMatch(/cannot manually credit their own accounts/i);
+    });
+
+    it('should validate manual credit payloads', async () => {
+      const admin = await createTestUser({
+        email: 'validation-admin@rectify.ae',
+        role: 'admin'
+      });
+      const target = await createTestUser({
+        email: 'validation-target@rectify.ae'
+      });
+
+      const token = generateJWT(admin._id);
+
+      const missingBodyResponse = await request(app)
+        .post('/api/payments/admin/manual-credit')
+        .set('Authorization', `Bearer ${token}`)
+        .send({})
+        .expect(400);
+
+      expect(missingBodyResponse.body.success).toBe(false);
+      expect(Array.isArray(missingBodyResponse.body.errors)).toBe(true);
+
+      const invalidCurrencyResponse = await request(app)
+        .post('/api/payments/admin/manual-credit')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          userId: target._id.toString(),
+          amount: 100,
+          currency: 'EUR'
+        })
+        .expect(400);
+
+      expect(invalidCurrencyResponse.body.success).toBe(false);
+    });
+
+    it('should return 404 when the target user does not exist', async () => {
+      const admin = await createTestUser({
+        email: 'notfound-admin@rectify.ae',
+        role: 'admin'
+      });
+
+      const token = generateJWT(admin._id);
+      const nonExistentUserId = '507f1f77bcf86cd799439011';
+
+      const response = await request(app)
+        .post('/api/payments/admin/manual-credit')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          userId: nonExistentUserId,
+          amount: 50,
+          currency: 'AED'
+        })
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
     });
   });
 
@@ -310,124 +322,108 @@ describe('Payment Integration', () => {
     });
   });
 
-  describe('Currency Handling', () => {
-    it('should support AED currency', async () => {
-      const user = await createTestUser({
-        email: 'aed-test@rectify.ae',
-        cashBalance: 0
+  describe('Admin User Listing', () => {
+    it('should allow admins to retrieve user summaries', async () => {
+      const admin = await createTestUser({
+        email: 'list-admin@rectify.ae',
+        role: 'admin'
+      });
+      const userA = await createTestUser({
+        email: 'list-user-a@rectify.ae',
+        cashBalance: 200
+      });
+      const userB = await createTestUser({
+        email: 'list-user-b@rectify.ae',
+        cashBalance: 300,
+        cashCurrency: 'USD'
       });
 
-      const token = generateJWT(user._id);
+      const token = generateJWT(admin._id);
 
       const response = await request(app)
-        .post('/api/payments/add-funds')
+        .get('/api/users')
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          amount: 1000,
-          currency: 'AED'
-        })
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.cashCurrency).toBe('AED');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.some(user => user.email === userA.email)).toBe(true);
+
+      const usdUser = response.body.data.find(user => user.email === userB.email);
+      expect(usdUser.cashCurrency).toBe('USD');
+      expect(typeof usdUser.isSelf).toBe('boolean');
     });
 
-    it('should support USD currency', async () => {
-      const user = await createTestUser({
-        email: 'usd-test@rectify.ae',
-        cashBalance: 0
+    it('should block non-admin users from listing accounts', async () => {
+      const nonAdmin = await createTestUser({
+        email: 'list-non-admin@rectify.ae'
       });
 
-      const token = generateJWT(user._id);
+      const token = generateJWT(nonAdmin._id);
 
       const response = await request(app)
-        .post('/api/payments/add-funds')
+        .get('/api/users')
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          amount: 1000,
-          currency: 'USD'
-        })
-        .expect(200);
+        .expect(403);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.cashCurrency).toBe('USD');
+      expect(response.body.success).toBe(false);
     });
   });
 
   describe('Rate Limiting', () => {
-    it('should enforce rate limiting on payment operations', async () => {
-      const user = await createTestUser({
-        email: 'ratelimit-test@rectify.ae',
-        cashBalance: 10000
+    it('should enforce rate limiting on manual credit operations', async () => {
+      const admin = await createTestUser({
+        email: 'ratelimit-admin@rectify.ae',
+        role: 'admin'
+      });
+      const recipient = await createTestUser({
+        email: 'ratelimit-user@rectify.ae'
       });
 
-      const token = generateJWT(user._id);
+      const token = generateJWT(admin._id);
 
-      // Make multiple rapid requests
-      const promises = [];
+      const requests = [];
       for (let i = 0; i < 10; i++) {
-        promises.push(
+        requests.push(
           request(app)
-            .post('/api/payments/add-funds')
+            .post('/api/payments/admin/manual-credit')
             .set('Authorization', `Bearer ${token}`)
             .send({
-              amount: 10,
+              userId: recipient._id.toString(),
+              amount: 1,
               currency: 'AED'
             })
         );
       }
 
-      const responses = await Promise.all(promises);
+      const responses = await Promise.all(requests);
 
-      // At least some requests should succeed
       const successCount = responses.filter(r => r.status === 200).length;
-      expect(successCount).toBeGreaterThan(0);
-
-      // But we might hit rate limit (429) on some requests
-      // This is acceptable behavior
       const rateLimitedCount = responses.filter(r => r.status === 429).length;
-      
-      // If rate limiting is working, we should see some 429s
-      // But this depends on timing, so we just verify the rate limiter exists
-      // by checking that not ALL requests succeeded (which would indicate no rate limiting)
-      // or that we got explicit rate limit responses
-      if (rateLimitedCount > 0) {
-        expect(responses.some(r => r.status === 429)).toBe(true);
-      }
+
+      expect(successCount).toBeGreaterThan(0);
+      expect(successCount + rateLimitedCount).toBe(responses.length);
     }, 15000); // Longer timeout for multiple requests
   });
 
   describe('Error Handling', () => {
-    it('should handle database errors gracefully', async () => {
+    it('should handle invalid admin tokens gracefully', async () => {
+      const targetUser = await createTestUser({
+        email: 'error-target@rectify.ae'
+      });
+
       const token = generateJWT('invalid-user-id-format');
 
       const response = await request(app)
-        .post('/api/payments/add-funds')
+        .post('/api/payments/admin/manual-credit')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          amount: 1000,
+          userId: targetUser._id.toString(),
+          amount: 100,
           currency: 'AED'
         });
 
-      // Should return error, not crash
       expect(response.status).toBeGreaterThanOrEqual(400);
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should handle missing request body', async () => {
-      const user = await createTestUser({
-        email: 'missing-body@rectify.ae',
-        cashBalance: 1000
-      });
-
-      const token = generateJWT(user._id);
-
-      const response = await request(app)
-        .post('/api/payments/add-funds')
-        .set('Authorization', `Bearer ${token}`)
-        .send({});
-
-      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
   });

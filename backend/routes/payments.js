@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const auth = require('../middleware/auth');
 const { auditLog, setEntityId, setAuditMetadata } = require('../middleware/auditLog');
+const User = require('../models/User');
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY;
 let stripe = null;
@@ -29,7 +30,6 @@ const paymentLimiter = rateLimit({
 // GET /api/payments/balance - return current user cash balance (AED)
 router.get('/balance', auth, async (req, res) => {
   try {
-    const User = require('../models/User');
     const user = await User.findById(req.user.userId);
     return res.json({
       success: true,
@@ -44,15 +44,19 @@ router.get('/balance', auth, async (req, res) => {
   }
 });
 
-// POST /api/payments/add-funds - Add funds directly (bypass Stripe for development)
-router.post('/add-funds', [
+// POST /api/payments/admin/manual-credit - Admin adds funds to a user's balance
+router.post('/admin/manual-credit', [
   paymentLimiter,
   auth,
-  auditLog('PAYMENT_DEPOSIT', 'Payment', { includeBody: true }),
+  auditLog('PAYMENT_MANUAL_CREDIT', 'Payment', { includeBody: true }),
+  body('userId')
+    .trim()
+    .isMongoId()
+    .withMessage('Valid userId is required'),
   body('amount')
     .isFloat({ min: 0.01, max: 1000000 })
     .withMessage('Amount must be between 0.01 and 1,000,000')
-    .customSanitizer(value => Math.round(value * 100) / 100), // 2 decimal max
+    .customSanitizer(value => Math.round(value * 100) / 100),
   body('currency')
     .optional()
     .isIn(['AED', 'USD'])
@@ -68,48 +72,61 @@ router.post('/add-funds', [
       });
     }
 
-    const { amount, currency = 'AED' } = req.body;
+    const { userId, amount, currency = 'AED' } = req.body;
 
-    const User = require('../models/User');
-    const user = await User.findById(req.user.userId);
-    
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+    if (req.user.userId === userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Admins cannot manually credit their own accounts'
       });
     }
 
-    // Add funds to user's cash balance
-    user.cashBalance = (user.cashBalance || 0) + amount;
-    user.cashCurrency = currency;
-    await user.save();
+    const adminUser = await User.findById(req.user.userId);
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
 
-    console.log(`💰 Added ${amount} ${currency} to user ${user.email} (ID: ${user._id})`);
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target user not found'
+      });
+    }
 
-    // Set audit metadata
-    setAuditMetadata(res, { 
-      amount, 
-      currency, 
-      newBalance: user.cashBalance,
-      method: 'direct_add' 
+    const updatedBalance = Math.round(((targetUser.cashBalance || 0) + amount) * 100) / 100;
+    targetUser.cashBalance = updatedBalance;
+    targetUser.cashCurrency = currency;
+    await targetUser.save();
+
+    setEntityId(res, targetUser._id);
+    setAuditMetadata(res, {
+      amount,
+      currency,
+      targetUserId: targetUser._id.toString(),
+      targetEmail: targetUser.email,
+      initiatedBy: adminUser.email,
+      newBalance: targetUser.cashBalance,
+      method: 'admin_manual_credit'
     });
 
     return res.json({
       success: true,
-      message: `Successfully added ${amount} ${currency} to your account`,
+      message: `Successfully credited ${amount} ${currency} to ${targetUser.email}`,
       data: {
-        cashBalance: user.cashBalance,
-        cashCurrency: user.cashCurrency,
-        reservedBalance: user.reservedBalance || 0,
-        addedAmount: amount
+        userId: targetUser._id.toString(),
+        cashBalance: targetUser.cashBalance,
+        cashCurrency: targetUser.cashCurrency
       }
     });
   } catch (error) {
-    console.error('Error adding funds:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Failed to add funds' 
+    console.error('Admin manual credit error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to credit funds'
     });
   }
 });

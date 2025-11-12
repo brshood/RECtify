@@ -47,6 +47,36 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const demoUsers: Record<string, User & { password: string }> = {
+  'team@rectifygo.com': {
+    id: '5',
+    email: 'team@rectifygo.com',
+    password: 'Admin2024!Secure',
+    firstName: 'REC',
+    lastName: 'Admin',
+    company: 'RECtify',
+    role: 'admin',
+    tier: 'enterprise',
+    emirate: 'Abu Dhabi',
+    joinedDate: '2023-01-01',
+    lastLogin: '2024-01-20 12:00:00',
+    preferences: {
+      currency: 'AED',
+      language: 'en',
+      notifications: true,
+      darkMode: false,
+      dashboardLayout: 'default'
+    },
+    permissions: {
+      canTrade: true,
+      canRegisterFacilities: true,
+      canViewAnalytics: true,
+      canExportReports: true,
+      canManageUsers: true
+    },
+    portfolioValue: 0,
+    totalRecs: 0,
+    verificationStatus: 'verified'
+  },
   'ahmed.alshamsi@adnoc.ae': {
     id: '1',
     email: 'ahmed.alshamsi@adnoc.ae',

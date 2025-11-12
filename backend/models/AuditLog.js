@@ -20,7 +20,7 @@ const auditLogSchema = new mongoose.Schema({
       // REC actions
       'REC_TRANSFER', 'REC_REGISTER', 'REC_RETIRE',
       // Payment actions
-      'PAYMENT_DEPOSIT', 'PAYMENT_WITHDRAW', 'PAYMENT_REFUND',
+      'PAYMENT_DEPOSIT', 'PAYMENT_WITHDRAW', 'PAYMENT_REFUND', 'PAYMENT_MANUAL_CREDIT',
       // Holdings actions
       'HOLDING_CREATE', 'HOLDING_UPDATE', 'HOLDING_DELETE',
       // User actions

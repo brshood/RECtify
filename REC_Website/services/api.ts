@@ -122,16 +122,20 @@ class ApiService {
     return this.request('/payments/balance');
   }
 
-  async addFunds(amount: number, currency: 'AED' | 'USD' = 'AED'): Promise<ApiResponse> {
-    return this.request('/payments/add-funds', {
-      method: 'POST',
-      body: JSON.stringify({ amount, currency })
-    });
-  }
-
   // User management (admin only)
   async getUserStats(): Promise<ApiResponse> {
     return this.request('/users/stats');
+  }
+
+  async getUsers(): Promise<ApiResponse> {
+    return this.request('/users');
+  }
+
+  async manualCreditUser(userId: string, amount: number, currency: 'AED' | 'USD' = 'AED'): Promise<ApiResponse> {
+    return this.request('/payments/admin/manual-credit', {
+      method: 'POST',
+      body: JSON.stringify({ userId, amount, currency })
+    });
   }
 
   // Holdings endpoints

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,8 +10,7 @@ import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { useAuth, UserRole, UserTier } from './AuthContext';
 import apiService from '../services/api';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
-import { toast } from 'sonner';
+import { BankTransferInstructions } from './BankTransferInstructions';
 import { 
   User, 
   Mail, 
@@ -27,7 +26,8 @@ import {
   Crown,
   CheckCircle,
   AlertCircle,
-  Clock
+  Clock,
+  CreditCard
 } from 'lucide-react';
 
 interface UserProfileProps {
@@ -39,10 +39,8 @@ export function UserProfile({ onClose }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(user || {});
   const [balance, setBalance] = useState<{ cashBalance: number; cashCurrency: 'AED' | 'USD'; reservedBalance?: number } | null>(null);
-  const [topupOpen, setTopupOpen] = useState(false);
-  const [amount, setAmount] = useState<string>('');
-  const [currency, setCurrency] = useState<'AED' | 'USD'>('AED');
-  const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showBankInstructions, setShowBankInstructions] = useState(false);
 
   if (!user) return null;
 
@@ -130,16 +128,16 @@ export function UserProfile({ onClose }: UserProfileProps) {
     }).format(amount);
   };
 
-  const canSubmit = useMemo(() => {
-    const a = parseFloat(amount || '0');
-    return !loading && a > 0;
-  }, [loading, amount]);
-
   const refreshBalance = async () => {
     try {
+      setIsRefreshing(true);
       const res = await apiService.getCashBalance();
       if (res.success) setBalance(res.data);
-    } catch {}
+    } catch (error) {
+      console.error('Failed to refresh balance', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   useEffect(() => {
@@ -166,27 +164,6 @@ export function UserProfile({ onClose }: UserProfileProps) {
   }, [user?.preferences?.darkMode]);
 
 
-  const addFundsDirectly = async () => {
-    try {
-      setLoading(true);
-      const a = parseFloat(amount);
-      const res = await apiService.addFunds(a, currency);
-      if (res.success) {
-        toast.success(res.message || 'Funds added successfully!');
-        setBalance(res.data);
-        setTopupOpen(false);
-        setAmount('');
-        setStep('amount');
-      } else {
-        toast.error(res.message || 'Failed to add funds');
-      }
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to add funds');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -210,11 +187,26 @@ export function UserProfile({ onClose }: UserProfileProps) {
                 )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={refreshBalance} disabled={loading}>Refresh</Button>
-                <Button onClick={() => setTopupOpen(true)} disabled={loading}>Add Funds</Button>
+                <Button variant="outline" onClick={refreshBalance} disabled={isRefreshing}>
+                  {isRefreshing ? 'Refreshing…' : 'Refresh'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowBankInstructions(!showBankInstructions)}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  {showBankInstructions ? 'Hide' : 'Add Funds'}
+                </Button>
               </div>
             </CardContent>
           </Card>
+
+          {showBankInstructions && (
+            <div className="mt-4">
+              <BankTransferInstructions />
+            </div>
+          )}
           <div className="flex items-center space-x-4">
             <Avatar className="h-20 w-20">
               <AvatarFallback className="text-lg">
@@ -514,52 +506,6 @@ export function UserProfile({ onClose }: UserProfileProps) {
         </CardContent>
       </Card>
 
-      <Dialog open={topupOpen} onOpenChange={(v) => { setTopupOpen(v); if (!v) { setAmount(''); setCurrency('AED'); } }}>
-        <DialogContent className="max-w-[420px] w-[92vw] p-0 overflow-hidden rounded-2xl">
-          <div className="bg-white dark:bg-gray-800 text-black dark:text-white">
-            <div>
-              <div className="px-6 pt-8 pb-4 text-center">
-                <div className="text-4xl font-bold">
-                  <span className="mr-2 text-black/60 dark:text-white/60">{currency}</span>
-                  <input
-                    id="amount-input"
-                    aria-label="Amount"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    autoComplete="off"
-                    className="inline-block w-[10ch] bg-transparent border-0 outline-none text-4xl font-bold tracking-tight text-black dark:text-white placeholder-black/30 dark:placeholder-white/30 text-center"
-                  />
-                </div>
-              </div>
-              <div className="px-6 pb-2">
-                <Label htmlFor="topup-currency" className="text-black/70 dark:text-white/70 text-xs">Currency</Label>
-                <select id="topup-currency" className="mt-2 h-10 w-full px-3 rounded-md bg-black/5 border border-black/20" value={currency} onChange={(e) => setCurrency(e.target.value as 'AED' | 'USD')}>
-                  <option value="AED">AED</option>
-                  <option value="USD">USD</option>
-                </select>
-              </div>
-              <div className="px-6 pb-4">
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-800">
-                    <strong>Development Mode:</strong> Funds are added directly without payment processing. 
-                    This bypasses Stripe since business license is not yet available.
-                  </p>
-                </div>
-              </div>
-              <div className="px-6 pb-6">
-                <Button className="w-full bg-black text-white hover:bg-black/80" disabled={!canSubmit} onClick={addFundsDirectly}>
-                  Add {formatCurrency(parseFloat(amount || '0'))}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

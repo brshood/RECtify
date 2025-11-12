@@ -4,6 +4,33 @@ require('dotenv').config();
 
 const demoUsers = [
   {
+    email: 'team@rectifygo.com',
+    password: 'Admin2024!Secure',
+    firstName: 'REC',
+    lastName: 'Admin',
+    company: 'RECtify',
+    role: 'admin',
+    tier: 'enterprise',
+    emirate: 'Abu Dhabi',
+    preferences: {
+      currency: 'AED',
+      language: 'en',
+      notifications: true,
+      darkMode: false,
+      dashboardLayout: 'default'
+    },
+    permissions: {
+      canTrade: true,
+      canRegisterFacilities: true,
+      canViewAnalytics: true,
+      canExportReports: true,
+      canManageUsers: true
+    },
+    verificationStatus: 'verified',
+    isActive: true,
+    emailVerified: true
+  },
+  {
     email: 'ahmed.alshamsi@adnoc.ae',
     password: 'Demo2024!Secure',
     firstName: 'Ahmed',
